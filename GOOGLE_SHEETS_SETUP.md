@@ -75,7 +75,18 @@ const PROMO_SHEET_NAME = 'Промо';
 // Обработка POST запросов
 function doPost(e) {
   try {
-    const data = JSON.parse(e.postData.contents);
+    let data;
+    
+    // Обработка разных форматов данных
+    if (e.postData && e.postData.contents) {
+      // JSON данные
+      data = JSON.parse(e.postData.contents);
+    } else if (e.parameter && e.parameter.data) {
+      // Данные из FormData
+      data = JSON.parse(e.parameter.data);
+    } else {
+      throw new Error('No data received');
+    }
     
     if (data.formType === 'distribution') {
       saveDistribution(data);
@@ -83,8 +94,9 @@ function doPost(e) {
       savePromo(data);
     }
     
+    // Возвращаем ответ с CORS заголовками
     return ContentService
-      .createTextOutput(JSON.stringify({ success: true }))
+      .createTextOutput(JSON.stringify({ success: true, message: 'Данные успешно сохранены' }))
       .setMimeType(ContentService.MimeType.JSON);
       
   } catch (error) {
@@ -184,8 +196,30 @@ function getPromoTypeName(type) {
   return names[type] || type;
 }
 
-// Тестовая функция для GET запросов (проверка работоспособности)
-function doGet() {
+// Обработка GET запросов (для тестирования и альтернативного метода отправки)
+function doGet(e) {
+  // Если есть параметр data - это запрос на сохранение данных (обходит CORS)
+  if (e.parameter && e.parameter.data) {
+    try {
+      const data = JSON.parse(decodeURIComponent(e.parameter.data));
+      
+      if (data.formType === 'distribution') {
+        saveDistribution(data);
+      } else if (data.formType === 'promo') {
+        savePromo(data);
+      }
+      
+      return ContentService
+        .createTextOutput(JSON.stringify({ success: true, message: 'Данные успешно сохранены' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    } catch (error) {
+      return ContentService
+        .createTextOutput(JSON.stringify({ success: false, error: error.toString() }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+  
+  // Обычный GET запрос для проверки работоспособности
   return ContentService
     .createTextOutput(JSON.stringify({ 
       status: 'ok', 

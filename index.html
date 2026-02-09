@@ -19,6 +19,20 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Runtime config injection: try to set window.VITE_GOOGLE_SCRIPT_URL from /config.json -->
+    <script>
+      (function(){
+        try {
+          // initialize global
+          window.VITE_GOOGLE_SCRIPT_URL = '';
+          // fetch runtime config (non-blocking)
+          fetch('/config.json', { cache: 'no-store' })
+            .then(function(res){ if(!res.ok) throw new Error('no-config'); return res.json(); })
+            .then(function(obj){ if(obj && obj.VITE_GOOGLE_SCRIPT_URL){ window.VITE_GOOGLE_SCRIPT_URL = obj.VITE_GOOGLE_SCRIPT_URL; console.log('Injected window.VITE_GOOGLE_SCRIPT_URL from /config.json'); } })
+            .catch(function(){ /* ignore */ });
+        } catch (e) { /* ignore */ }
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

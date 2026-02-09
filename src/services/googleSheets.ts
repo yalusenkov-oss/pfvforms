@@ -7,7 +7,65 @@
 // VITE_GOOGLE_SCRIPT_URL="https://script.google.com/macros/s/ВАШ_ID/exec"
 // Vite сделает переменную доступной через import.meta.env
 // import.meta.env typing differs between TS setups; cast to any to avoid type errors here
-const GOOGLE_SCRIPT_URL = ((import.meta as any)?.env?.VITE_GOOGLE_SCRIPT_URL as string) || '';
+
+// Вспомогательная функция для вычисления количества треков (совпадает с логикой из StepOne)
+function getTrackCount(data: Record<string, string>): number {
+  const type = data.releaseType;
+  if (type === 'Single') return data.singleTrackCount === '2' ? 2 : 1;
+  if (type === 'EP') return parseInt(data.epTrackCount || '3', 10);
+  if (type === 'Album') return parseInt(data.albumTrackCount || '6', 10);
+  return 1;
+}
+
+// Функция для получения URL (читает переменную при вызове).
+// Попытки (в порядке): import.meta.env -> window global -> /config.json
+let _cachedGoogleScriptUrl: string | null = null;
+async function getGoogleScriptUrl(): Promise<string> {
+  if (_cachedGoogleScriptUrl) return _cachedGoogleScriptUrl;
+
+  // 1) try Vite-provided import.meta.env (replaced at build time)
+  try {
+    const envUrl = ((import.meta as any)?.env?.VITE_GOOGLE_SCRIPT_URL as string) || '';
+    if (envUrl) {
+      _cachedGoogleScriptUrl = envUrl;
+      console.log('DEBUG getGoogleScriptUrl(): from import.meta.env', envUrl);
+      return envUrl;
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  // 2) try global window variable (injected via public/config.js or similar)
+  try {
+    // @ts-ignore
+    const w = (window as any);
+    if (w && w.VITE_GOOGLE_SCRIPT_URL) {
+      _cachedGoogleScriptUrl = String(w.VITE_GOOGLE_SCRIPT_URL);
+      console.log('DEBUG getGoogleScriptUrl(): from window.VITE_GOOGLE_SCRIPT_URL', _cachedGoogleScriptUrl);
+      return _cachedGoogleScriptUrl;
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  // 3) try to fetch /config.json (served from public/)
+  try {
+    const res = await fetch('/config.json', { cache: 'no-store' });
+    if (res.ok) {
+      const obj = await res.json();
+      if (obj && obj.VITE_GOOGLE_SCRIPT_URL) {
+        _cachedGoogleScriptUrl = String(obj.VITE_GOOGLE_SCRIPT_URL);
+        console.log('DEBUG getGoogleScriptUrl(): from /config.json', _cachedGoogleScriptUrl);
+        return _cachedGoogleScriptUrl;
+      }
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  console.log('DEBUG getGoogleScriptUrl(): no URL found');
+  return '';
+}
 
 interface SubmitResponse {
   success: boolean;
@@ -53,6 +111,21 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
   });
 
   // Рассчитываем итоговую сумму
+  // Маппинг русских названий тарифов на английские ключи для Apps Script
+  const tariffMap: Record<string, string> = {
+    'Базовый': 'basic',
+    'Продвинутый': 'advanced',
+    'Премиум': 'premium',
+    'Платинум': 'platinum',
+  };
+  
+  // Маппинг русских названий типов релизов на английские ключи
+  const releaseTypeMap: Record<string, string> = {
+    'Single': 'single',
+    'EP': 'ep',
+    'Album': 'album',
+  };
+
   const prices: Record<string, Record<string, number>> = {
     basic: { single: 500, ep: 700, album: 900 },
     advanced: { single: 690, ep: 890, album: 1200 },
@@ -67,10 +140,14 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
     platinum: 0,
   };
 
-  const tariff = formData.tariff || 'basic';
-  const releaseType = formData.releaseType || 'single';
-  const trackCount = parseInt(formData.trackCount || '1', 10);
-  const addKaraoke = formData.addKaraoke === 'yes';
+  const tariffRu = formData.tariff || '';
+  const tariff = tariffMap[tariffRu] || 'basic';
+  const releaseTypeRu = formData.releaseType || '';
+  const releaseType = releaseTypeMap[releaseTypeRu] || 'single';
+  // Используем функцию getTrackCount для правильного вычисления количества треков
+  const trackCount = getTrackCount(formData);
+  // В форме используется karaokeAddition со значениями "Да"/"Нет"
+  const addKaraoke = formData.karaokeAddition === 'Да';
 
   const basePrice = prices[tariff]?.[releaseType] || 0;
   const karaokePrice = addKaraoke ? karaokePrices[tariff] * trackCount : 0;
@@ -80,9 +157,9 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
     formType: 'distribution',
     timestamp: new Date().toISOString(),
     
-    // Тариф и тип
-    tariff: formData.tariff,
-    releaseType: formData.releaseType,
+    // Тариф и тип (используем английские ключи для Apps Script)
+    tariff: tariff,
+    releaseType: releaseType,
     trackCount: trackCount,
     
     // Информация о релизе
@@ -91,7 +168,8 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
     releaseVersion: formData.releaseVersion,
     releaseLink: formData.releaseLink,
     genre: formData.genre,
-    language: formData.language,
+    // Если указан languageOther, используем его, иначе language
+    language: formData.languageOther?.trim() || formData.language || '',
     releaseDate: formData.releaseDate,
     coverLink: formData.coverLink,
     
@@ -102,8 +180,8 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
     // Яндекс
     yandexPreSave: formData.yandexPreSave,
     
-    // Караоке
-    addKaraoke: formData.addKaraoke,
+    // Караоке (конвертируем "Да"/"Нет" в "yes"/"no" для Apps Script)
+    addKaraoke: formData.karaokeAddition === 'Да' ? 'yes' : 'no',
     
     // Треки (JSON для сложных данных)
     tracks: JSON.stringify(tracksFormatted, null, 2),
@@ -129,30 +207,81 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
 
 // Подготовка данных промо для отправки
 export function preparePromoData(promoData: Record<string, string>): Record<string, unknown> {
+  const promoType = promoData.promoType;
+  
+  // Для детального промо используем поля с префиксом "promo"
+  // Для еженедельного промо используем поля с префиксом "promoWeekly"
+  if (promoType === 'detailed') {
+    return {
+      formType: 'promo',
+      timestamp: new Date().toISOString(),
+      
+      // Тип промо
+      promoType: promoData.promoType,
+      
+      // Общие поля для детального промо
+      releaseLink: promoData.promoReleaseLink || '',
+      upcOrName: promoData.promoUPC || '',
+      releaseDate: promoData.promoReleaseDate || '',
+      genre: promoData.promoGenre || '',
+      focusTrack: promoData.promoFocusTrack || '',
+      additionalInfo: promoData.promoExtra || '',
+      
+      // Только для детального промо
+      artistAndTitle: promoData.promoArtistTitle || '',
+      releaseDescription: promoData.promoDescription || '',
+      artistInfo: promoData.promoArtistInfo || '',
+      artistPhotos: promoData.promoPhotos || '',
+      socialLinks: promoData.promoSocials || '',
+      
+      // Контакты
+      contactInfo: promoData.promoContact || '',
+    };
+  } else if (promoType === 'weekly') {
+    return {
+      formType: 'promo',
+      timestamp: new Date().toISOString(),
+      
+      // Тип промо
+      promoType: promoData.promoType,
+      
+      // Общие поля для еженедельного промо
+      releaseLink: promoData.promoWeeklyReleaseLink || '',
+      upcOrName: promoData.promoWeeklyUPC || '',
+      releaseDate: promoData.promoWeeklyReleaseDate || '',
+      genre: promoData.promoWeeklyGenre || '',
+      focusTrack: promoData.promoWeeklyFocusTrack || '',
+      additionalInfo: promoData.promoWeeklyExtra || '',
+      
+      // Пустые поля для еженедельного промо
+      artistAndTitle: '',
+      releaseDescription: '',
+      artistInfo: '',
+      artistPhotos: '',
+      socialLinks: '',
+      
+      // Контакты
+      contactInfo: promoData.promoContact || '',
+    };
+  }
+  
+  // Fallback
   return {
     formType: 'promo',
     timestamp: new Date().toISOString(),
-    
-    // Тип промо
-    promoType: promoData.promoType,
-    
-    // Общие поля
-    releaseLink: promoData.releaseLink,
-    upcOrName: promoData.upcOrName,
-    releaseDate: promoData.releaseDate,
-    genre: promoData.genre,
-    focusTrack: promoData.focusTrack,
-    additionalInfo: promoData.additionalInfo,
-    
-    // Только для детального промо
-    artistAndTitle: promoData.artistAndTitle,
-    releaseDescription: promoData.releaseDescription,
-    artistInfo: promoData.artistInfo,
-    artistPhotos: promoData.artistPhotos,
-    socialLinks: promoData.socialLinks,
-    
-    // Контакты
-    contactInfo: promoData.contactInfo,
+    promoType: promoData.promoType || '',
+    releaseLink: '',
+    upcOrName: '',
+    releaseDate: '',
+    genre: '',
+    focusTrack: '',
+    additionalInfo: '',
+    artistAndTitle: '',
+    releaseDescription: '',
+    artistInfo: '',
+    artistPhotos: '',
+    socialLinks: '',
+    contactInfo: promoData.promoContact || '',
   };
 }
 
@@ -161,6 +290,8 @@ export async function submitToGoogleSheets(
   formType: FormType,
   data: Record<string, string>
 ): Promise<SubmitResponse> {
+  const GOOGLE_SCRIPT_URL = await getGoogleScriptUrl();
+  
   if (!GOOGLE_SCRIPT_URL) {
     console.error('Google Script URL not configured. Data not sent.');
     return {
@@ -174,7 +305,7 @@ export async function submitToGoogleSheets(
     ? prepareDistributionData(data)
     : preparePromoData(data);
 
-  // Небольшая функция-обёртка для fetch с обработкой времени ожидания
+  // Функция-обёртка для fetch с обработкой времени ожидания
   const fetchWithTimeout = (url: string, opts: RequestInit = {}, timeout = 10000) => {
     return new Promise<Response>((resolve, reject) => {
       const timer = setTimeout(() => reject(new Error('Request timed out')), timeout);
@@ -197,14 +328,29 @@ export async function submitToGoogleSheets(
 
   while (attempt <= maxRetries) {
     try {
-      const res = await fetchWithTimeout(GOOGLE_SCRIPT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(preparedData),
-        // Не используем 'no-cors' — ваш Web App отдаёт Access-Control-Allow-Origin: *
-      }, 12000);
+      // Пробуем сначала POST запрос с JSON
+      // Если не работает, используем GET с данными в URL (более надежно для Google Apps Script)
+      let res: Response;
+      
+      try {
+        // Попытка POST запроса
+        res = await fetchWithTimeout(GOOGLE_SCRIPT_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(preparedData),
+          redirect: 'follow',
+        }, 12000);
+      } catch (postError) {
+        // Если POST не работает, используем GET с данными в URL
+        const url = new URL(GOOGLE_SCRIPT_URL);
+        url.searchParams.set('data', JSON.stringify(preparedData));
+        res = await fetchWithTimeout(url.toString(), {
+          method: 'GET',
+          redirect: 'follow',
+        }, 12000);
+      }
 
       // Ожидаем JSON-ответ от Apps Script
       const text = await res.text();
@@ -232,7 +378,7 @@ export async function submitToGoogleSheets(
       }
 
       // По умолчанию считаем успехом, если HTTP 2xx
-      return { success: true, message: 'Данные успешно отправлены (без JSON‑ответа)' };
+      return { success: true, message: 'Данные успешно отправлены' };
 
     } catch (err) {
       lastErr = err;

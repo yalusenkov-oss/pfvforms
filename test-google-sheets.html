@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест Google Sheets Integration</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #555;
+            font-size: 18px;
+        }
+        button {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #4f46e5;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+        .info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #3b82f6;
+        }
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #6366f1;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .url-info {
+            background: #f3f4f6;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 12px;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Тест интеграции с Google Sheets</h1>
+        
+        <div class="url-info" id="urlInfo">
+            Загрузка URL...
+        </div>
+
+        <div class="test-section">
+            <h2>1. Тест дистрибуции (минимальные данные)</h2>
+            <button onclick="testDistribution()">Отправить тестовые данные дистрибуции</button>
+            <div id="result-distribution"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>2. Тест промо (детальное)</h2>
+            <button onclick="testPromoDetailed()">Отправить тестовые данные промо (детальное)</button>
+            <div id="result-promo-detailed"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>3. Тест промо (еженедельное)</h2>
+            <button onclick="testPromoWeekly()">Отправить тестовые данные промо (еженедельное)</button>
+            <div id="result-promo-weekly"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>4. Проверка URL скрипта</h2>
+            <button onclick="checkUrl()">Проверить доступность URL</button>
+            <div id="result-url"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Импортируем функции из сервиса
+        const scriptUrl = 'https://script.google.com/macros/s/AKfycbzXO-i9scK4c61XUiuqQWl90I1BTgtiIgpm3UR6dBF9fuzatXkDPZ3YJffxuPmWt9GPDA/exec';
+        
+        // Устанавливаем URL в window для тестирования
+        window.VITE_GOOGLE_SCRIPT_URL = scriptUrl;
+        
+        document.getElementById('urlInfo').textContent = `URL скрипта: ${scriptUrl}`;
+
+        // Функция для получения URL
+        async function getGoogleScriptUrl() {
+            if (window.VITE_GOOGLE_SCRIPT_URL) {
+                return window.VITE_GOOGLE_SCRIPT_URL;
+            }
+            
+            try {
+                const res = await fetch('/config.json', { cache: 'no-store' });
+                if (res.ok) {
+                    const obj = await res.json();
+                    if (obj && obj.VITE_GOOGLE_SCRIPT_URL) {
+                        return obj.VITE_GOOGLE_SCRIPT_URL;
+                    }
+                }
+            } catch (e) {
+                console.error('Error fetching config:', e);
+            }
+            
+            return '';
+        }
+
+        // Функция для подготовки данных дистрибуции
+        function prepareDistributionData(formData) {
+            const tariffMap = {
+                'Базовый': 'basic',
+                'Продвинутый': 'advanced',
+                'Премиум': 'premium',
+                'Платинум': 'platinum',
+            };
+            
+            const releaseTypeMap = {
+                'Single': 'single',
+                'EP': 'ep',
+                'Album': 'album',
+            };
+
+            const prices = {
+                basic: { single: 500, ep: 700, album: 900 },
+                advanced: { single: 690, ep: 890, album: 1200 },
+                premium: { single: 1200, ep: 1690, album: 2290 },
+                platinum: { single: 4990, ep: 6490, album: 7990 },
+            };
+
+            const karaokePrices = {
+                basic: 350,
+                advanced: 195,
+                premium: 140,
+                platinum: 0,
+            };
+
+            function getTrackCount(data) {
+                const type = data.releaseType;
+                if (type === 'Single') return data.singleTrackCount === '2' ? 2 : 1;
+                if (type === 'EP') return parseInt(data.epTrackCount || '3', 10);
+                if (type === 'Album') return parseInt(data.albumTrackCount || '6', 10);
+                return 1;
+            }
+
+            const tariffRu = formData.tariff || '';
+            const tariff = tariffMap[tariffRu] || 'basic';
+            const releaseTypeRu = formData.releaseType || '';
+            const releaseType = releaseTypeMap[releaseTypeRu] || 'single';
+            const trackCount = getTrackCount(formData);
+            const addKaraoke = formData.karaokeAddition === 'Да';
+
+            const basePrice = prices[tariff]?.[releaseType] || 0;
+            const karaokePrice = addKaraoke ? karaokePrices[tariff] * trackCount : 0;
+            const totalPrice = basePrice + karaokePrice;
+
+            let tracks = [];
+            try {
+                if (formData._tracks) {
+                    tracks = JSON.parse(formData._tracks);
+                }
+            } catch (e) {
+                console.error('Error parsing tracks:', e);
+            }
+
+            const tracksFormatted = tracks.map((track, index) => {
+                const artists = (track.artists || [])
+                    .map((a, i) => {
+                        if (i === 0) return a.name;
+                        return a.type === 'feat' ? `feat. ${a.name}` : `, ${a.name}`;
+                    })
+                    .join('') || '';
+
+                return {
+                    number: index + 1,
+                    name: track.name || '',
+                    version: track.version || '',
+                    artists: artists,
+                    lyricists: (track.lyricists || []).join(', ') || '',
+                    composers: (track.composers || []).join(', ') || '',
+                    explicitContent: track.explicitContent || '',
+                    substanceMention: track.substanceMention || '',
+                    lyrics: track.lyrics || '',
+                };
+            });
+
+            return {
+                formType: 'distribution',
+                timestamp: new Date().toISOString(),
+                tariff: tariff,
+                releaseType: releaseType,
+                trackCount: trackCount,
+                releaseName: formData.releaseName,
+                mainArtist: formData.mainArtist,
+                releaseVersion: formData.releaseVersion || '',
+                releaseLink: formData.releaseLink,
+                genre: formData.genre,
+                language: (formData.languageOther || '').trim() || formData.language || '',
+                releaseDate: formData.releaseDate,
+                coverLink: formData.coverLink,
+                tiktokExcerpt: formData.tiktokExcerpt,
+                tiktokFull: formData.tiktokFull || '',
+                yandexPreSave: formData.yandexPreSave || '',
+                addKaraoke: formData.karaokeAddition === 'Да' ? 'yes' : 'no',
+                tracks: JSON.stringify(tracksFormatted, null, 2),
+                fullName: formData.fullName,
+                passportNumber: formData.passportNumber,
+                issuedBy: formData.issuedBy,
+                issueDate: formData.issueDate,
+                bankDetails: formData.bankDetails,
+                email: formData.email,
+                contactInfo: formData.contactInfo,
+                artistProfileLinks: formData.artistProfileLinks || '',
+                basePrice: basePrice,
+                karaokePrice: karaokePrice,
+                totalPrice: totalPrice,
+            };
+        }
+
+        // Функция для подготовки данных промо
+        function preparePromoData(promoData) {
+            const promoType = promoData.promoType;
+            
+            if (promoType === 'detailed') {
+                return {
+                    formType: 'promo',
+                    timestamp: new Date().toISOString(),
+                    promoType: promoData.promoType,
+                    releaseLink: promoData.promoReleaseLink || '',
+                    upcOrName: promoData.promoUPC || '',
+                    releaseDate: promoData.promoReleaseDate || '',
+                    genre: promoData.promoGenre || '',
+                    focusTrack: promoData.promoFocusTrack || '',
+                    additionalInfo: promoData.promoExtra || '',
+                    artistAndTitle: promoData.promoArtistTitle || '',
+                    releaseDescription: promoData.promoDescription || '',
+                    artistInfo: promoData.promoArtistInfo || '',
+                    artistPhotos: promoData.promoPhotos || '',
+                    socialLinks: promoData.promoSocials || '',
+                    contactInfo: promoData.promoContact || '',
+                };
+            } else if (promoType === 'weekly') {
+                return {
+                    formType: 'promo',
+                    timestamp: new Date().toISOString(),
+                    promoType: promoData.promoType,
+                    releaseLink: promoData.promoWeeklyReleaseLink || '',
+                    upcOrName: promoData.promoWeeklyUPC || '',
+                    releaseDate: promoData.promoWeeklyReleaseDate || '',
+                    genre: promoData.promoWeeklyGenre || '',
+                    focusTrack: promoData.promoWeeklyFocusTrack || '',
+                    additionalInfo: promoData.promoWeeklyExtra || '',
+                    artistAndTitle: '',
+                    releaseDescription: '',
+                    artistInfo: '',
+                    artistPhotos: '',
+                    socialLinks: '',
+                    contactInfo: promoData.promoContact || '',
+                };
+            }
+            
+            return {
+                formType: 'promo',
+                timestamp: new Date().toISOString(),
+                promoType: promoData.promoType || '',
+                releaseLink: '',
+                upcOrName: '',
+                releaseDate: '',
+                genre: '',
+                focusTrack: '',
+                additionalInfo: '',
+                artistAndTitle: '',
+                releaseDescription: '',
+                artistInfo: '',
+                artistPhotos: '',
+                socialLinks: '',
+                contactInfo: promoData.promoContact || '',
+            };
+        }
+
+        // Функция отправки данных
+        async function submitToGoogleSheets(formType, data) {
+            const GOOGLE_SCRIPT_URL = await getGoogleScriptUrl();
+            
+            if (!GOOGLE_SCRIPT_URL) {
+                return {
+                    success: false,
+                    message: 'Google Script URL not configured',
+                };
+            }
+
+            const preparedData = formType === 'distribution' 
+                ? prepareDistributionData(data)
+                : preparePromoData(data);
+
+            try {
+                // Используем GET запрос с данными в URL (более надежно для Google Apps Script)
+                // Кодируем данные для безопасной передачи в URL
+                const dataString = encodeURIComponent(JSON.stringify(preparedData));
+                const url = new URL(GOOGLE_SCRIPT_URL);
+                url.searchParams.set('data', dataString);
+                
+                console.log('Sending data via GET:', {
+                    url: url.toString().substring(0, 200) + '...',
+                    formType: preparedData.formType,
+                    dataLength: dataString.length
+                });
+                
+                const res = await fetch(url.toString(), {
+                    method: 'GET',
+                    redirect: 'follow',
+                });
+
+                const text = await res.text();
+                let json = null;
+                try {
+                    json = text ? JSON.parse(text) : null;
+                } catch (parseErr) {
+                    json = { success: res.ok, message: text || res.statusText };
+                }
+
+                if (!res.ok) {
+                    const msg = json && json.error ? json.error : json && json.message ? json.message : `HTTP ${res.status}`;
+                    return { success: false, message: `Server error: ${msg}`, response: json };
+                }
+
+                if (json && typeof json === 'object') {
+                    return {
+                        success: !!json.success,
+                        message: json.message || 'Данные успешно отправлены',
+                        row: json.row,
+                        response: json,
+                    };
+                }
+
+                return { success: true, message: 'Данные успешно отправлены', response: json || text };
+            } catch (err) {
+                return {
+                    success: false,
+                    message: err.message || 'Ошибка отправки данных',
+                    error: err.toString(),
+                };
+            }
+        }
+
+        // Экспортируем функции в глобальную область
+        window.testDistribution = async function() {
+            const button = event.target;
+            const resultDiv = document.getElementById('result-distribution');
+            button.disabled = true;
+            resultDiv.innerHTML = '<div class="loading"></div> Отправка...';
+
+            const testData = {
+                tariff: 'Базовый',
+                releaseType: 'Single',
+                singleTrackCount: '1',
+                releaseName: 'Тестовый релиз',
+                mainArtist: 'Тестовый артист',
+                releaseLink: 'https://example.com/release',
+                genre: 'Pop',
+                language: 'Русский',
+                releaseDate: '2024-12-31',
+                coverLink: 'https://example.com/cover.jpg',
+                tiktokExcerpt: 'https://example.com/tiktok',
+                karaokeAddition: 'Нет',
+                fullName: 'Иван Иванов',
+                passportNumber: '1234 567890',
+                issuedBy: 'МВД России',
+                issueDate: '2020-01-01',
+                bankDetails: '12345678901234567890',
+                email: 'test@example.com',
+                contactInfo: '@testuser',
+                _tracks: JSON.stringify([
+                    {
+                        name: 'Тестовый трек',
+                        version: '',
+                        artists: [{ name: 'Тестовый артист', type: 'main' }],
+                        lyricists: ['Автор текста'],
+                        composers: ['Композитор'],
+                        explicitContent: 'Нет',
+                        substanceMention: 'Нет',
+                        lyrics: 'Тестовый текст песни',
+                    },
+                ]),
+            };
+
+            const result = await submitToGoogleSheets('distribution', testData);
+            
+            button.disabled = false;
+            resultDiv.innerHTML = `<div class="result ${result.success ? 'success' : 'error'}">
+                <strong>${result.success ? '✅ Успех!' : '❌ Ошибка'}</strong><br>
+                Сообщение: ${result.message}<br>
+                ${result.row ? `Номер строки: ${result.row}<br>` : ''}
+                ${result.response ? `Ответ сервера: ${JSON.stringify(result.response, null, 2)}` : ''}
+                ${result.error ? `Ошибка: ${result.error}` : ''}
+            </div>`;
+        };
+
+        window.testPromoDetailed = async function() {
+            const button = event.target;
+            const resultDiv = document.getElementById('result-promo-detailed');
+            button.disabled = true;
+            resultDiv.innerHTML = '<div class="loading"></div> Отправка...';
+
+            const testData = {
+                promoType: 'detailed',
+                promoReleaseLink: 'https://example.com/release.wav',
+                promoUPC: 'UPC123456789',
+                promoReleaseDate: '2024-12-31',
+                promoGenre: 'Pop',
+                promoFocusTrack: 'Фокус трек',
+                promoExtra: 'Дополнительная информация для редакции',
+                promoArtistTitle: 'Тестовый артист - Тестовый релиз',
+                promoDescription: 'Описание тестового релиза',
+                promoArtistInfo: 'Информация о тестовом артисте',
+                promoPhotos: 'https://example.com/photos.zip',
+                promoSocials: 'https://vk.com/testartist',
+                promoContact: '@testcontact',
+            };
+
+            const result = await submitToGoogleSheets('promo', testData);
+            
+            button.disabled = false;
+            resultDiv.innerHTML = `<div class="result ${result.success ? 'success' : 'error'}">
+                <strong>${result.success ? '✅ Успех!' : '❌ Ошибка'}</strong><br>
+                Сообщение: ${result.message}<br>
+                ${result.row ? `Номер строки: ${result.row}<br>` : ''}
+                ${result.response ? `Ответ сервера: ${JSON.stringify(result.response, null, 2)}` : ''}
+                ${result.error ? `Ошибка: ${result.error}` : ''}
+            </div>`;
+        };
+
+        window.testPromoWeekly = async function() {
+            const button = event.target;
+            const resultDiv = document.getElementById('result-promo-weekly');
+            button.disabled = true;
+            resultDiv.innerHTML = '<div class="loading"></div> Отправка...';
+
+            const testData = {
+                promoType: 'weekly',
+                promoWeeklyReleaseLink: 'https://example.com/release.wav',
+                promoWeeklyUPC: 'UPC987654321',
+                promoWeeklyReleaseDate: '2024-12-27',
+                promoWeeklyGenre: 'Rock',
+                promoWeeklyFocusTrack: 'Еженедельный трек',
+                promoWeeklyExtra: 'Информация для еженедельного промо',
+                promoContact: '@weeklycontact',
+            };
+
+            const result = await submitToGoogleSheets('promo', testData);
+            
+            button.disabled = false;
+            resultDiv.innerHTML = `<div class="result ${result.success ? 'success' : 'error'}">
+                <strong>${result.success ? '✅ Успех!' : '❌ Ошибка'}</strong><br>
+                Сообщение: ${result.message}<br>
+                ${result.row ? `Номер строки: ${result.row}<br>` : ''}
+                ${result.response ? `Ответ сервера: ${JSON.stringify(result.response, null, 2)}` : ''}
+                ${result.error ? `Ошибка: ${result.error}` : ''}
+            </div>`;
+        };
+
+        window.checkUrl = async function() {
+            const button = event.target;
+            const resultDiv = document.getElementById('result-url');
+            button.disabled = true;
+            resultDiv.innerHTML = '<div class="loading"></div> Проверка...';
+
+            const url = await getGoogleScriptUrl();
+            
+            if (!url) {
+                button.disabled = false;
+                resultDiv.innerHTML = `<div class="result error">
+                    <strong>❌ URL не найден</strong><br>
+                    Проверьте настройки в .env или config.json
+                </div>`;
+                return;
+            }
+
+            try {
+                // Пробуем сделать GET запрос для проверки доступности
+                const res = await fetch(url, {
+                    method: 'GET',
+                    redirect: 'follow',
+                });
+                
+                const text = await res.text();
+                let json = null;
+                try {
+                    json = JSON.parse(text);
+                } catch (e) {
+                    // Не JSON ответ - это нормально для некоторых скриптов
+                }
+
+                button.disabled = false;
+                resultDiv.innerHTML = `<div class="result ${res.ok ? 'success' : 'error'}">
+                    <strong>${res.ok ? '✅ URL доступен' : '⚠️ Проблема с URL'}</strong><br>
+                    Статус: ${res.status} ${res.statusText}<br>
+                    URL: ${url}<br>
+                    ${json ? `Ответ: ${JSON.stringify(json, null, 2)}` : `Ответ: ${text.substring(0, 200)}`}
+                </div>`;
+            } catch (err) {
+                button.disabled = false;
+                resultDiv.innerHTML = `<div class="result error">
+                    <strong>❌ Ошибка при проверке</strong><br>
+                    ${err.message}<br>
+                    URL: ${url}
+                </div>`;
+            }
+        };
+    </script>
+</body>
+</html>
