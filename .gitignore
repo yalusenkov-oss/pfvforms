@@ -1,0 +1,21 @@
+# Node
+node_modules/
+dist/
+.next/
+.build/
+.DS_Store
+.env
+.env.*.local
+.vscode/
+.idea/
+coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+# Vite build
+dist/
+# macOS
+*.DS_Store
+# Editor
+Thumbs.db
