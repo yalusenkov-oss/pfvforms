@@ -1,4 +1,4 @@
-import { Input, InfoBox, StepCard, Divider } from './UI';
+import { Input, InfoBox, StepCard, Divider, DatePicker } from './UI';
 import { FileText, User, CreditCard, Mail, Calendar, Shield, MapPin } from 'lucide-react';
 
 interface StepTwoProps {
@@ -50,10 +50,9 @@ export function StepTwo({ data, onChange }: StepTwoProps) {
           placeholder="0000 000000"
         />
 
-        <Input
+        <DatePicker
           label="Дата выдачи"
           required
-          type="date"
           icon={<Calendar className="w-4 h-4" />}
           value={data.issueDate || ''}
           onChange={(e) => onChange('issueDate', e.target.value)}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '@/utils/cn';
-import { Info, AlertTriangle, Sparkles } from 'lucide-react';
+import { Info, AlertTriangle, Sparkles, ChevronDown } from 'lucide-react';
 
 /* ─── Input ─── */
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -323,4 +323,121 @@ export function NumberStepper({ label, required, icon, hint, value, onChange, mi
       </div>
     </div>
   );
+}
+
+/* ─── DatePicker ─── */
+interface DatePickerProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
+  label: string;
+  required?: boolean;
+  hint?: string;
+  icon?: React.ReactNode;
+}
+
+export function DatePicker({ label, required, hint, icon, className, ...props }: DatePickerProps) {
+  return (
+    <div className="space-y-2">
+      <label className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+        {icon && <span className="text-purple-500">{icon}</span>}
+        {label}
+        {required && <span className="text-red-400 text-xs">*</span>}
+      </label>
+      {hint && <HintText>{hint}</HintText>}
+      <div className="relative">
+        <input
+          type="date"
+          className={cn(
+            'w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm transition-all duration-200',
+            'placeholder:text-gray-400',
+            'focus:border-purple-400 focus:outline-none focus:ring-3 focus:ring-purple-100',
+            'hover:border-purple-300',
+            'date-input-custom',
+            className
+          )}
+          {...props}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ─── Select ─── */
+interface SelectOption {
+  value: string;
+  label: string;
+  description?: string;
+}
+
+interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'onChange'> {
+  label?: string;
+  required?: boolean;
+  hint?: string;
+  icon?: React.ReactNode;
+  options: SelectOption[] | string[];
+  onChange: (value: string) => void;
+  value: string;
+  placeholder?: string;
+}
+
+export function Select({ 
+  label, 
+  required, 
+  hint, 
+  icon, 
+  options, 
+  value, 
+  onChange, 
+  placeholder,
+  className,
+  ...props 
+}: SelectProps) {
+  const normalizedOptions: SelectOption[] = options.map((o) =>
+    typeof o === 'string' ? { value: o, label: o } : o
+  );
+
+  const selectElement = (
+    <div className="relative group">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={cn(
+          'w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm transition-all duration-200 appearance-none cursor-pointer',
+          'focus:border-purple-400 focus:outline-none focus:ring-3 focus:ring-purple-100',
+          'hover:border-purple-300 hover:shadow-md',
+          'select-custom',
+          className
+        )}
+        {...props}
+      >
+        {placeholder && (
+          <option value="" disabled>
+            {placeholder}
+          </option>
+        )}
+        {normalizedOptions.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none transition-all group-hover:translate-y-[-1px]">
+        <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-purple-500 transition-colors" />
+      </div>
+    </div>
+  );
+
+  if (label) {
+    return (
+      <div className="space-y-2">
+        <label className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+          {icon && <span className="text-purple-500">{icon}</span>}
+          {label}
+          {required && <span className="text-red-400 text-xs">*</span>}
+        </label>
+        {hint && <HintText>{hint}</HintText>}
+        {selectElement}
+      </div>
+    );
+  }
+
+  return selectElement;
 }

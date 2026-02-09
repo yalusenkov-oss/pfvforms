@@ -1,6 +1,6 @@
 import React from 'react';
 import { Music, Send, Calendar, AlertTriangle, Clock, Zap } from 'lucide-react';
-import { StepCard, Input, TextArea, InfoBox } from './UI';
+import { StepCard, Input, TextArea, InfoBox, DatePicker } from './UI';
 
 interface StepPromoProps {
   data: Record<string, string>;
@@ -138,10 +138,10 @@ export const StepPromo: React.FC<StepPromoProps> = ({ data, onChange }) => {
               hint="Если UPC-код ещё не получен, укажите название релиза и ваш псевдоним"
             />
 
-            <Input
+            <DatePicker
               label="Дата релиза"
               required
-              type="date"
+              icon={<Calendar size={20} />}
               value={data.promoReleaseDate || ''}
               onChange={(e) => onChange('promoReleaseDate', e.target.value)}
               hint="Обратите внимание, что международный релизный день – пятница"
@@ -256,10 +256,10 @@ export const StepPromo: React.FC<StepPromoProps> = ({ data, onChange }) => {
               hint="Если UPC-код ещё не получен, укажите название релиза и ваш псевдоним"
             />
 
-            <Input
+            <DatePicker
               label="Дата релиза"
               required
-              type="date"
+              icon={<Calendar size={20} />}
               value={data.promoWeeklyReleaseDate || ''}
               onChange={(e) => onChange('promoWeeklyReleaseDate', e.target.value)}
               hint="Обратите внимание, что международный релизный день – пятница"

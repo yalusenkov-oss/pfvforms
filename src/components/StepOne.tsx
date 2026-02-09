@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Input, TextArea, RadioGroup, InfoBox, StepCard, Divider, NumberStepper } from './UI';
+import { Input, TextArea, RadioGroup, InfoBox, StepCard, Divider, NumberStepper, DatePicker, Select } from './UI';
 import {
   Music2, User, Link2, Disc3, Calendar, Image, Globe, Clock,
   Mic2, PenTool, Hash, Bookmark, TicketPercent, Pill, Type, Banknote,
@@ -358,7 +358,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
 
         <Divider label="Дата" />
 
-        <Input label="Дата релиза" required type="date" icon={<Calendar className="w-4 h-4" />}
+        <DatePicker label="Дата релиза" required icon={<Calendar className="w-4 h-4" />}
           value={data.releaseDate || ''} onChange={(e) => onChange('releaseDate', e.target.value)} />
 
         <InfoBox variant="info">
@@ -520,18 +520,19 @@ export function StepOne({ data, onChange }: StepOneProps) {
                             <span className="text-xs text-gray-400 w-5 text-right flex-shrink-0 font-mono">{ai + 1}.</span>
                             
                             {ai > 0 && (
-                              <select
+                              <Select
                                 value={artist.type}
-                                onChange={(e) => {
+                                onChange={(value) => {
                                   const newArtists = [...track.artists];
-                                  newArtists[ai] = { ...newArtists[ai], type: e.target.value as 'main' | 'comma' | 'feat' };
+                                  newArtists[ai] = { ...newArtists[ai], type: value as 'main' | 'comma' | 'feat' };
                                   updateTrack(i, 'artists', newArtists);
                                 }}
-                                className="w-24 flex-shrink-0 rounded-lg border border-gray-200 bg-white px-2 py-2.5 text-xs text-gray-700 shadow-sm transition-all focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-100"
-                              >
-                                <option value="comma">, (запятая)</option>
-                                <option value="feat">feat.</option>
-                              </select>
+                                options={[
+                                  { value: 'comma', label: ', (запятая)' },
+                                  { value: 'feat', label: 'feat.' }
+                                ]}
+                                className="w-28 flex-shrink-0 text-xs py-2.5"
+                              />
                             )}
                             
                             <input
