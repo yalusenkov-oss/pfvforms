@@ -173,28 +173,81 @@ export async function submitToGoogleSheets(
     ? prepareDistributionData(data)
     : preparePromoData(data);
 
-  try {
-    await fetch(GOOGLE_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors', // Google Apps Script требует no-cors
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(preparedData),
+  // Небольшая функция-обёртка для fetch с обработкой времени ожидания
+  const fetchWithTimeout = (url: string, opts: RequestInit = {}, timeout = 10000) => {
+    return new Promise<Response>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('Request timed out')), timeout);
+      fetch(url, opts)
+        .then((res) => {
+          clearTimeout(timer);
+          resolve(res);
+        })
+        .catch((err) => {
+          clearTimeout(timer);
+          reject(err);
+        });
     });
+  };
 
-    // При no-cors мы не можем прочитать ответ, но запрос отправлен
-    return {
-      success: true,
-      message: 'Данные успешно отправлены',
-    };
-  } catch (error) {
-    console.error('Error submitting to Google Sheets:', error);
-    return {
-      success: false,
-      message: error instanceof Error ? error.message : 'Ошибка отправки данных',
-    };
+  // Попробуем отправить с небольшим числом ретраев (экспоненциальный бэкофф)
+  const maxRetries = 2;
+  let attempt = 0;
+  let lastErr: any = null;
+
+  while (attempt <= maxRetries) {
+    try {
+      const res = await fetchWithTimeout(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(preparedData),
+        // Не используем 'no-cors' — ваш Web App отдаёт Access-Control-Allow-Origin: *
+      }, 12000);
+
+      // Ожидаем JSON-ответ от Apps Script
+      const text = await res.text();
+      let json: any = null;
+      try {
+        json = text ? JSON.parse(text) : null;
+      } catch (parseErr) {
+        // если не JSON — вернём текст
+        json = { success: res.ok, message: text || res.statusText };
+      }
+
+      if (!res.ok) {
+        // Небольшая полезная информация для отладки
+        const msg = json && json.error ? json.error : json && json.message ? json.message : `HTTP ${res.status}`;
+        return { success: false, message: `Server error: ${msg}` };
+      }
+
+      // Если сервер вернул JSON { success: true } — используем его
+      if (json && typeof json === 'object') {
+        return {
+          success: !!json.success,
+          message: json.message || 'Данные успешно отправлены',
+          row: json.row,
+        };
+      }
+
+      // По умолчанию считаем успехом, если HTTP 2xx
+      return { success: true, message: 'Данные успешно отправлены (без JSON‑ответа)' };
+
+    } catch (err) {
+      lastErr = err;
+      attempt += 1;
+      // Ждём перед ретраем (экспоненциальный бэкофф)
+      const waitMs = 500 * Math.pow(2, attempt);
+      // eslint-disable-next-line no-await-in-loop
+      await new Promise((r) => setTimeout(r, waitMs));
+    }
   }
+
+  console.error('Error submitting to Google Sheets (all retries):', lastErr);
+  return {
+    success: false,
+    message: lastErr instanceof Error ? lastErr.message : 'Ошибка отправки данных (retries exhausted)',
+  };
 }
 
 // Экспорт для использования в компонентах
