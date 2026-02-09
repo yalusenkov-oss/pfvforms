@@ -162,10 +162,11 @@ export async function submitToGoogleSheets(
   data: Record<string, string>
 ): Promise<SubmitResponse> {
   if (!GOOGLE_SCRIPT_URL) {
-    console.warn('Google Script URL not configured. Data not sent.');
+    console.error('Google Script URL not configured. Data not sent.');
     return {
-      success: true,
-      message: 'Форма отправлена (тестовый режим - Google Sheets не настроен)',
+      success: false,
+      message:
+        'Google Script URL not configured. Set VITE_GOOGLE_SCRIPT_URL in .env (or configure env) and restart dev server.',
     };
   }
 
