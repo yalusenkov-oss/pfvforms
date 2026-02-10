@@ -1119,28 +1119,15 @@ function Header({ onBack }: { onBack?: () => void }) {
             <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest">Издательство</p>
           </div>
         </div>
-        <div className="hidden sm:flex items-center gap-2">
-          <a
-            href="https://clck.ru/3E6yBX"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="items-center gap-1.5 rounded-lg bg-purple-50 px-4 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-100 border border-purple-100 transition-all hover:shadow-sm flex"
-          >
-            Тарифы
-            <ChevronRight className="w-3 h-3 ml-1" />
-          </a>
-
-          {/* Admin panel quick link — opens admin/index.html in a new tab. */}
-          <a
-            href="/admin/index.html"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="items-center gap-1.5 rounded-lg bg-gray-50 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 border border-gray-100 transition-all hover:shadow-sm flex"
-            title="Открыть админ-панель"
-          >
-            Админ
-          </a>
-        </div>
+        <a
+          href="https://clck.ru/3E6yBX"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hidden sm:flex items-center gap-1.5 rounded-lg bg-purple-50 px-4 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-100 border border-purple-100 transition-all hover:shadow-sm"
+        >
+          Тарифы
+          <ChevronRight className="w-3 h-3" />
+        </a>
       </div>
     </header>
   );

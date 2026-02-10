@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:app": "vite",
+    "dev:admin": "cd admin && npm run dev",
+    "dev:both": "concurrently \"npm:dev:app\" \"npm:dev:admin\"",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest",
@@ -36,6 +39,7 @@
     "tailwindcss": "4.1.17",
     "typescript": "5.9.3",
     "vite": "7.2.4",
+    "concurrently": "8.2.0",
     "vite-plugin-singlefile": "2.3.0",
     "vitest": "^4.0.18"
   }
