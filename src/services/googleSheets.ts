@@ -73,6 +73,22 @@ interface SubmitResponse {
   row?: number;
 }
 
+export interface PromoCodeRecord {
+  id: string;
+  code: string;
+  discountType: 'percent' | 'fixed';
+  discountValue: number;
+  applicableTariffs: string[];
+  applicableReleaseTypes: string[];
+  maxUses: number;
+  currentUses: number;
+  isActive: boolean;
+  validFrom: string;
+  validUntil: string;
+  createdAt: string;
+  description: string;
+}
+
 // Типы форм
 type FormType = 'distribution' | 'promo';
 
@@ -151,7 +167,18 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
 
   const basePrice = prices[tariff]?.[releaseType] || 0;
   const karaokePrice = addKaraoke ? karaokePrices[tariff] * trackCount : 0;
-  const totalPrice = basePrice + karaokePrice;
+  let totalPrice = basePrice + karaokePrice;
+
+  const promoApplied = formData.promoApplied === 'yes';
+  const promoDiscountType = formData.promoDiscountType || '';
+  const promoDiscountValue = parseFloat(formData.promoDiscountValue || '0');
+  if (promoApplied && promoDiscountValue > 0) {
+    const rawDiscount = promoDiscountType === 'percent'
+      ? Math.round(totalPrice * (promoDiscountValue / 100))
+      : Math.round(promoDiscountValue);
+    const discountAmount = Math.min(totalPrice, Math.max(0, rawDiscount));
+    totalPrice = totalPrice - discountAmount;
+  }
 
   return {
     formType: 'distribution',
@@ -202,7 +229,64 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
     basePrice: basePrice,
     karaokePrice: karaokePrice,
     totalPrice: totalPrice,
+    promoCode: formData.promoCode || '',
+    promoDiscountType: formData.promoDiscountType || '',
+    promoDiscountValue: formData.promoDiscountValue || '',
+    promoDiscountAmount: formData.promoDiscountAmount || '',
   };
+}
+
+export async function fetchPromoCodes(): Promise<PromoCodeRecord[] | null> {
+  const url = await getGoogleScriptUrl();
+  if (!url) return null;
+
+  let final = url;
+  try {
+    const u = new URL(url);
+    u.searchParams.set('action', 'list');
+    u.searchParams.set('sheet', 'promocodes');
+    final = u.toString();
+  } catch {
+    final = `${url}${url.includes('?') ? '&' : '?'}action=list&sheet=promocodes`;
+  }
+
+  const res = await fetch(final, { method: 'GET', redirect: 'follow' });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`HTTP ${res.status} when fetching promo codes: ${text.slice(0, 300)}`);
+
+  let json: any = null;
+  try {
+    json = text ? JSON.parse(text) : null;
+  } catch {
+    throw new Error(`Response was not valid JSON: ${text.slice(0, 300)}`);
+  }
+
+  const rows = Array.isArray(json) ? json : Array.isArray(json?.rows) ? json.rows : null;
+  if (!rows) return null;
+
+  const toArray = (v: any) => {
+    if (!v) return [];
+    if (Array.isArray(v)) return v.map((s: any) => String(s).trim()).filter(Boolean);
+    return String(v).split(',').map(s => s.trim()).filter(Boolean);
+  };
+  const toBool = (v: any) => v === true || v === 'true' || v === '1' || v === 'Да' || v === 'yes';
+  const toNum = (v: any) => typeof v === 'number' ? v : parseFloat(String(v).replace(/[^\d.-]/g, '')) || 0;
+
+  return rows.map((r: any) => ({
+    id: String(r.id || r.ID || ''),
+    code: String(r.code || r.promo_code || '').toUpperCase(),
+    discountType: (r.discountType || r.discount_type || 'percent') as 'percent' | 'fixed',
+    discountValue: toNum(r.discountValue ?? r.discount_value),
+    applicableTariffs: toArray(r.applicableTariffs || r.applicable_tariffs),
+    applicableReleaseTypes: toArray(r.applicableReleaseTypes || r.applicable_release_types),
+    maxUses: toNum(r.maxUses ?? r.max_uses),
+    currentUses: toNum(r.currentUses ?? r.current_uses),
+    isActive: toBool(r.isActive ?? r.is_active),
+    validFrom: String(r.validFrom || r.valid_from || ''),
+    validUntil: String(r.validUntil || r.valid_until || ''),
+    createdAt: String(r.createdAt || r.created_at || ''),
+    description: String(r.description || ''),
+  }));
 }
 
 // Подготовка данных промо для отправки

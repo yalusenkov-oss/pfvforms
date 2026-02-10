@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react';
 import { Input, StepCard, InfoBox, Divider } from './UI';
-import { CreditCard, MessageCircle, Send, ExternalLink, Building2, Smartphone, Heart, Calculator, ReceiptText, MessageSquare, UserCheck, Megaphone } from 'lucide-react';
+import { CreditCard, MessageCircle, Send, ExternalLink, Building2, Smartphone, Heart, Calculator, ReceiptText, MessageSquare, UserCheck, Megaphone, TicketPercent, CheckCircle2, XCircle } from 'lucide-react';
 import { calcTotal, getTrackCount } from './StepOne';
+import { fetchPromoCodes, PromoCodeRecord } from '@/services/googleSheets';
 
 interface StepFourProps {
   data: Record<string, string>;
@@ -19,11 +21,164 @@ export function StepFour({ data, onChange, onGoToPromo }: StepFourProps) {
   const tariff = data.tariff || '';
   const releaseType = data.releaseType || '';
   const trackCount = getTrackCount(data);
-  const { base, karaoke, total } = calcTotal(data);
+  const { base, karaoke } = calcTotal(data);
   const hasSelection = tariff && releaseType;
+  const [promoCodes, setPromoCodes] = useState<PromoCodeRecord[]>([]);
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoMessage, setPromoMessage] = useState<string>('');
+  const [promoError, setPromoError] = useState<string>('');
+
+  const tariffMap: Record<string, string> = {
+    'Базовый': 'basic',
+    'Продвинутый': 'advanced',
+    'Премиум': 'premium',
+    'Платинум': 'platinum',
+  };
+  const releaseTypeMap: Record<string, string> = {
+    'Single': 'single',
+    'EP': 'ep',
+    'Album': 'album',
+  };
+
+  const totalBeforeDiscount = base + karaoke;
+  const appliedDiscount = parseFloat(data.promoDiscountAmount || '0') || 0;
+  const totalAfterDiscount = Math.max(0, totalBeforeDiscount - (data.promoApplied === 'yes' ? appliedDiscount : 0));
+
+  useEffect(() => {
+    let mounted = true;
+    setPromoLoading(true);
+    fetchPromoCodes()
+      .then((rows) => {
+        if (!mounted) return;
+        setPromoCodes(rows || []);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setPromoCodes([]);
+      })
+      .finally(() => {
+        if (!mounted) return;
+        setPromoLoading(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const validatePromo = (code: string) => {
+    const normalized = code.trim().toUpperCase();
+    if (!normalized) return { ok: false, error: 'Введите промокод' };
+
+    const promo = promoCodes.find((p) => p.code.toUpperCase() === normalized);
+    if (!promo) return { ok: false, error: 'Промокод не найден' };
+    if (!promo.isActive) return { ok: false, error: 'Промокод неактивен' };
+    if (promo.currentUses >= promo.maxUses) return { ok: false, error: 'Лимит использований исчерпан' };
+
+    const now = new Date();
+    if (promo.validFrom && new Date(promo.validFrom) > now) return { ok: false, error: 'Промокод ещё не активен' };
+    if (promo.validUntil && new Date(promo.validUntil) < now) return { ok: false, error: 'Срок действия истёк' };
+
+    const tariffEn = tariffMap[tariff] || '';
+    const releaseTypeEn = releaseTypeMap[releaseType] || '';
+    if (tariffEn && promo.applicableTariffs.length > 0 && !promo.applicableTariffs.includes(tariffEn)) {
+      return { ok: false, error: 'Промокод не подходит для выбранного тарифа' };
+    }
+    if (releaseTypeEn && promo.applicableReleaseTypes.length > 0 && !promo.applicableReleaseTypes.includes(releaseTypeEn)) {
+      return { ok: false, error: 'Промокод не подходит для выбранного типа релиза' };
+    }
+
+    const discountRaw = promo.discountType === 'percent'
+      ? Math.round(totalBeforeDiscount * (promo.discountValue / 100))
+      : Math.round(promo.discountValue);
+    const discountAmount = Math.min(totalBeforeDiscount, Math.max(0, discountRaw));
+
+    return { ok: true, promo, discountAmount };
+  };
+
+  const applyPromo = () => {
+    setPromoError('');
+    setPromoMessage('');
+
+    if (!hasSelection) {
+      setPromoError('Сначала выберите тариф и тип релиза');
+      return;
+    }
+
+    const code = data.promoCode || '';
+    const result = validatePromo(code);
+    if (!result.ok) {
+      onChange('promoApplied', 'no');
+      onChange('promoDiscountType', '');
+      onChange('promoDiscountValue', '');
+      onChange('promoDiscountAmount', '');
+      setPromoError(result.error || 'Промокод не применён');
+      return;
+    }
+
+    onChange('promoApplied', 'yes');
+    onChange('promoCode', result.promo.code);
+    onChange('promoDiscountType', result.promo.discountType);
+    onChange('promoDiscountValue', String(result.promo.discountValue));
+    onChange('promoDiscountAmount', String(result.discountAmount));
+    setPromoMessage(`Промокод применён: -${result.discountAmount.toLocaleString('ru-RU')} ₽`);
+  };
+
+  useEffect(() => {
+    if (data.promoApplied !== 'yes') return;
+    if (!data.promoCode) return;
+    const result = validatePromo(data.promoCode);
+    if (!result.ok) {
+      onChange('promoApplied', 'no');
+      onChange('promoDiscountType', '');
+      onChange('promoDiscountValue', '');
+      onChange('promoDiscountAmount', '');
+      setPromoMessage('');
+      setPromoError(result.error || 'Промокод неактуален');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tariff, releaseType, base, karaoke, promoCodes]);
 
   return (
     <div className="space-y-6">
+      {/* ═══ Promo Code ═══ */}
+      <StepCard
+        title="Промокод"
+        subtitle="Введите промокод перед оплатой"
+        icon={<TicketPercent className="w-5 h-5" />}
+      >
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1">
+            <Input
+              label="Промокод"
+              icon={<TicketPercent className="w-4 h-4" />}
+              placeholder="PFV10, WELCOME20..."
+              value={data.promoCode || ''}
+              onChange={(e) => onChange('promoCode', e.target.value.toUpperCase())}
+            />
+          </div>
+          <div className="sm:pt-7">
+            <button
+              type="button"
+              onClick={applyPromo}
+              disabled={promoLoading}
+              className="w-full sm:w-auto inline-flex items-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 text-sm font-semibold transition-colors shadow-sm disabled:opacity-60"
+            >
+              <TicketPercent className="w-4 h-4" />
+              {promoLoading ? 'Загрузка...' : 'Применить'}
+            </button>
+          </div>
+        </div>
+
+        {(promoMessage || promoError) && (
+          <div className={`mt-3 rounded-xl px-4 py-3 text-sm ${promoError ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-green-50 border border-green-200 text-green-700'}`}>
+            <div className="flex items-center gap-2">
+              {promoError ? <XCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+              <span>{promoError || promoMessage}</span>
+            </div>
+          </div>
+        )}
+      </StepCard>
+
       {/* ═══ Payment Details ═══ */}
       <StepCard
         title="Реквизиты для оплаты"
@@ -207,13 +362,27 @@ export function StepFour({ data, onChange, onGoToPromo }: StepFourProps) {
               </div>
             )}
 
+            {data.promoApplied === 'yes' && (
+              <div className="flex items-center justify-between text-sm bg-white/60 rounded-xl px-4 py-3 border border-purple-100">
+                <div>
+                  <p className="text-gray-700 font-semibold">Промокод {data.promoCode}</p>
+                  <p className="text-xs text-gray-400">
+                    Скидка {data.promoDiscountType === 'percent' ? `${data.promoDiscountValue}%` : `${Number(data.promoDiscountValue || 0).toLocaleString('ru-RU')} ₽`}
+                  </p>
+                </div>
+                <p className="font-bold text-gray-900 text-base">
+                  -{(parseFloat(data.promoDiscountAmount || '0') || 0).toLocaleString('ru-RU')} ₽
+                </p>
+              </div>
+            )}
+
             <div className="flex items-center justify-between pt-3 border-t-2 border-purple-300/50">
               <div className="flex items-center gap-2">
                 <Calculator className="w-5 h-5 text-purple-600" />
                 <p className="text-lg font-extrabold text-purple-800">Итого</p>
               </div>
               <p className="text-3xl font-extrabold bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">
-                {total.toLocaleString('ru-RU')} ₽
+                {totalAfterDiscount.toLocaleString('ru-RU')} ₽
               </p>
             </div>
           </div>

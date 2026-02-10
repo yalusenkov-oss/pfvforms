@@ -22,7 +22,7 @@ import {
   isAuthenticated,
   logout,
 } from './store';
-import { fetchSheetRows } from './services/googleSheetsAdmin';
+import { fetchSheetRows, updateSheetRow } from './services/googleSheetsAdmin';
 
 type View =
   | { type: 'dashboard' }
@@ -43,6 +43,88 @@ export function App() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [remoteInfo, setRemoteInfo] = useState<{ loaded: boolean; source: 'remote' | 'local' | 'none'; distCount?: number; promoCount?: number; error?: string }>({ loaded: false, source: 'none' });
 
+  const normalizeBool = (v: any): boolean => {
+    if (v === true || v === false) return v;
+    if (v === 'Да' || v === 'yes' || v === 'true' || v === '1') return true;
+    if (v === 'Нет' || v === 'no' || v === 'false' || v === '0') return false;
+    return !!v;
+  };
+
+  const normalizeNumber = (v: any): number => {
+    if (typeof v === 'number') return v;
+    if (typeof v === 'string') {
+      const cleaned = v.replace(/[^\d.-]/g, '');
+      const n = parseFloat(cleaned);
+      return Number.isFinite(n) ? n : 0;
+    }
+    return 0;
+  };
+
+  const normalizeTrackArtists = (raw: any): { name: string; separator: ',' | 'feat.' }[] => {
+    if (!raw) return [];
+    if (Array.isArray(raw)) {
+      return raw.map((a: any) => ({
+        name: String(a?.name ?? a ?? '').trim(),
+        separator: a?.separator === 'feat.' || a?.type === 'feat' ? 'feat.' : ',',
+      })).filter((a: any) => a.name);
+    }
+    const text = String(raw).trim();
+    if (!text) return [];
+    // Keep as a single artist if parsing fails
+    const parts = text.split(/( feat\. |, )/);
+    if (parts.length <= 1) return [{ name: text, separator: ',' }];
+    const result: { name: string; separator: ',' | 'feat.' }[] = [];
+    let pendingSep: ',' | 'feat.' = ',';
+    for (const part of parts) {
+      if (part === ' feat. ') {
+        pendingSep = 'feat.';
+        continue;
+      }
+      if (part === ', ') {
+        pendingSep = ',';
+        continue;
+      }
+      const name = String(part).trim();
+      if (!name) continue;
+      result.push({ name, separator: pendingSep });
+      pendingSep = ',';
+    }
+    return result.length ? result : [{ name: text, separator: ',' }];
+  };
+
+  const toStringArray = (raw: any): string[] => {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw.map(v => String(v).trim()).filter(Boolean);
+    return String(raw)
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+  };
+
+  const normalizeTracks = (v: any): any[] => {
+    if (!v) return [];
+    let parsed: any[] = [];
+    if (Array.isArray(v)) parsed = v;
+    else {
+      try {
+        parsed = JSON.parse(String(v));
+      } catch {
+        parsed = [];
+      }
+    }
+    return parsed.map((t: any, idx: number) => ({
+      id: String(t?.id ?? t?.number ?? idx + 1),
+      name: String(t?.name ?? ''),
+      version: String(t?.version ?? ''),
+      artists: normalizeTrackArtists(t?.artists),
+      lyricists: toStringArray(t?.lyricists),
+      composers: toStringArray(t?.composers),
+      explicit: normalizeBool(t?.explicit ?? t?.explicitContent),
+      substances: normalizeBool(t?.substances ?? t?.substanceMention),
+      lyrics: String(t?.lyrics ?? ''),
+    }));
+  };
+
   const refresh = useCallback(() => {
     setDistributions(getDistributions());
     setPromos(getPromos());
@@ -58,72 +140,65 @@ export function App() {
     if (!authed) return;
     try {
       const rows = await fetchSheetRows('distributions');
-      let distCount = 0;
-      if (Array.isArray(rows) && rows.length > 0) {
-        distCount = rows.length;
-        const mapped = rows.map((r: any, idx: number) => ({
-          id: r.id || r.ID || `remote-${idx}`,
-          tariff: (r.tariff as any) || (r.Tariff as any) || 'basic',
-          releaseType: (r.releaseType as any) || (r.ReleaseType as any) || 'single',
-          releaseName: r.releaseName || r.ReleaseName || r.title || '',
-          mainArtist: r.mainArtist || r.MainArtist || r.artist || '',
-          releaseVersion: r.releaseVersion || '',
-          releaseLink: r.releaseLink || '',
-          genre: r.genre || '',
-          language: r.language || '',
-          releaseDate: r.releaseDate || '',
-          coverLink: r.coverLink || '',
-          tracks: r.tracks ? JSON.parse(String(r.tracks)) : [],
-          tiktokStart: r.tiktokStart || '',
-          tiktokFull: !!r.tiktokFull,
-          preSaveYandex: !!r.yandexPreSave,
-          karaoke: !!r.addKaraoke,
-          fullName: r.fullName || r.FullName || '',
-          passportSeries: r.passportNumber || r.passportSeries || '',
-          passportIssuedBy: r.issuedBy || r.passportIssuedBy || '',
-          passportIssuedDate: r.issueDate || r.passportIssueDate || '',
-          bankDetails: r.bankDetails || '',
-          email: r.email || '',
-          consentAccepted: true,
-          contacts: r.contactInfo || r.contacts || '',
-          artistProfileLinks: r.artistProfileLinks || '',
-          submittedAt: r.timestamp || r.submittedAt || new Date().toISOString(),
-          status: (r.status as any) || 'new',
-          totalPrice: Number(r.totalPrice || r.total || 0),
-        }));
-        setDistributions(mapped as DistributionData[]);
-      }
+      const distCount = Array.isArray(rows) ? rows.length : 0;
+      const mapped = (Array.isArray(rows) ? rows : []).map((r: any, idx: number) => ({
+        id: r.id || r.ID || `remote-${idx}`,
+        rowIndex: r._row || r.rowIndex || r.row || undefined,
+        tariff: (r.tariff as any) || (r.Tariff as any) || r.tariff_name || 'basic',
+        releaseType: (r.releaseType as any) || (r.ReleaseType as any) || r.release_type || 'single',
+        releaseName: r.releaseName || r.ReleaseName || r.title || r.work_title || '',
+        mainArtist: r.mainArtist || r.MainArtist || r.artist || r.pseudonym || '',
+        releaseVersion: r.releaseVersion || r.release_version || '',
+        releaseLink: r.releaseLink || r.release_link || '',
+        genre: r.genre || '',
+        language: r.language || '',
+        releaseDate: r.releaseDate || r.release_date || '',
+        coverLink: r.coverLink || r.cover_link || '',
+        tracks: normalizeTracks(r.tracks || r.tracks_json),
+        tiktokStart: String(r.tiktokExcerpt ?? r.tiktok_excerpt ?? r.tiktokStart ?? ''),
+        tiktokFull: normalizeBool(r.tiktokFull ?? r.tiktok_full),
+        preSaveYandex: normalizeBool(r.yandexPreSave ?? r.yandex_presave),
+        karaoke: normalizeBool(r.addKaraoke ?? r.karaoke),
+        fullName: r.fullName || r.FullName || r.licensor_name || '',
+        passportSeries: r.passportNumber || r.passportSeries || r.passport_series_number || '',
+        passportIssuedBy: r.issuedBy || r.passportIssuedBy || r.passport_issued_by || '',
+        passportIssuedDate: r.issueDate || r.passportIssueDate || r.passport_issue_date || '',
+        bankDetails: r.bankDetails || r.bank_details || '',
+        email: r.email || '',
+        consentAccepted: true,
+        contacts: r.contactInfo || r.contacts || r.contact || '',
+        artistProfileLinks: r.artistProfileLinks || r.artist_profile_links || '',
+        submittedAt: r.timestamp || r.submittedAt || new Date().toISOString(),
+        status: (r.status as any) || r.contractStatus || r.contract_status || 'new',
+        totalPrice: normalizeNumber(r.totalPrice ?? r.total ?? r.total_price),
+        contractNumber: r.contractNumber || r.contract_number || '',
+      }));
+      setDistributions(mapped as DistributionData[]);
 
-  const promoRows = await fetchSheetRows('promos');
-      let promoCount = 0;
-      if (Array.isArray(promoRows) && promoRows.length > 0) {
-        promoCount = promoRows.length;
-        const mappedPromos = promoRows.map((p: any, idx: number) => ({
-          id: p.id || p.ID || `remote-promo-${idx}`,
-          type: p.promoType || p.type || 'detailed',
-          trackLink: p.releaseLink || p.trackLink || '',
-          upc: p.upcOrName || p.upc || '',
-          releaseDate: p.releaseDate || '',
-          genre: p.genre || '',
-          artistAndTitle: p.artistAndTitle || p.artistAndTitle || '',
-          releaseDescription: p.releaseDescription || p.releaseDescription || '',
-          artistInfo: p.artistInfo || '',
-          artistPhotos: p.artistPhotos || '',
-          socialLinks: p.socialLinks || '',
-          focusTrack: p.focusTrack || '',
-          additionalInfo: p.additionalInfo || '',
-          contacts: p.contactInfo || p.contacts || '',
-          submittedAt: p.timestamp || p.submittedAt || new Date().toISOString(),
-          status: p.status || 'new',
-        }));
-        setPromos(mappedPromos as PromoData[]);
-      }
+      const promoRows = await fetchSheetRows('promos');
+      const promoCount = Array.isArray(promoRows) ? promoRows.length : 0;
+      const mappedPromos = (Array.isArray(promoRows) ? promoRows : []).map((p: any, idx: number) => ({
+        id: p.id || p.ID || `remote-promo-${idx}`,
+        rowIndex: p._row || p.rowIndex || p.row || undefined,
+        type: p.promoType || p.type || p.Type || 'detailed',
+        trackLink: p.releaseLink || p.release_link || p.trackLink || '',
+        upc: p.upcOrName || p.upc_or_name || p.upc || '',
+        releaseDate: p.releaseDate || p.release_date || '',
+        genre: p.genre || '',
+        artistAndTitle: p.artistAndTitle || p.artist_and_title || '',
+        releaseDescription: p.releaseDescription || p.release_description || '',
+        artistInfo: p.artistInfo || p.artist_info || '',
+        artistPhotos: p.artistPhotos || p.artist_photos || '',
+        socialLinks: p.socialLinks || p.social_links || '',
+        focusTrack: p.focusTrack || p.focus_track || '',
+        additionalInfo: p.additionalInfo || p.additional_info || '',
+        contacts: p.contactInfo || p.contacts || p.contact_info || '',
+        submittedAt: p.timestamp || p.submittedAt || new Date().toISOString(),
+        status: p.status || 'new',
+      }));
+      setPromos(mappedPromos as PromoData[]);
 
-      if (distCount || promoCount) {
-        setRemoteInfo({ loaded: true, source: 'remote', distCount, promoCount });
-      } else {
-        setRemoteInfo({ loaded: false, source: 'local' });
-      }
+      setRemoteInfo({ loaded: true, source: 'remote', distCount, promoCount });
     } catch (e: any) {
       // Show diagnostics to the admin so it's clear why loading failed
       setRemoteInfo({ loaded: false, source: 'none', error: e?.message ? String(e.message) : String(e) });
@@ -165,12 +240,32 @@ export function App() {
     }
   };
 
-  const handleDistStatusChange = (id: string, status: DistributionData['status']) => {
+  const handleDistStatusChange = async (id: string, status: DistributionData['status']) => {
+    const row = distributions.find(d => d.id === id)?.rowIndex;
+    if (row) {
+      try {
+        await updateSheetRow('distributions', row, { contract_status: status });
+        loadRemote();
+        return;
+      } catch {
+        // fall back to local
+      }
+    }
     updateDistributionStatus(id, status);
     setRefreshKey(k => k + 1);
   };
 
-  const handlePromoStatusChange = (id: string, status: PromoData['status']) => {
+  const handlePromoStatusChange = async (id: string, status: PromoData['status']) => {
+    const row = promos.find(p => p.id === id)?.rowIndex;
+    if (row) {
+      try {
+        await updateSheetRow('promos', row, { status });
+        loadRemote();
+        return;
+      } catch {
+        // fall back to local
+      }
+    }
     updatePromoStatus(id, status);
     setRefreshKey(k => k + 1);
   };
@@ -183,7 +278,17 @@ export function App() {
     setRefreshKey(k => k + 1);
   };
 
-  const handleContractNumberUpdate = (id: string, contractNumber: string) => {
+  const handleContractNumberUpdate = async (id: string, contractNumber: string) => {
+    const row = distributions.find(d => d.id === id)?.rowIndex;
+    if (row) {
+      try {
+        await updateSheetRow('distributions', row, { contract_number: contractNumber });
+        loadRemote();
+        return;
+      } catch {
+        // fall back to local
+      }
+    }
     updateDistributionContractNumber(id, contractNumber);
     setRefreshKey(k => k + 1);
   };
