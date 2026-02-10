@@ -41,7 +41,7 @@ export function App() {
   const [distributions, setDistributions] = useState<DistributionData[]>([]);
   const [promos, setPromos] = useState<PromoData[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [remoteInfo, setRemoteInfo] = useState<{ loaded: boolean; source: 'remote' | 'local' | 'none'; distCount?: number; promoCount?: number }>({ loaded: false, source: 'none' });
+  const [remoteInfo, setRemoteInfo] = useState<{ loaded: boolean; source: 'remote' | 'local' | 'none'; distCount?: number; promoCount?: number; error?: string }>({ loaded: false, source: 'none' });
 
   const refresh = useCallback(() => {
     setDistributions(getDistributions());
@@ -94,7 +94,7 @@ export function App() {
         setDistributions(mapped as DistributionData[]);
       }
 
-      const promoRows = await fetchSheetRows('promos');
+  const promoRows = await fetchSheetRows('promos');
       let promoCount = 0;
       if (Array.isArray(promoRows) && promoRows.length > 0) {
         promoCount = promoRows.length;
@@ -124,8 +124,9 @@ export function App() {
       } else {
         setRemoteInfo({ loaded: false, source: 'local' });
       }
-    } catch (e) {
-      setRemoteInfo({ loaded: false, source: 'local' });
+    } catch (e: any) {
+      // Show diagnostics to the admin so it's clear why loading failed
+      setRemoteInfo({ loaded: false, source: 'none', error: e?.message ? String(e.message) : String(e) });
     }
   }, [authed]);
 
@@ -315,11 +316,18 @@ export function App() {
               </div>
             ) : remoteInfo.source === 'local' ? (
               <div className="text-xs text-gray-300 bg-gray-900/20 px-3 py-1 rounded-full">
-                Данные: локально (mocks)
+                Данные: локально
               </div>
             ) : (
-              <div className="text-xs text-yellow-200 bg-yellow-900/10 px-3 py-1 rounded-full">
-                Источник данных: не установлен
+              <div className="flex flex-col items-end gap-1">
+                <div className="text-xs text-yellow-200 bg-yellow-900/10 px-3 py-1 rounded-full">
+                  Источник данных: не установлен
+                </div>
+                {remoteInfo.error ? (
+                  <div className="text-xs text-red-300 bg-red-900/10 px-2 py-1 rounded-md max-w-xl break-words">
+                    Ошибка загрузки: {remoteInfo.error}
+                  </div>
+                ) : null}
               </div>
             )}
 

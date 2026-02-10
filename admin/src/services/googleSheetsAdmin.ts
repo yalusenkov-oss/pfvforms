@@ -32,17 +32,27 @@ export async function fetchSheetRows(sheetName: string, options: { limit?: numbe
   try {
     const res = await fetch(final, { method: 'GET', redirect: 'follow' });
     const text = await res.text();
-    try {
-      const json = text ? JSON.parse(text) : null;
-      if (Array.isArray(json)) return json;
-      if (json && Array.isArray(json.rows)) return json.rows;
-      return null;
-    } catch (e) {
-      // not JSON
-      return null;
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status} when fetching sheets: ${text.slice(0, 300)}`);
     }
-  } catch (err) {
-    return null;
+
+    let json: any = null;
+    try {
+      json = text ? JSON.parse(text) : null;
+    } catch (e) {
+      throw new Error(`Response was not valid JSON: ${text.slice(0, 300)}`);
+    }
+
+    // Accept either raw array or { rows: [...] } shape
+    if (Array.isArray(json)) return json as SheetRow[];
+    if (json && Array.isArray(json.rows)) return json.rows as SheetRow[];
+
+    // Unexpected shape — surface it to the caller
+    throw new Error(`Unexpected JSON shape from script: ${JSON.stringify(json).slice(0, 500)}`);
+  } catch (err: any) {
+    // Bubble up the error message so caller can display diagnostics
+    throw new Error(err?.message || String(err));
   }
 }
 
