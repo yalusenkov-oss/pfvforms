@@ -41,6 +41,7 @@ export function App() {
   const [distributions, setDistributions] = useState<DistributionData[]>([]);
   const [promos, setPromos] = useState<PromoData[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [remoteInfo, setRemoteInfo] = useState<{ loaded: boolean; source: 'remote' | 'local' | 'none'; distCount?: number; promoCount?: number }>({ loaded: false, source: 'none' });
 
   const refresh = useCallback(() => {
     setDistributions(getDistributions());
@@ -52,77 +53,88 @@ export function App() {
   }, [authed, refresh, refreshKey]);
 
   // Try to load data from Google Sheets (Apps Script) and replace local store if available
-  useEffect(() => {
-    let mounted = true;
-    async function loadRemote() {
-      if (!authed) return;
-      try {
-        const rows = await fetchSheetRows('distributions');
-        if (mounted && Array.isArray(rows) && rows.length > 0) {
-          // Map rows (plain objects) to DistributionData[] shape minimally expected
-          const mapped = rows.map((r: any, idx: number) => ({
-            id: r.id || r.ID || `remote-${idx}`,
-            tariff: (r.tariff as any) || (r.Tariff as any) || 'basic',
-            releaseType: (r.releaseType as any) || (r.ReleaseType as any) || 'single',
-            releaseName: r.releaseName || r.ReleaseName || r.title || '',
-            mainArtist: r.mainArtist || r.MainArtist || r.artist || '',
-            releaseVersion: r.releaseVersion || '',
-            releaseLink: r.releaseLink || '',
-            genre: r.genre || '',
-            language: r.language || '',
-            releaseDate: r.releaseDate || '',
-            coverLink: r.coverLink || '',
-            tracks: r.tracks ? JSON.parse(String(r.tracks)) : [],
-            tiktokStart: r.tiktokStart || '',
-            tiktokFull: !!r.tiktokFull,
-            preSaveYandex: !!r.yandexPreSave,
-            karaoke: !!r.addKaraoke,
-            fullName: r.fullName || r.FullName || '',
-            passportSeries: r.passportNumber || r.passportSeries || '',
-            passportIssuedBy: r.issuedBy || r.passportIssuedBy || '',
-            passportIssuedDate: r.issueDate || r.passportIssueDate || '',
-            bankDetails: r.bankDetails || '',
-            email: r.email || '',
-            consentAccepted: true,
-            contacts: r.contactInfo || r.contacts || '',
-            artistProfileLinks: r.artistProfileLinks || '',
-            submittedAt: r.timestamp || r.submittedAt || new Date().toISOString(),
-            status: (r.status as any) || 'new',
-            totalPrice: Number(r.totalPrice || r.total || 0),
-          }));
-          setDistributions(mapped as DistributionData[]);
-        }
-
-        const promoRows = await fetchSheetRows('promos');
-        if (mounted && Array.isArray(promoRows) && promoRows.length > 0) {
-          const mappedPromos = promoRows.map((p: any, idx: number) => ({
-            id: p.id || p.ID || `remote-promo-${idx}`,
-            type: p.promoType || p.type || 'detailed',
-            trackLink: p.releaseLink || p.trackLink || '',
-            upc: p.upcOrName || p.upc || '',
-            releaseDate: p.releaseDate || '',
-            genre: p.genre || '',
-            artistAndTitle: p.artistAndTitle || p.artistAndTitle || '',
-            releaseDescription: p.releaseDescription || p.releaseDescription || '',
-            artistInfo: p.artistInfo || '',
-            artistPhotos: p.artistPhotos || '',
-            socialLinks: p.socialLinks || '',
-            focusTrack: p.focusTrack || '',
-            additionalInfo: p.additionalInfo || '',
-            contacts: p.contactInfo || p.contacts || '',
-            submittedAt: p.timestamp || p.submittedAt || new Date().toISOString(),
-            status: p.status || 'new',
-          }));
-          setPromos(mappedPromos as PromoData[]);
-        }
-      } catch (e) {
-        // ignore remote load errors — fallback to local storage
-        // console.debug('Remote sheets load failed', e);
+  // Extracted loader so we can call it manually and show status in UI
+  const loadRemote = useCallback(async () => {
+    if (!authed) return;
+    try {
+      const rows = await fetchSheetRows('distributions');
+      let distCount = 0;
+      if (Array.isArray(rows) && rows.length > 0) {
+        distCount = rows.length;
+        const mapped = rows.map((r: any, idx: number) => ({
+          id: r.id || r.ID || `remote-${idx}`,
+          tariff: (r.tariff as any) || (r.Tariff as any) || 'basic',
+          releaseType: (r.releaseType as any) || (r.ReleaseType as any) || 'single',
+          releaseName: r.releaseName || r.ReleaseName || r.title || '',
+          mainArtist: r.mainArtist || r.MainArtist || r.artist || '',
+          releaseVersion: r.releaseVersion || '',
+          releaseLink: r.releaseLink || '',
+          genre: r.genre || '',
+          language: r.language || '',
+          releaseDate: r.releaseDate || '',
+          coverLink: r.coverLink || '',
+          tracks: r.tracks ? JSON.parse(String(r.tracks)) : [],
+          tiktokStart: r.tiktokStart || '',
+          tiktokFull: !!r.tiktokFull,
+          preSaveYandex: !!r.yandexPreSave,
+          karaoke: !!r.addKaraoke,
+          fullName: r.fullName || r.FullName || '',
+          passportSeries: r.passportNumber || r.passportSeries || '',
+          passportIssuedBy: r.issuedBy || r.passportIssuedBy || '',
+          passportIssuedDate: r.issueDate || r.passportIssueDate || '',
+          bankDetails: r.bankDetails || '',
+          email: r.email || '',
+          consentAccepted: true,
+          contacts: r.contactInfo || r.contacts || '',
+          artistProfileLinks: r.artistProfileLinks || '',
+          submittedAt: r.timestamp || r.submittedAt || new Date().toISOString(),
+          status: (r.status as any) || 'new',
+          totalPrice: Number(r.totalPrice || r.total || 0),
+        }));
+        setDistributions(mapped as DistributionData[]);
       }
+
+      const promoRows = await fetchSheetRows('promos');
+      let promoCount = 0;
+      if (Array.isArray(promoRows) && promoRows.length > 0) {
+        promoCount = promoRows.length;
+        const mappedPromos = promoRows.map((p: any, idx: number) => ({
+          id: p.id || p.ID || `remote-promo-${idx}`,
+          type: p.promoType || p.type || 'detailed',
+          trackLink: p.releaseLink || p.trackLink || '',
+          upc: p.upcOrName || p.upc || '',
+          releaseDate: p.releaseDate || '',
+          genre: p.genre || '',
+          artistAndTitle: p.artistAndTitle || p.artistAndTitle || '',
+          releaseDescription: p.releaseDescription || p.releaseDescription || '',
+          artistInfo: p.artistInfo || '',
+          artistPhotos: p.artistPhotos || '',
+          socialLinks: p.socialLinks || '',
+          focusTrack: p.focusTrack || '',
+          additionalInfo: p.additionalInfo || '',
+          contacts: p.contactInfo || p.contacts || '',
+          submittedAt: p.timestamp || p.submittedAt || new Date().toISOString(),
+          status: p.status || 'new',
+        }));
+        setPromos(mappedPromos as PromoData[]);
+      }
+
+      if (distCount || promoCount) {
+        setRemoteInfo({ loaded: true, source: 'remote', distCount, promoCount });
+      } else {
+        setRemoteInfo({ loaded: false, source: 'local' });
+      }
+    } catch (e) {
+      setRemoteInfo({ loaded: false, source: 'local' });
     }
-    loadRemote();
-    return () => { mounted = false; };
-  }, [authed, refreshKey]);
+  }, [authed]);
+
+  useEffect(() => {
+    if (authed) {
+      // initial attempt
+      loadRemote();
+    }
+  }, [authed, loadRemote, refreshKey]);
 
   const handleLogout = () => {
     logout();
@@ -295,6 +307,30 @@ export function App() {
       />
       <main className="flex-1 min-w-0 lg:ml-0">
         <div className="p-4 sm:p-6 lg:p-8 pt-16 lg:pt-6 max-w-7xl">
+          {/* Data source indicator + manual reload */}
+          <div className="flex items-center justify-end gap-3 mb-4">
+            {remoteInfo.source === 'remote' ? (
+              <div className="text-xs text-emerald-300 bg-emerald-900/20 px-3 py-1 rounded-full">
+                Данные: Google Sheets — {remoteInfo.distCount ?? 0} релиз(ов), {remoteInfo.promoCount ?? 0} промо
+              </div>
+            ) : remoteInfo.source === 'local' ? (
+              <div className="text-xs text-gray-300 bg-gray-900/20 px-3 py-1 rounded-full">
+                Данные: локально (mocks)
+              </div>
+            ) : (
+              <div className="text-xs text-yellow-200 bg-yellow-900/10 px-3 py-1 rounded-full">
+                Источник данных: не установлен
+              </div>
+            )}
+
+            <button
+              onClick={() => loadRemote()}
+              className="text-xs px-3 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 transition-colors"
+            >
+              Загрузить из Sheets
+            </button>
+          </div>
+
           {renderContent()}
         </div>
       </main>
