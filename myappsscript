@@ -1,0 +1,1326 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// PFVMUSIC Complete System - Final Version с Telegram
+// Дистрибуция + Промо + Промокоды + Генерация договоров + Админ-панель + Telegram
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Настройки
+const SPREADSHEET_ID = SpreadsheetApp.getActiveSpreadsheet().getId();
+const DISTRIBUTION_SHEET_NAME = 'Дистрибуция';
+const PROMO_SHEET_NAME = 'Промо';
+const PROMO_CODES_SHEET_NAME = 'Промокоды';
+
+// ID шаблона документа
+const TEMPLATE_ID = '1MD0F4Ie0WQMCbZxHuwa0v23p836TFNV36MSEVbhBY7g';
+// ID файла подписи в Google Drive
+const SIGNATURE_FILE_ID = '19Ot12RgTizoTHUitr6Sl7SiiEZ0ZAoXn';
+
+// Настройки Telegram уведомлений
+const TELEGRAM_CONFIG = {
+  ENABLED: false,              // ← Установите true для включения уведомлений
+  BOT_TOKEN: '',               // ← Вставьте токен бота (от @BotFather)
+  CHAT_ID: '',                 // ← Вставьте ID чата/канала
+  THREAD_ID: null,             // ← ID топика (опционально, для супергрупп)
+  DEBUG_MODE: false,           // ← true для отладки
+  NOTIFY_DISTRIBUTION: true,   // Уведомлять о новых договорах
+  NOTIFY_PROMO: true,          // Уведомлять о новых промо
+  NOTIFY_PROMO_CODE: false,    // Уведомлять о промокодах
+  NOTIFY_DOC_GENERATED: true   // Уведомлять когда договор сгенерирован
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Инициализация листов
+// ═══════════════════════════════════════════════════════════════════════════
+function initializeSheets() {
+  const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+
+  let distributionSheet = spreadsheet.getSheetByName(DISTRIBUTION_SHEET_NAME);
+  if (!distributionSheet) {
+    distributionSheet = spreadsheet.insertSheet(DISTRIBUTION_SHEET_NAME);
+  }
+  setupDistributionSheet(distributionSheet);
+
+  let promoSheet = spreadsheet.getSheetByName(PROMO_SHEET_NAME);
+  if (!promoSheet) {
+    promoSheet = spreadsheet.insertSheet(PROMO_SHEET_NAME);
+  }
+  setupPromoSheet(promoSheet);
+
+  let promoCodesSheet = spreadsheet.getSheetByName(PROMO_CODES_SHEET_NAME);
+  if (!promoCodesSheet) {
+    promoCodesSheet = spreadsheet.insertSheet(PROMO_CODES_SHEET_NAME);
+  }
+  setupPromoCodesSheet(promoCodesSheet);
+}
+
+function setupDistributionSheet(sheet) {
+  const headers = [
+    'timestamp', 'tariff', 'release_type', 'track_count', 'work_title',
+    'pseudonym', 'release_version', 'release_link', 'genre', 'language',
+    'release_date', 'cover_link', 'tiktok_excerpt', 'tiktok_full', 'yandex_presave',
+    'karaoke', 'tracks_json', 'licensor_name', 'passport_series_number', 'passport_issued_by',
+    'passport_issue_date', 'bank_details', 'email', 'contact', 'artist_profile_links',
+    'base_price', 'karaoke_price', 'total_price', 'contract_number', 'percentage',
+    'contract_status', 'music_author', 'lyrics_author', 'document_status'
+  ];
+
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  const headerRange = sheet.getRange(1, 1, 1, headers.length);
+  headerRange.setFontWeight('bold');
+  headerRange.setBackground('#4A90E2');
+  headerRange.setFontColor('#FFFFFF');
+  headerRange.setHorizontalAlignment('center');
+  headerRange.setVerticalAlignment('middle');
+  headerRange.setWrap(true);
+
+  sheet.setColumnWidth(1, 150);
+  sheet.setColumnWidth(2, 120);
+  sheet.setColumnWidth(3, 120);
+  sheet.setColumnWidth(4, 100);
+  sheet.setColumnWidth(5, 200);
+  sheet.setColumnWidth(6, 150);
+  sheet.setColumnWidth(17, 250);
+  sheet.setColumnWidth(18, 200);
+  sheet.setFrozenRows(1);
+
+  Logger.log('Distribution sheet configured');
+}
+
+function setupPromoSheet(sheet) {
+  const headers = [
+    'timestamp', 'Type', 'release_link', 'upc_or_name', 'release_date',
+    'genre', 'focus_track', 'additional_info', 'artist_and_title', 'release_description',
+    'artist_info', 'artist_photos', 'social_links', 'contact_info', 'status'
+  ];
+
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  const headerRange = sheet.getRange(1, 1, 1, headers.length);
+  headerRange.setFontWeight('bold');
+  headerRange.setBackground('#E27D60');
+  headerRange.setFontColor('#FFFFFF');
+  headerRange.setHorizontalAlignment('center');
+  headerRange.setVerticalAlignment('middle');
+  headerRange.setWrap(true);
+
+  sheet.setColumnWidth(1, 150);
+  sheet.setColumnWidth(2, 120);
+  for (let i = 3; i <= headers.length; i++) {
+    sheet.setColumnWidth(i, 180);
+  }
+  sheet.setFrozenRows(1);
+
+  Logger.log('Promo sheet configured');
+}
+
+function setupPromoCodesSheet(sheet) {
+  const headers = [
+    'id', 'code', 'discount_type', 'discount_value', 'applicable_tariffs',
+    'applicable_release_types', 'max_uses', 'current_uses', 'is_active',
+    'valid_from', 'valid_until', 'created_at', 'description'
+  ];
+
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  const headerRange = sheet.getRange(1, 1, 1, headers.length);
+  headerRange.setFontWeight('bold');
+  headerRange.setBackground('#9B59B6');
+  headerRange.setFontColor('#FFFFFF');
+  headerRange.setHorizontalAlignment('center');
+  headerRange.setVerticalAlignment('middle');
+  headerRange.setWrap(true);
+
+  sheet.setFrozenRows(1);
+  Logger.log('Promo codes sheet configured');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Обработка POST/GET запросов
+// ═══════════════════════════════════════════════════════════════════════════
+function doPost(e) {
+  try {
+    if (!e) throw new Error('No request data received');
+
+    let data;
+    if (e.postData && e.postData.contents) {
+      data = JSON.parse(e.postData.contents);
+    } else if (e.parameter && e.parameter.data) {
+      data = JSON.parse(e.parameter.data);
+    } else {
+      throw new Error('No data received');
+    }
+
+    if (data.action === 'update') {
+      updateRowData(data);
+    } else if (data.action === 'promo_code_delete') {
+      deletePromoCode(data);
+    } else if (data.formType === 'promo_code') {
+      savePromoCode(data);
+    } else if (data.formType === 'distribution') {
+      saveDistribution(data);
+    } else if (data.formType === 'promo') {
+      savePromo(data);
+    } else {
+      throw new Error('Unknown formType or action: ' + (data.formType || data.action || 'undefined'));
+    }
+
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: true,
+        message: 'Данные успешно сохранены',
+        formType: data.formType,
+        action: data.action
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (error) {
+    Logger.log('doPost error: ' + error.toString());
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: false,
+        error: error.toString(),
+        stack: error.stack
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doGet(e) {
+  if (!e) e = { parameter: {} };
+  if (!e.parameter) e.parameter = {};
+
+  if (e.parameter.action === 'list') {
+    try {
+      const sheetParam = e.parameter.sheet || '';
+      const limit = e.parameter.limit ? parseInt(String(e.parameter.limit), 10) : null;
+      const rows = listSheetRows(sheetParam, limit);
+      return ContentService
+        .createTextOutput(JSON.stringify({ rows: rows }))
+        .setMimeType(ContentService.MimeType.JSON);
+    } catch (error) {
+      Logger.log('doGet list error: ' + error.toString());
+      return ContentService
+        .createTextOutput(JSON.stringify({ success: false, error: error.toString() }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  if (e.parameter.data) {
+    try {
+      const dataString = decodeURIComponent(e.parameter.data);
+      const data = JSON.parse(dataString);
+
+      if (data.action === 'update') {
+        updateRowData(data);
+      } else if (data.action === 'promo_code_delete') {
+        deletePromoCode(data);
+      } else if (data.formType === 'promo_code') {
+        savePromoCode(data);
+      } else if (data.formType === 'distribution') {
+        saveDistribution(data);
+      } else if (data.formType === 'promo') {
+        savePromo(data);
+      } else {
+        throw new Error('Unknown formType or action');
+      }
+
+      return ContentService
+        .createTextOutput(JSON.stringify({
+          success: true,
+          message: 'Данные успешно сохранены',
+          formType: data.formType,
+          action: data.action
+        }))
+        .setMimeType(ContentService.MimeType.JSON);
+    } catch (error) {
+      return ContentService
+        .createTextOutput(JSON.stringify({ success: false, error: error.toString() }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  return ContentService
+    .createTextOutput(JSON.stringify({
+      status: 'ok',
+      message: 'PFVMUSIC API is running',
+      info: 'Use ?action=list&sheet=distributions to get data',
+      hasParameters: !!(e && e.parameter && Object.keys(e.parameter).length > 0)
+    }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Сохранение данных
+// ═══════════════════════════════════════════════════════════════════════════
+function saveDistribution(data) {
+  try {
+    initializeSheets();
+    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(DISTRIBUTION_SHEET_NAME);
+    if (!sheet) throw new Error('Sheet "' + DISTRIBUTION_SHEET_NAME + '" not found');
+
+    const contractNumber = generateContractNumber();
+    const percentage = getTariffPercentage(data.tariff);
+
+    const row = [
+      new Date(data.timestamp || new Date()),
+      getTariffName(data.tariff),
+      getReleaseTypeName(data.releaseType),
+      data.trackCount || 0,
+      data.releaseName || '',
+      data.mainArtist || '',
+      data.releaseVersion || '',
+      data.releaseLink || '',
+      data.genre || '',
+      data.language || '',
+      data.releaseDate || '',
+      data.coverLink || '',
+      data.tiktokExcerpt || '',
+      data.tiktokFull || '',
+      data.yandexPreSave || '',
+      data.addKaraoke === 'yes' ? 'Да' : 'Нет',
+      JSON.stringify(data.tracks || []),
+      data.fullName || '',
+      data.passportNumber || '',
+      data.issuedBy || '',
+      data.issueDate || '',
+      data.bankDetails || '',
+      data.email || '',
+      data.contactInfo || '',
+      data.artistProfileLinks || '',
+      Number(data.basePrice || 0),
+      Number(data.karaokePrice || 0),
+      Number(data.totalPrice || 0),
+      contractNumber,
+      percentage + '%',
+      '',
+      data.musicAuthor || '',
+      data.lyricsAuthor || '',
+      ''
+    ];
+
+    sheet.appendRow(row);
+
+    const lastRow = sheet.getLastRow();
+    if (lastRow % 2 === 0) {
+      sheet.getRange(lastRow, 1, 1, row.length).setBackground('#F9F9F9');
+    }
+    sheet.getRange(lastRow, 26, 1, 3).setNumberFormat('#,##0 ₽');
+
+    Logger.log('Distribution data saved successfully. Contract: ' + contractNumber);
+
+    // Отправка уведомления в Telegram
+    if (TELEGRAM_CONFIG.ENABLED && TELEGRAM_CONFIG.NOTIFY_DISTRIBUTION) {
+      sendDistributionNotification({
+        contractNumber: contractNumber,
+        licensorName: data.fullName || '',
+        pseudonym: data.mainArtist || '',
+        tariff: getTariffName(data.tariff),
+        releaseType: getReleaseTypeName(data.releaseType),
+        releaseDate: data.releaseDate || '',
+        workTitle: data.releaseName || '',
+        musicAuthor: data.musicAuthor || data.fullName || '',
+        lyricsAuthor: data.lyricsAuthor || data.fullName || '',
+        email: data.email || '',
+        contact: data.contactInfo || '',
+        sheetUrl: SpreadsheetApp.getActiveSpreadsheet().getUrl()
+      });
+    }
+
+  } catch (error) {
+    Logger.log('saveDistribution error: ' + error.toString());
+    throw error;
+  }
+}
+
+function savePromo(data) {
+  try {
+    initializeSheets();
+    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(PROMO_SHEET_NAME);
+    if (!sheet) throw new Error('Sheet "' + PROMO_SHEET_NAME + '" not found');
+
+    const row = [
+      new Date(data.timestamp || new Date()),
+      getPromoTypeName(data.promoType),
+      data.releaseLink || '',
+      data.upcOrName || '',
+      data.releaseDate || '',
+      data.genre || '',
+      data.focusTrack || '',
+      data.additionalInfo || '',
+      data.artistAndTitle || '',
+      data.releaseDescription || '',
+      data.artistInfo || '',
+      data.artistPhotos || '',
+      data.socialLinks || '',
+      data.contactInfo || '',
+      data.status || ''
+    ];
+
+    sheet.appendRow(row);
+
+    const lastRow = sheet.getLastRow();
+    if (lastRow % 2 === 0) {
+      sheet.getRange(lastRow, 1, 1, row.length).setBackground('#FFF5E6');
+    }
+
+    Logger.log('Promo data saved successfully. Type: ' + data.promoType);
+
+    // Отправка уведомления в Telegram
+    if (TELEGRAM_CONFIG.ENABLED && TELEGRAM_CONFIG.NOTIFY_PROMO) {
+      sendPromoNotification({
+        promoType: getPromoTypeName(data.promoType),
+        releaseLink: data.releaseLink || '',
+        upcOrName: data.upcOrName || '',
+        releaseDate: data.releaseDate || '',
+        genre: data.genre || '',
+        focusTrack: data.focusTrack || '',
+        artistAndTitle: data.artistAndTitle || '',
+        contactInfo: data.contactInfo || '',
+        sheetUrl: SpreadsheetApp.getActiveSpreadsheet().getUrl()
+      });
+    }
+
+  } catch (error) {
+    Logger.log('savePromo error: ' + error.toString());
+    throw error;
+  }
+}
+
+function savePromoCode(data) {
+  try {
+    initializeSheets();
+    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(PROMO_CODES_SHEET_NAME);
+    if (!sheet) throw new Error('Sheet "' + PROMO_CODES_SHEET_NAME + '" not found');
+
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const id = data.id || ('PC-' + Math.random().toString(36).substring(2, 8).toUpperCase());
+    const existingRow = findRowById(sheet, headers, id);
+
+    const row = [
+      id,
+      data.code || '',
+      data.discountType || 'percent',
+      data.discountValue || 0,
+      (data.applicableTariffs || []).join(', '),
+      (data.applicableReleaseTypes || []).join(', '),
+      data.maxUses || 0,
+      data.currentUses || 0,
+      data.isActive === false ? false : true,
+      data.validFrom || '',
+      data.validUntil || '',
+      data.createdAt || new Date().toISOString(),
+      data.description || ''
+    ];
+
+    if (existingRow > 1) {
+      sheet.getRange(existingRow, 1, 1, row.length).setValues([row]);
+      Logger.log('Promo code updated: ' + id);
+    } else {
+      sheet.appendRow(row);
+      Logger.log('Promo code created: ' + id);
+
+      // Отправка уведомления в Telegram при создании
+      if (TELEGRAM_CONFIG.ENABLED && TELEGRAM_CONFIG.NOTIFY_PROMO_CODE) {
+        sendPromoCodeNotification({
+          id: id,
+          code: data.code || '',
+          discountType: data.discountType || 'percent',
+          discountValue: data.discountValue || 0,
+          description: data.description || '',
+          sheetUrl: SpreadsheetApp.getActiveSpreadsheet().getUrl()
+        });
+      }
+    }
+  } catch (error) {
+    Logger.log('savePromoCode error: ' + error.toString());
+    throw error;
+  }
+}
+
+function deletePromoCode(data) {
+  try {
+    initializeSheets();
+    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(PROMO_CODES_SHEET_NAME);
+    if (!sheet) throw new Error('Sheet "' + PROMO_CODES_SHEET_NAME + '" not found');
+
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const id = data.id || '';
+    const rowNum = findRowById(sheet, headers, id);
+
+    if (rowNum > 1) {
+      sheet.deleteRow(rowNum);
+      Logger.log('Promo code deleted: ' + id);
+    } else {
+      throw new Error('Promo code not found: ' + id);
+    }
+  } catch (error) {
+    Logger.log('deletePromoCode error: ' + error.toString());
+    throw error;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ГЕНЕРАЦИЯ ЛИЦЕНЗИОННЫХ ДОКУМЕНТОВ
+// ═══════════════════════════════════════════════════════════════════════════
+function generateLicenseDocuments() {
+  try {
+    const templateId = TEMPLATE_ID;
+    Logger.log("ID шаблона:", templateId);
+
+    const templateFile = DriveApp.getFileById(templateId);
+    if (!templateFile) {
+      throw new Error("Шаблон с указанным ID не найден. Проверьте TEMPLATE_ID.");
+    }
+    Logger.log("Шаблон найден:", templateFile.getName());
+
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(DISTRIBUTION_SHEET_NAME);
+    if (!sheet) {
+      throw new Error("Не найден лист '" + DISTRIBUTION_SHEET_NAME + "'");
+    }
+    Logger.log("Лист найден:", sheet.getName());
+
+    const rows = sheet.getDataRange().getValues();
+    const headers = rows[0];
+    Logger.log("Заголовки столбцов:", headers);
+
+    const indices = {
+      contractNumber: headers.indexOf("contract_number"),
+      licensorName: headers.indexOf("licensor_name"),
+      tariff: headers.indexOf("tariff"),
+      passportSeriesNumber: headers.indexOf("passport_series_number"),
+      passportIssuedBy: headers.indexOf("passport_issued_by"),
+      passportIssueDate: headers.indexOf("passport_issue_date"),
+      bankDetails: headers.indexOf("bank_details"),
+      email: headers.indexOf("email"),
+      pseudonym: headers.indexOf("pseudonym"),
+      workTitle: headers.indexOf("work_title"),
+      musicAuthor: headers.indexOf("music_author"),
+      lyricsAuthor: headers.indexOf("lyrics_author"),
+      documentStatus: headers.indexOf("document_status")
+    };
+
+    Logger.log("Индексы столбцов:", indices);
+
+    for (let key in indices) {
+      if (indices[key] < 0) {
+        throw new Error(`Столбец '${key}' не найден. Проверьте заголовки таблицы.`);
+      }
+    }
+
+    const currentDate = new Date();
+    const formattedDate = formatDate(currentDate);
+
+    const futureDate = new Date();
+    futureDate.setFullYear(currentDate.getFullYear() + 4);
+    const formattedFutureDate = formatDate(futureDate);
+
+    let processedCount = 0;
+
+    rows.slice(1).forEach((row, index) => {
+      const rowIndex = index + 2;
+      Logger.log(`Обработка строки ${rowIndex}`);
+
+      if (row[indices.documentStatus] === "Completed") {
+        Logger.log(`Строка ${rowIndex} уже обработана. Пропуск.`);
+        return;
+      }
+
+      const contractNumber = row[indices.contractNumber];
+      if (!contractNumber) {
+        Logger.log(`Строка ${rowIndex}: нет номера договора. Пропуск.`);
+        return;
+      }
+
+      const licensorName = row[indices.licensorName] || 'Без имени';
+      const fileName = `Договор №${contractNumber} - ${licensorName}`;
+      Logger.log(`Создание документа: ${fileName}`);
+
+      try {
+        const docCopy = templateFile.makeCopy(fileName);
+        Utilities.sleep(2000);
+
+        const doc = DocumentApp.openById(docCopy.getId());
+        const body = doc.getBody();
+
+        const tariff = row[indices.tariff] || '';
+        Logger.log(`Тариф для строки ${rowIndex}: ${tariff}`);
+
+        let percentageText = '';
+        switch (tariff) {
+          case 'Базовый':
+            percentageText = '55% (Пятьдесят пять процентов)';
+            break;
+          case 'Продвинутый':
+            percentageText = '70% (Семьдесят процентов)';
+            break;
+          case 'Премиум':
+            percentageText = '90% (Девяносто процентов)';
+            break;
+          case 'Платинум':
+            percentageText = '95% (Девяносто пять процентов)';
+            break;
+          default:
+            percentageText = '55% (Пятьдесят пять процентов)';
+        }
+
+        const replacements = {
+          '{{contract_number}}': contractNumber,
+          '{{licensor_name}}': licensorName,
+          '{{date}}': formattedDate,
+          '{{future_date}}': formattedFutureDate,
+          '{{percentage}}': percentageText,
+          '{{passport_series_number}}': row[indices.passportSeriesNumber] || '',
+          '{{passport_issued_by}}': row[indices.passportIssuedBy] || '',
+          '{{passport_issue_date}}': row[indices.passportIssueDate] || '',
+          '{{bank_details}}': row[indices.bankDetails] || '',
+          '{{email}}': row[indices.email] || '',
+          '{{pseudonym}}': row[indices.pseudonym] || '',
+          '{{work_title}}': row[indices.workTitle] || '',
+          '{{music_author}}': row[indices.musicAuthor] || '',
+          '{{lyrics_author}}': row[indices.lyricsAuthor] || ''
+        };
+
+        Logger.log("Значения для замены:", replacements);
+
+        for (let marker in replacements) {
+          body.replaceText(marker, replacements[marker]);
+        }
+
+        replaceInTables(body, replacements);
+        insertSignature(body);
+        doc.saveAndClose();
+
+        Logger.log(`Документ для ${fileName} успешно создан.`);
+        sheet.getRange(rowIndex, indices.documentStatus + 1).setValue("Completed");
+        processedCount++;
+
+        // Отправка уведомления о созданном документе
+        if (TELEGRAM_CONFIG.ENABLED && TELEGRAM_CONFIG.NOTIFY_DOC_GENERATED) {
+          const docUrl = docCopy.getUrl();
+          sendDocumentGeneratedNotification({
+            contractNumber: contractNumber,
+            licensorName: licensorName,
+            pseudonym: row[indices.pseudonym] || '',
+            workTitle: row[indices.workTitle] || '',
+            docUrl: docUrl
+          });
+        }
+
+      } catch (docError) {
+        Logger.log(`Ошибка при создании документа для договора №${contractNumber}: ${docError.message}`);
+        sheet.getRange(rowIndex, indices.documentStatus + 1).setValue("Error: " + docError.message);
+      }
+    });
+
+    Logger.log(`Процесс создания документов завершён. Обработано строк: ${processedCount}`);
+
+    SpreadsheetApp.getActiveSpreadsheet().toast(
+      `Создано документов: ${processedCount}`,
+      'Генерация завершена',
+      5
+    );
+
+  } catch (error) {
+    Logger.log("Произошла ошибка: " + error.message);
+    SpreadsheetApp.getActiveSpreadsheet().toast(
+      error.message,
+      'Ошибка генерации документов',
+      10
+    );
+  }
+}
+
+function replaceInTables(body, replacements) {
+  const tables = body.getTables();
+  tables.forEach(table => {
+    for (let r = 0; r < table.getNumRows(); r++) {
+      const row = table.getRow(r);
+      for (let c = 0; c < row.getNumCells(); c++) {
+        const cell = row.getCell(c);
+        for (let marker in replacements) {
+          cell.replaceText(marker, replacements[marker]);
+        }
+      }
+    }
+  });
+}
+
+function formatDate(date) {
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}.${month}.${year}`;
+}
+
+function insertSignature(body) {
+  try {
+    const marker = '{{signature_or}}';
+    const range = body.findText(marker);
+    if (!range) {
+      Logger.log('Маркер {{signature_or}} не найден в документе');
+      return;
+    }
+
+    const el = range.getElement();
+    const text = el.asText();
+    const start = range.getStartOffset();
+    const end = range.getEndOffsetInclusive();
+
+    text.deleteText(start, end);
+
+    const blob = DriveApp.getFileById(SIGNATURE_FILE_ID).getBlob();
+    const parent = el.getParent();
+
+    if (parent && parent.insertInlineImage) {
+      const img = parent.insertInlineImage(parent.getChildIndex(el) + 1, blob);
+      img.setWidth(200);
+      Logger.log('Подпись успешно вставлена');
+    } else {
+      Logger.log('Не удалось вставить подпись: родительский элемент не поддерживает изображения');
+    }
+  } catch (error) {
+    Logger.log('Ошибка при вставке подписи: ' + error.toString());
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TELEGRAM УВЕДОМЛЕНИЯ
+// ═══════════════════════════════════════════════════════════════════════════
+
+function sendDistributionNotification(data) {
+  if (!TELEGRAM_CONFIG.ENABLED || !TELEGRAM_CONFIG.BOT_TOKEN || !TELEGRAM_CONFIG.CHAT_ID) {
+    return;
+  }
+
+  try {
+    const message = buildDistributionMessage(data);
+    const result = sendToTelegramAPI(message);
+
+    if (!result.ok) {
+      throw new Error(result.description || "Ошибка Telegram API");
+    }
+
+    Logger.log("✅ Уведомление о дистрибуции отправлено");
+  } catch (error) {
+    Logger.log("🚨 Ошибка отправки Telegram: " + error.message);
+    if (TELEGRAM_CONFIG.DEBUG_MODE) {
+      sendDebugInfo("Ошибка отправки дистрибуции: " + error.message);
+    }
+  }
+}
+
+function sendPromoNotification(data) {
+  if (!TELEGRAM_CONFIG.ENABLED || !TELEGRAM_CONFIG.BOT_TOKEN || !TELEGRAM_CONFIG.CHAT_ID) {
+    return;
+  }
+
+  try {
+    const message = buildPromoMessage(data);
+    const result = sendToTelegramAPI(message);
+
+    if (!result.ok) {
+      throw new Error(result.description || "Ошибка Telegram API");
+    }
+
+    Logger.log("✅ Уведомление о промо отправлено");
+  } catch (error) {
+    Logger.log("🚨 Ошибка отправки Telegram: " + error.message);
+    if (TELEGRAM_CONFIG.DEBUG_MODE) {
+      sendDebugInfo("Ошибка отправки промо: " + error.message);
+    }
+  }
+}
+
+function sendPromoCodeNotification(data) {
+  if (!TELEGRAM_CONFIG.ENABLED || !TELEGRAM_CONFIG.BOT_TOKEN || !TELEGRAM_CONFIG.CHAT_ID) {
+    return;
+  }
+
+  try {
+    const message = buildPromoCodeMessage(data);
+    const result = sendToTelegramAPI(message);
+
+    if (!result.ok) {
+      throw new Error(result.description || "Ошибка Telegram API");
+    }
+
+    Logger.log("✅ Уведомление о промокоде отправлено");
+  } catch (error) {
+    Logger.log("🚨 Ошибка отправки Telegram: " + error.message);
+  }
+}
+
+function sendDocumentGeneratedNotification(data) {
+  if (!TELEGRAM_CONFIG.ENABLED || !TELEGRAM_CONFIG.BOT_TOKEN || !TELEGRAM_CONFIG.CHAT_ID) {
+    return;
+  }
+
+  try {
+    const message = buildDocumentMessage(data);
+    const result = sendToTelegramAPI(message);
+
+    if (!result.ok) {
+      throw new Error(result.description || "Ошибка Telegram API");
+    }
+
+    Logger.log("✅ Уведомление о документе отправлено");
+  } catch (error) {
+    Logger.log("🚨 Ошибка отправки Telegram: " + error.message);
+  }
+}
+
+function buildDistributionMessage(data) {
+  const escapeMd = (text) => {
+    if (!text) return '';
+    return String(text).replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&');
+  };
+
+  const messageParts = [
+    "\\#дистрибуция *Новая заявка получена*\\!",
+    "",
+    "📝 *Основные данные*",
+    `▸ №: ${escapeMd(data.contractNumber)}`,
+    `▸ Лицензиар: ${escapeMd(data.licensorName)}`,
+    `▸ Псевдоним: ${escapeMd(data.pseudonym || 'не указан')}`,
+    `▸ Тариф: ${escapeMd(data.tariff)}`,
+    `▸ Тип релиза: ${escapeMd(data.releaseType || 'не указан')}`,
+    `▸ Дата релиза: ${escapeMd(data.releaseDate || 'не указана')}`,
+    "",
+    "🎵 *Произведение*",
+    `▸ Название: ${escapeMd(data.workTitle || 'не указано')}`,
+    `▸ Автор музыки: ${escapeMd(data.musicAuthor)}`,
+    `▸ Автор текста: ${escapeMd(data.lyricsAuthor)}`,
+    "",
+    "📞 *Контакты*",
+    `▸ Email: ${escapeMd(data.email || 'не указан')}`,
+    `▸ Связь: ${escapeMd(data.contact || 'не указан')}`,
+    "",
+    `📄 [Открыть таблицу](${escapeMd(data.sheetUrl)})`
+  ];
+
+  return messageParts.join("\n");
+}
+
+function buildPromoMessage(data) {
+  const escapeMd = (text) => {
+    if (!text) return '';
+    return String(text).replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&');
+  };
+
+  const messageParts = [
+    "\\#питчинг *Новая заявка на промо*\\!",
+    "",
+    `▸ Тип: ${escapeMd(data.promoType)}`,
+    `▸ Артист и название: ${escapeMd(data.artistAndTitle || 'не указано')}`,
+    `▸ Ссылка: ${escapeMd(data.releaseLink || 'не указана')}`,
+    `▸ UPC: ${escapeMd(data.upcOrName || 'не указан')}`,
+    `▸ Дата релиза: ${escapeMd(data.releaseDate || 'не указана')}`,
+    `▸ Жанр: ${escapeMd(data.genre || 'не указан')}`,
+    `▸ Фокус\\-трек: ${escapeMd(data.focusTrack || 'не указан')}`,
+    `▸ Контакты: ${escapeMd(data.contactInfo || 'не указаны')}`,
+    "",
+    `📄 [Открыть таблицу](${escapeMd(data.sheetUrl)})`
+  ];
+
+  return messageParts.join("\n");
+}
+
+function buildPromoCodeMessage(data) {
+  const escapeMd = (text) => {
+    if (!text) return '';
+    return String(text).replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&');
+  };
+
+  const discountText = data.discountType === 'percent'
+    ? `${data.discountValue}%`
+    : `${data.discountValue} ₽`;
+
+  const messageParts = [
+    "\\#промокод *Создан новый промокод*\\!",
+    "",
+    `▸ ID: ${escapeMd(data.id)}`,
+    `▸ Код: \`${escapeMd(data.code)}\``,
+    `▸ Скидка: ${escapeMd(discountText)}`,
+    `▸ Описание: ${escapeMd(data.description || 'не указано')}`,
+    "",
+    `📄 [Открыть таблицу](${escapeMd(data.sheetUrl)})`
+  ];
+
+  return messageParts.join("\n");
+}
+
+function buildDocumentMessage(data) {
+  const escapeMd = (text) => {
+    if (!text) return '';
+    return String(text).replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&');
+  };
+
+  const messageParts = [
+    "\\#договор *Договор создан*\\!",
+    "",
+    `▸ №: ${escapeMd(data.contractNumber)}`,
+    `▸ Лицензиар: ${escapeMd(data.licensorName)}`,
+    `▸ Псевдоним: ${escapeMd(data.pseudonym || 'не указан')}`,
+    `▸ Произведение: ${escapeMd(data.workTitle || 'не указано')}`,
+    "",
+    `📄 [Открыть договор](${escapeMd(data.docUrl)})`
+  ];
+
+  return messageParts.join("\n");
+}
+
+function sendToTelegramAPI(message) {
+  const url = `https://api.telegram.org/bot${TELEGRAM_CONFIG.BOT_TOKEN}/sendMessage`;
+
+  const chatIdsToTry = [
+    TELEGRAM_CONFIG.CHAT_ID,
+    `-100${TELEGRAM_CONFIG.CHAT_ID}`,
+    `@${TELEGRAM_CONFIG.CHAT_ID}`
+  ];
+
+  let lastError;
+
+  for (const chatId of chatIdsToTry) {
+    try {
+      const payload = {
+        chat_id: chatId,
+        text: message,
+        parse_mode: "MarkdownV2",
+        disable_web_page_preview: false
+      };
+
+      // Добавляем thread_id если указан
+      if (TELEGRAM_CONFIG.THREAD_ID) {
+        payload.message_thread_id = TELEGRAM_CONFIG.THREAD_ID;
+      }
+
+      const response = UrlFetchApp.fetch(url, {
+        method: "post",
+        contentType: "application/json",
+        payload: JSON.stringify(payload),
+        muteHttpExceptions: true
+      });
+
+      const responseData = JSON.parse(response.getContentText());
+      if (responseData.ok) return responseData;
+
+      lastError = responseData.description;
+    } catch (e) {
+      lastError = e.message;
+    }
+  }
+
+  throw new Error(`Telegram API: ${lastError || "Не удалось отправить сообщение"}`);
+}
+
+function sendDebugInfo(text) {
+  if (!TELEGRAM_CONFIG.DEBUG_MODE || !TELEGRAM_CONFIG.BOT_TOKEN || !TELEGRAM_CONFIG.CHAT_ID) {
+    return;
+  }
+
+  try {
+    const debugUrl = `https://api.telegram.org/bot${TELEGRAM_CONFIG.BOT_TOKEN}/sendMessage`;
+    const payload = {
+      chat_id: TELEGRAM_CONFIG.CHAT_ID,
+      text: "🛠 DEBUG:\n" + text,
+      parse_mode: "MarkdownV2"
+    };
+
+    if (TELEGRAM_CONFIG.THREAD_ID) {
+      payload.message_thread_id = TELEGRAM_CONFIG.THREAD_ID;
+    }
+
+    UrlFetchApp.fetch(debugUrl, {
+      method: "post",
+      contentType: "application/json",
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    });
+  } catch (e) {
+    Logger.log("Не удалось отправить debug info: " + e);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// АДМИН-ПАНЕЛЬ: Чтение данных
+// ═══════════════════════════════════════════════════════════════════════════
+function listSheetRows(sheetParam, limit) {
+  initializeSheets();
+
+  const normalized = String(sheetParam || '').toLowerCase().trim();
+  let sheetName = sheetParam;
+  let sheetType = 'unknown';
+
+  if (normalized === 'distributions' || normalized === 'distribution' || normalized === 'дистрибуция') {
+    sheetName = DISTRIBUTION_SHEET_NAME;
+    sheetType = 'distribution';
+  } else if (normalized === 'promos' || normalized === 'promo' || normalized === 'промо') {
+    sheetName = PROMO_SHEET_NAME;
+    sheetType = 'promo';
+  } else if (normalized === 'promocodes' || normalized === 'promo_codes' || normalized === 'промокоды') {
+    sheetName = PROMO_CODES_SHEET_NAME;
+    sheetType = 'promocodes';
+  }
+
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(sheetName);
+  if (!sheet) throw new Error('Sheet "' + sheetName + '" not found');
+
+  const data = sheet.getDataRange().getValues();
+  if (!data || data.length < 2) return [];
+
+  const headers = data[0];
+  let rows = data.slice(1);
+  if (limit && limit > 0) rows = rows.slice(-limit);
+
+  if (sheetType === 'distribution') {
+    return rows.map((r, idx) => {
+      const obj = mapDistributionRow(headers, r);
+      obj._row = idx + 2;
+      return obj;
+    });
+  }
+  if (sheetType === 'promo') {
+    return rows.map((r, idx) => {
+      const obj = mapPromoRow(headers, r);
+      obj._row = idx + 2;
+      return obj;
+    });
+  }
+  if (sheetType === 'promocodes') {
+    return rows.map((r, idx) => {
+      const obj = mapPromoCodeRow(headers, r);
+      obj._row = idx + 2;
+      return obj;
+    });
+  }
+
+  return rows.map((r, idx) => ({ index: idx + 1, values: r }));
+}
+
+function mapDistributionRow(headers, row) {
+  const raw = rowToObject(headers, row);
+  return {
+    timestamp: normalizeDate(raw.timestamp),
+    tariff: normalizeTariff(raw.tariff),
+    releaseType: normalizeReleaseType(raw.release_type),
+    trackCount: raw.track_count || 0,
+    releaseName: raw.work_title || '',
+    mainArtist: raw.pseudonym || '',
+    releaseVersion: raw.release_version || '',
+    releaseLink: raw.release_link || '',
+    genre: raw.genre || '',
+    language: raw.language || '',
+    releaseDate: raw.release_date || '',
+    coverLink: raw.cover_link || '',
+    tiktokExcerpt: raw.tiktok_excerpt || '',
+    tiktokFull: normalizeBool(raw.tiktok_full),
+    yandexPreSave: normalizeBool(raw.yandex_presave),
+    addKaraoke: normalizeBool(raw.karaoke),
+    tracks: raw.tracks_json || '',
+    fullName: raw.licensor_name || '',
+    passportNumber: raw.passport_series_number || '',
+    issuedBy: raw.passport_issued_by || '',
+    issueDate: raw.passport_issue_date || '',
+    bankDetails: raw.bank_details || '',
+    email: raw.email || '',
+    contactInfo: raw.contact || '',
+    artistProfileLinks: raw.artist_profile_links || '',
+    basePrice: normalizeNumber(raw.base_price),
+    karaokePrice: normalizeNumber(raw.karaoke_price),
+    totalPrice: normalizeNumber(raw.total_price),
+    contractNumber: raw.contract_number || '',
+    percentage: raw.percentage || '',
+    contractStatus: raw.contract_status || '',
+    musicAuthor: raw.music_author || '',
+    lyricsAuthor: raw.lyrics_author || '',
+    documentStatus: raw.document_status || ''
+  };
+}
+
+function mapPromoRow(headers, row) {
+  const raw = rowToObject(headers, row);
+  return {
+    timestamp: normalizeDate(raw.timestamp),
+    promoType: normalizePromoType(raw.Type || raw.type),
+    releaseLink: raw.release_link || '',
+    upcOrName: raw.upc_or_name || '',
+    releaseDate: raw.release_date || '',
+    genre: raw.genre || '',
+    focusTrack: raw.focus_track || '',
+    additionalInfo: raw.additional_info || '',
+    artistAndTitle: raw.artist_and_title || '',
+    releaseDescription: raw.release_description || '',
+    artistInfo: raw.artist_info || '',
+    artistPhotos: raw.artist_photos || '',
+    socialLinks: raw.social_links || '',
+    contactInfo: raw.contact_info || '',
+    status: raw.status || ''
+  };
+}
+
+function mapPromoCodeRow(headers, row) {
+  const raw = rowToObject(headers, row);
+  return {
+    id: raw.id || '',
+    code: raw.code || '',
+    discountType: raw.discount_type || 'percent',
+    discountValue: raw.discount_value || 0,
+    applicableTariffs: raw.applicable_tariffs || '',
+    applicableReleaseTypes: raw.applicable_release_types || '',
+    maxUses: raw.max_uses || 0,
+    currentUses: raw.current_uses || 0,
+    isActive: normalizeBool(raw.is_active),
+    validFrom: raw.valid_from || '',
+    validUntil: raw.valid_until || '',
+    createdAt: raw.created_at || '',
+    description: raw.description || ''
+  };
+}
+
+function rowToObject(headers, row) {
+  const obj = {};
+  for (let i = 0; i < headers.length; i++) {
+    obj[String(headers[i]).trim()] = row[i];
+  }
+  return obj;
+}
+
+function updateRowData(data) {
+  const sheetParam = data.sheet || '';
+  const rowNum = parseInt(String(data.row || ''), 10);
+  const updates = data.updates || {};
+
+  if (!sheetParam || !rowNum || !updates) {
+    throw new Error('Missing update parameters');
+  }
+
+  const normalized = String(sheetParam || '').toLowerCase().trim();
+  let sheetName = sheetParam;
+
+  if (normalized === 'distributions' || normalized === 'distribution' || normalized === 'дистрибуция') {
+    sheetName = DISTRIBUTION_SHEET_NAME;
+  } else if (normalized === 'promos' || normalized === 'promo' || normalized === 'промо') {
+    sheetName = PROMO_SHEET_NAME;
+  } else if (normalized === 'promocodes' || normalized === 'promo_codes' || normalized === 'промокоды') {
+    sheetName = PROMO_CODES_SHEET_NAME;
+  }
+
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(sheetName);
+  if (!sheet) throw new Error('Sheet "' + sheetName + '" not found');
+
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+  Object.keys(updates).forEach(function(key) {
+    let idx = headers.indexOf(key);
+    if (idx < 0) {
+      headers.push(key);
+      sheet.getRange(1, headers.length).setValue(key);
+      idx = headers.length - 1;
+    }
+    sheet.getRange(rowNum, idx + 1).setValue(updates[key]);
+  });
+
+  Logger.log(`Row ${rowNum} updated in ${sheetName}`);
+}
+
+function findRowById(sheet, headers, id) {
+  if (!id) return -1;
+  const idIdx = headers.indexOf('id');
+  if (idIdx < 0) return -1;
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return -1;
+
+  const values = sheet.getRange(2, idIdx + 1, lastRow - 1, 1).getValues();
+  for (let i = 0; i < values.length; i++) {
+    if (String(values[i][0]) === String(id)) return i + 2;
+  }
+  return -1;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Вспомогательные функции
+// ═══════════════════════════════════════════════════════════════════════════
+function generateContractNumber() {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+  return `PFV-${year}${month}-${random}`;
+}
+
+function getTariffPercentage(tariff) {
+  const percentages = {
+    'basic': 55, 'Базовый': 55, 'базовый': 55,
+    'advanced': 70, 'Продвинутый': 70, 'продвинутый': 70,
+    'premium': 90, 'Премиум': 90, 'премиум': 90,
+    'platinum': 95, 'Платинум': 95, 'платинум': 95
+  };
+  return percentages[tariff] || 55;
+}
+
+function getTariffName(tariff) {
+  const names = {
+    'basic': 'Базовый',
+    'advanced': 'Продвинутый',
+    'premium': 'Премиум',
+    'platinum': 'Платинум'
+  };
+  return names[tariff] || tariff || 'Не указан';
+}
+
+function getReleaseTypeName(type) {
+  const names = {
+    'single': 'Сингл',
+    'ep': 'EP',
+    'album': 'Альбом'
+  };
+  return names[type] || type || 'Не указан';
+}
+
+function getPromoTypeName(type) {
+  const names = {
+    'detailed': 'Детальное промо',
+    'weekly': 'Еженедельное промо'
+  };
+  return names[type] || type || 'Не указан';
+}
+
+function normalizeDate(value) {
+  if (value instanceof Date) return value.toISOString();
+  return value;
+}
+
+function normalizeBool(value) {
+  if (value === true || value === false) return value;
+  if (value === 'Да' || value === 'yes' || value === 'true' || value === '1') return true;
+  if (value === 'Нет' || value === 'no' || value === 'false' || value === '0') return false;
+  return !!value;
+}
+
+function normalizeNumber(value) {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const cleaned = value.replace(/[^\d.-]/g, '');
+    const n = parseFloat(cleaned);
+    return isNaN(n) ? 0 : n;
+  }
+  return 0;
+}
+
+function normalizeTariff(value) {
+  const map = {
+    'Базовый': 'basic',
+    'Продвинутый': 'advanced',
+    'Премиум': 'premium',
+    'Платинум': 'platinum'
+  };
+  return map[value] || value;
+}
+
+function normalizeReleaseType(value) {
+  const map = {
+    'Сингл': 'single',
+    'EP': 'ep',
+    'Альбом': 'album'
+  };
+  return map[value] || value;
+}
+
+function normalizePromoType(value) {
+  const map = {
+    'Детальное промо': 'detailed',
+    'Еженедельное промо': 'weekly'
+  };
+  return map[value] || value;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Функция для ручного обновления заголовков
+// ═══════════════════════════════════════════════════════════════════════════
+function updateExistingSheets() {
+  Logger.log('Starting sheets update...');
+  initializeSheets();
+  Logger.log('Sheets updated successfully!');
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    'Заголовки всех таблиц обновлены',
+    'Готово',
+    3
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Создание пользовательского меню
+// ═══════════════════════════════════════════════════════════════════════════
+function onOpen() {
+  const ui = SpreadsheetApp.getUi();
+  ui.createMenu('📄 PFVMUSIC')
+    .addItem('🔄 Обновить заголовки таблиц', 'updateExistingSheets')
+    .addSeparator()
+    .addItem('📝 Генерировать договоры', 'generateLicenseDocuments')
+    .addSeparator()
+    .addItem('📲 Тест Telegram (дистрибуция)', 'testTelegramDistribution')
+    .addItem('📲 Тест Telegram (промо)', 'testTelegramPromo')
+    .addToUi();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Тестовые функции для Telegram
+// ═══════════════════════════════════════════════════════════════════════════
+function testTelegramDistribution() {
+  const testData = {
+    contractNumber: 'TEST-2026-0001',
+    licensorName: 'Тестовый Артист',
+    pseudonym: 'Test MC',
+    tariff: 'Продвинутый',
+    releaseType: 'Сингл',
+    releaseDate: '2026-03-15',
+    workTitle: 'Тестовый трек',
+    musicAuthor: 'Тестовый Артист',
+    lyricsAuthor: 'Тестовый Артист',
+    email: 'test@test.ru',
+    contact: '+7 999 123 45 67',
+    sheetUrl: SpreadsheetApp.getActiveSpreadsheet().getUrl()
+  };
+  
+  try {
+    sendDistributionNotification(testData);
+    SpreadsheetApp.getActiveSpreadsheet().toast(
+      'Тестовое уведомление отправлено!',
+      'Telegram',
+      5
+    );
+  } catch (error) {
+    SpreadsheetApp.getActiveSpreadsheet().toast(
+      'Ошибка: ' + error.message,
+      'Telegram',
+      10
+    );
+  }
+}
+
+function testTelegramPromo() {
+  const testData = {
+    promoType: 'Детальное промо',
+    artistAndTitle: 'Test Artist - Test Track',
+    releaseLink: 'https://example.com',
+    upcOrName: '1234567890',
+    releaseDate: '2026-03-15',
+    genre: 'Pop',
+    focusTrack: 'Test Track',
+    contactInfo: 'test@test.ru',
+    sheetUrl: SpreadsheetApp.getActiveSpreadsheet().getUrl()
+  };
+  
+  try {
+    sendPromoNotification(testData);
+    SpreadsheetApp.getActiveSpreadsheet().toast(
+      'Тестовое уведомление отправлено!',
+      'Telegram',
+      5
+    );
+  } catch (error) {
+    SpreadsheetApp.getActiveSpreadsheet().toast(
+      'Ошибка: ' + error.message,
+      'Telegram',
+      10
+    );
+  }
+}
