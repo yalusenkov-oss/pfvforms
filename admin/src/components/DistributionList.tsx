@@ -29,11 +29,16 @@ export function DistributionList({ distributions, onView, onDelete, onStatusChan
   const [statusDropdown, setStatusDropdown] = useState<string | null>(null);
 
   const filtered = distributions.filter(d => {
+    const needle = search.toLowerCase();
+    const releaseName = String(d.releaseName ?? '').toLowerCase();
+    const mainArtist = String(d.mainArtist ?? '').toLowerCase();
+    const id = String(d.id ?? '').toLowerCase();
+    const fullName = String(d.fullName ?? '').toLowerCase();
     const matchSearch =
-      d.releaseName.toLowerCase().includes(search.toLowerCase()) ||
-      d.mainArtist.toLowerCase().includes(search.toLowerCase()) ||
-      d.id.toLowerCase().includes(search.toLowerCase()) ||
-      d.fullName.toLowerCase().includes(search.toLowerCase());
+      releaseName.includes(needle) ||
+      mainArtist.includes(needle) ||
+      id.includes(needle) ||
+      fullName.includes(needle);
     const matchStatus = filterStatus === 'all' || d.status === filterStatus;
     const matchTariff = filterTariff === 'all' || d.tariff === filterTariff;
     return matchSearch && matchStatus && matchTariff;
