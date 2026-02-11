@@ -412,29 +412,13 @@ export async function submitToGoogleSheets(
 
   while (attempt <= maxRetries) {
     try {
-      // Пробуем сначала POST запрос с JSON
-      // Если не работает, используем GET с данными в URL (более надежно для Google Apps Script)
-      let res: Response;
-      
-      try {
-        // Попытка POST запроса
-        res = await fetchWithTimeout(GOOGLE_SCRIPT_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(preparedData),
-          redirect: 'follow',
-        }, 12000);
-      } catch (postError) {
-        // Если POST не работает, используем GET с данными в URL
-        const url = new URL(GOOGLE_SCRIPT_URL);
-        url.searchParams.set('data', JSON.stringify(preparedData));
-        res = await fetchWithTimeout(url.toString(), {
-          method: 'GET',
-          redirect: 'follow',
-        }, 12000);
-      }
+      // Use GET with data param to avoid CORS preflight on Apps Script
+      const url = new URL(GOOGLE_SCRIPT_URL);
+      url.searchParams.set('data', JSON.stringify(preparedData));
+      const res = await fetchWithTimeout(url.toString(), {
+        method: 'GET',
+        redirect: 'follow',
+      }, 12000);
 
       // Ожидаем JSON-ответ от Apps Script
       const text = await res.text();
