@@ -36,6 +36,14 @@ function validateStep1(data: Record<string, string>): ValidationResult {
   if (!data.releaseDate) errors.push('Укажите дату релиза');
   if (!data.coverLink?.trim()) errors.push('Укажите ссылку на обложку');
   if (!data.tiktokExcerpt?.trim()) errors.push('Укажите отрывок в TikTok');
+  const tiktokFullValue = data.tiktokFull || data.fullTiktok;
+  if (!tiktokFullValue && (data.tariff === 'Премиум' || data.tariff === 'Платинум')) {
+    errors.push('Укажите полную версию в TikTok');
+  }
+  const yandexPreSaveValue = data.yandexPreSave || data.preSaveYandex;
+  if (!yandexPreSaveValue && (data.tariff === 'Премиум' || data.tariff === 'Платинум')) {
+    errors.push('Укажите Pre-Save в Яндекс Музыке');
+  }
   if (!data.karaokeAddition) errors.push('Выберите добавление караоке');
   
   // Validate tracks
@@ -55,6 +63,14 @@ function validateStep1(data: Record<string, string>): ValidationResult {
   }
   
   return { valid: errors.length === 0, errors };
+}
+
+function normalizeDistributionData(data: Record<string, string>): Record<string, string> {
+  return {
+    ...data,
+    tiktokFull: data.tiktokFull || data.fullTiktok || '',
+    yandexPreSave: data.yandexPreSave || data.preSaveYandex || '',
+  };
 }
 
 function validateStep2(data: Record<string, string>): ValidationResult {
@@ -176,12 +192,13 @@ export function App() {
   }, []);
 
   const goNext = () => {
+    const normalized = normalizeDistributionData(formData);
     let validation: ValidationResult = { valid: true, errors: [] };
     
     if (currentStep === 1) {
-      validation = validateStep1(formData);
+      validation = validateStep1(normalized);
     } else if (currentStep === 2) {
-      validation = validateStep2(formData);
+      validation = validateStep2(normalized);
     } else if (currentStep === 3) {
       validation = validateStep3(agreed);
     }
@@ -204,10 +221,11 @@ export function App() {
   };
 
   const handleDistributionSubmit = async () => {
-    const step1 = validateStep1(formData);
-    const step2 = validateStep2(formData);
+    const normalized = normalizeDistributionData(formData);
+    const step1 = validateStep1(normalized);
+    const step2 = validateStep2(normalized);
     const step3 = validateStep3(agreed);
-    const step4 = validateStep4(formData);
+    const step4 = validateStep4(normalized);
     
     const allErrors = [...step1.errors, ...step2.errors, ...step3.errors, ...step4.errors];
     
@@ -221,7 +239,7 @@ export function App() {
     setSubmitting(true);
     
     try {
-      const result = await submitToGoogleSheets('distribution', formData);
+      const result = await submitToGoogleSheets('distribution', normalized);
       if (result.success) {
         setSubmitted(true);
       } else {

@@ -713,9 +713,19 @@ export function StepOne({ data, onChange }: StepOneProps) {
         {isPremiumOrPlatinum && (
           <>
             <Divider />
-            <RadioGroup label="Полная версия в TikTok" name="fullTiktok" icon={<Clock className="w-4 h-4" />}
+            <RadioGroup
+              label="Полная версия в TikTok"
+              name="tiktokFull"
+              icon={<Clock className="w-4 h-4" />}
               hint="Разрешить полную версию трека в TikTok?"
-              options={['Да', 'Нет']} value={data.fullTiktok || ''} onChange={(v) => onChange('fullTiktok', v)} horizontal />
+              options={['Да', 'Нет']}
+              value={data.tiktokFull || data.fullTiktok || ''}
+              onChange={(v) => {
+                onChange('tiktokFull', v);
+                onChange('fullTiktok', v);
+              }}
+              horizontal
+            />
           </>
         )}
       </StepCard>
@@ -733,9 +743,19 @@ export function StepOne({ data, onChange }: StepOneProps) {
             </p>
           </InfoBox>
 
-          <RadioGroup label="Pre-Save в Яндекс Музыке" name="preSaveYandex" icon={<Bookmark className="w-4 h-4" />}
+          <RadioGroup
+            label="Pre-Save в Яндекс Музыке"
+            name="yandexPreSave"
+            icon={<Bookmark className="w-4 h-4" />}
             hint="Разрешить предсохранение на Яндекс Музыке?"
-            options={['Да', 'Нет']} value={data.preSaveYandex || ''} onChange={(v) => onChange('preSaveYandex', v)} horizontal />
+            options={['Да', 'Нет']}
+            value={data.yandexPreSave || data.preSaveYandex || ''}
+            onChange={(v) => {
+              onChange('yandexPreSave', v);
+              onChange('preSaveYandex', v);
+            }}
+            horizontal
+          />
         </StepCard>
       )}
 

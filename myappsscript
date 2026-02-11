@@ -9,6 +9,7 @@ const DISTRIBUTION_SHEET_NAME = 'Дистрибуция';
 const PROMO_SHEET_NAME = 'Промо';
 const PROMO_CODES_SHEET_NAME = 'Промокоды';
 const WEB_LOG_SHEET_NAME = 'WebLogs';
+const DEBUG_LOGGING = true; // временное полное логирование
 
 // ID шаблона документа
 const TEMPLATE_ID = '1MD0F4Ie0WQMCbZxHuwa0v23p836TFNV36MSEVbhBY7g';
@@ -137,6 +138,13 @@ function setupPromoCodesSheet(sheet) {
 // ═══════════════════════════════════════════════════════════════════════════
 function doPost(e) {
   try {
+    if (DEBUG_LOGGING) {
+      Logger.log('RAW e.postData: ' + (e && e.postData ? JSON.stringify({
+        type: e.postData.type || '',
+        length: e.postData.length || '',
+        contents: e.postData.contents || ''
+      }) : 'no postData'));
+    }
     logWebRequest('POST', e);
     if (!e) throw new Error('No request data received');
 
@@ -147,6 +155,10 @@ function doPost(e) {
       data = JSON.parse(e.parameter.data);
     } else {
       throw new Error('No data received');
+    }
+
+    if (DEBUG_LOGGING) {
+      Logger.log('Parsed data: ' + JSON.stringify(data));
     }
 
     if (data.action === 'update') {
@@ -161,6 +173,16 @@ function doPost(e) {
       savePromo(data);
     } else {
       throw new Error('Unknown formType or action: ' + (data.formType || data.action || 'undefined'));
+    }
+
+    const responsePayload = {
+      success: true,
+      message: 'Данные успешно сохранены',
+      formType: data.formType,
+      action: data.action
+    };
+    if (DEBUG_LOGGING) {
+      Logger.log('Response payload: ' + JSON.stringify(responsePayload));
     }
 
     return ContentService
@@ -232,15 +254,21 @@ function logWebRequest(method, e) {
     let sheet = spreadsheet.getSheetByName(WEB_LOG_SHEET_NAME);
     if (!sheet) {
       sheet = spreadsheet.insertSheet(WEB_LOG_SHEET_NAME);
-      sheet.getRange(1, 1, 1, 5).setValues([['ts', 'method', 'params', 'contentType', 'body']]);
+      sheet.getRange(1, 1, 1, 7).setValues([['ts', 'method', 'params', 'contentType', 'body', 'headers', 'meta']]);
       sheet.setFrozenRows(1);
     }
 
     const params = e && e.parameter ? JSON.stringify(e.parameter) : '';
     const contentType = e && e.postData ? (e.postData.type || '') : '';
     const body = e && e.postData && e.postData.contents ? e.postData.contents : '';
+    const headers = e && e.parameter && e.parameter.headers ? JSON.stringify(e.parameter.headers) : '';
+    const meta = JSON.stringify({
+      hasPostData: !!(e && e.postData),
+      postLength: e && e.postData ? e.postData.length : '',
+      userAgent: (e && e.parameter && e.parameter['User-Agent']) ? e.parameter['User-Agent'] : ''
+    });
 
-    sheet.appendRow([new Date(), method || '', params, contentType, body]);
+    sheet.appendRow([new Date(), method || '', params, contentType, body, headers, meta]);
   } catch (err) {
     Logger.log('logWebRequest error: ' + err);
   }

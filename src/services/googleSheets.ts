@@ -20,6 +20,7 @@ function getTrackCount(data: Record<string, string>): number {
 // Функция для получения URL (читает переменную при вызове).
 // Попытки (в порядке): import.meta.env -> window global -> /config.json
 let _cachedGoogleScriptUrl: string | null = null;
+const DEBUG_LOGGING = true;
 async function getGoogleScriptUrl(): Promise<string> {
   if (_cachedGoogleScriptUrl) return _cachedGoogleScriptUrl;
 
@@ -180,6 +181,9 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
     totalPrice = totalPrice - discountAmount;
   }
 
+  const tiktokFull = formData.tiktokFull || formData.fullTiktok || '';
+  const yandexPreSave = formData.yandexPreSave || formData.preSaveYandex || '';
+
   return {
     formType: 'distribution',
     timestamp: new Date().toISOString(),
@@ -202,10 +206,10 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
     
     // TikTok
     tiktokExcerpt: formData.tiktokExcerpt,
-    tiktokFull: formData.tiktokFull,
+    tiktokFull: tiktokFull,
     
     // Яндекс
-    yandexPreSave: formData.yandexPreSave,
+    yandexPreSave: yandexPreSave,
     
     // Караоке (конвертируем "Да"/"Нет" в "yes"/"no" для Apps Script)
     addKaraoke: formData.karaokeAddition === 'Да' ? 'yes' : 'no',
@@ -378,6 +382,9 @@ export async function submitToGoogleSheets(
   const preparedData = formType === 'distribution' 
     ? prepareDistributionData(data)
     : preparePromoData(data);
+  if (DEBUG_LOGGING) {
+    console.log('[DEBUG] submitToGoogleSheets preparedData', preparedData);
+  }
 
   const isProd = typeof window !== 'undefined' && !/localhost|127\\.0\\.0\\.1/.test(window.location.hostname);
 
@@ -411,6 +418,9 @@ export async function submitToGoogleSheets(
           body: JSON.stringify(preparedData),
         }, 12000);
         const text = await res.text();
+        if (DEBUG_LOGGING) {
+          console.log('[DEBUG] /api/submit status', res.status, 'body', text);
+        }
         let json: any = null;
         try {
           json = text ? JSON.parse(text) : null;
@@ -445,6 +455,9 @@ export async function submitToGoogleSheets(
 
       // Ожидаем JSON-ответ от Apps Script
       const text = await res.text();
+      if (DEBUG_LOGGING) {
+        console.log('[DEBUG] Apps Script response status', res.status, 'body', text);
+      }
       let json: any = null;
       try {
         json = text ? JSON.parse(text) : null;
