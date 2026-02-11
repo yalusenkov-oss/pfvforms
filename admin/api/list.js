@@ -1,6 +1,8 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 
+const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz7FmVZm6C4d8QecFslgeSRCCmi4zSi-H8YuA1dIEVE6Nj4KZllOsbA8JSUFf03epdfvQ/exec';
+
 function getScriptUrl() {
   if (process.env.GOOGLE_SCRIPT_URL) return process.env.GOOGLE_SCRIPT_URL;
   const candidates = [
@@ -13,6 +15,11 @@ function getScriptUrl() {
     const raw = readFileSync(configPath, 'utf8');
     const parsed = JSON.parse(raw);
     if (parsed.VITE_GOOGLE_SCRIPT_URL) return parsed.VITE_GOOGLE_SCRIPT_URL;
+  }
+
+  if (DEFAULT_SCRIPT_URL) {
+    console.warn('[admin/api/list] Falling back to DEFAULT_SCRIPT_URL. config.json not found.');
+    return DEFAULT_SCRIPT_URL;
   }
 
   return '';
