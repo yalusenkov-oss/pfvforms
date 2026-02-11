@@ -107,11 +107,22 @@ export function App() {
     if (Array.isArray(v)) parsed = v;
     else {
       try {
-        parsed = JSON.parse(String(v));
+        const maybe = JSON.parse(String(v));
+        if (Array.isArray(maybe)) {
+          parsed = maybe;
+        } else if (maybe && Array.isArray(maybe.tracks)) {
+          parsed = maybe.tracks;
+        } else {
+          parsed = [];
+          if (maybe) {
+            console.warn('[admin] tracks_json is not an array:', maybe);
+          }
+        }
       } catch {
         parsed = [];
       }
     }
+    if (!Array.isArray(parsed)) return [];
     return parsed.map((t: any, idx: number) => ({
       id: String(t?.id ?? t?.number ?? idx + 1),
       name: String(t?.name ?? ''),
