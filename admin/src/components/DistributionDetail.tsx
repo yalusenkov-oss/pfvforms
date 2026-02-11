@@ -98,7 +98,7 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
             <p className="text-sm text-dark-400 mt-0.5">{data.mainArtist} · {data.id} · Подано: {formatDateTime(data.submittedAt)}</p>
           </div>
         </div>
-        <div className="relative">
+        <div className="relative z-30 inline-block">
           <button
             onClick={() => setShowStatusMenu(!showStatusMenu)}
             className={cn('text-sm px-3 py-1.5 rounded-lg border flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity', STATUS_COLORS[data.status])}
@@ -107,7 +107,7 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
             <ChevronDown size={14} />
           </button>
           {showStatusMenu && (
-            <div className="absolute z-20 top-full mt-1 right-0 bg-dark-800 border border-dark-600 rounded-lg shadow-xl py-1 min-w-[160px]">
+            <div className="absolute z-50 top-full mt-2 left-0 w-full min-w-[180px] bg-dark-800 border border-dark-600 rounded-lg shadow-2xl py-1 ring-1 ring-black/30">
               {ALL_STATUSES.map(s => (
                 <button
                   key={s}

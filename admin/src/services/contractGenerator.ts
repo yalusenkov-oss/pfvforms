@@ -266,7 +266,11 @@ _________________                             _________________
 // ==========================================
 // HTML version of the contract for printing/PDF — exact template
 // ==========================================
-export function generateContractHTML(d: ContractData): string {
+export function generateContractHTML(d: ContractData, options: { signatureUrl?: string } = {}): string {
+  const signatureUrl = options.signatureUrl || '';
+  const licenseeSignatureBlock = signatureUrl
+    ? `<div class="sig-image"><img src="${signatureUrl}" alt="signature" /></div>`
+    : `<div class="sig-line"></div>`;
   return `<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -295,6 +299,7 @@ export function generateContractHTML(d: ContractData): string {
   .requisites .col { width: 48%; }
   .requisites .col-title { font-weight: bold; margin-bottom: 8px; font-size: 13px; }
   .sig-line { border-bottom: 1px solid #000; width: 200px; margin-top: 40px; display: inline-block; }
+  .sig-image img { width: 95px; height: auto; margin-top: 12px; display: block; }
   table.objects { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 11px; }
   table.objects th, table.objects td { border: 1px solid #000; padding: 4px 6px; text-align: center; vertical-align: middle; }
   table.objects th { background: #f0f0f0; font-weight: bold; }
@@ -487,7 +492,7 @@ export function generateContractHTML(d: ContractData): string {
     Город: Москва<br>
     Корр. счёт: 30101810145250000974</p>
     <br>
-    <div class="sig-line"></div>
+    ${licenseeSignatureBlock}
     <p>/ Орехов Данила Александрович /</p>
   </div>
 </div>
@@ -552,7 +557,7 @@ export function generateContractHTML(d: ContractData): string {
   </div>
   <div class="col">
     <div class="col-title">ЛИЦЕНЗИАТ:</div>
-    <div class="sig-line"></div>
+    ${licenseeSignatureBlock}
     <p>/ Орехов Данила Александрович /</p>
   </div>
 </div>
@@ -583,7 +588,7 @@ export function generateContractHTML(d: ContractData): string {
   </div>
   <div class="col">
     <div class="col-title">ЛИЦЕНЗИАТ:</div>
-    <div class="sig-line"></div>
+    ${licenseeSignatureBlock}
     <p>/ Орехов Данила Александрович /</p>
   </div>
 </div>

@@ -35,9 +35,12 @@ export function Sidebar({ activeTab, onTabChange, isOpen, onToggle, onLogout }: 
       {/* Mobile toggle button */}
       <button
         onClick={onToggle}
-        className="fixed top-4 left-4 z-50 lg:hidden bg-dark-800 border border-dark-700 p-2 rounded-lg text-white hover:bg-dark-700 transition-colors"
+        className={cn(
+          'fixed top-4 left-4 z-50 lg:hidden bg-dark-800 border border-dark-700 p-2 rounded-lg text-white hover:bg-dark-700 transition-colors',
+          isOpen && 'hidden'
+        )}
       >
-        {isOpen ? <X size={20} /> : <Menu size={20} />}
+        <Menu size={20} />
       </button>
 
       {/* Sidebar */}
@@ -49,7 +52,13 @@ export function Sidebar({ activeTab, onTabChange, isOpen, onToggle, onLogout }: 
         )}
       >
         {/* Logo */}
-        <div className="p-6 border-b border-dark-700">
+        <div className="p-6 border-b border-dark-700 relative">
+          <button
+            onClick={onToggle}
+            className="absolute top-4 right-4 lg:hidden bg-dark-800 border border-dark-700 p-2 rounded-lg text-white hover:bg-dark-700 transition-colors"
+          >
+            <X size={20} />
+          </button>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-lg shadow-primary-500/20">
               <Music size={22} className="text-white" />

@@ -89,6 +89,10 @@ export function ContractGenerator({ data, onBack, onUpdateContractNumber }: Cont
 
   const contractText = useMemo(() => generateContractText(contractData), [contractData]);
   const contractHTML = useMemo(() => generateContractHTML(contractData), [contractData]);
+  const signedContractHTML = useMemo(
+    () => generateContractHTML(contractData, { signatureUrl: '/signature.png' }),
+    [contractData]
+  );
 
   const handleRegenerateNumber = () => {
     const newNumber = generateContractNumber();
@@ -138,6 +142,17 @@ export function ContractGenerator({ data, onBack, onUpdateContractNumber }: Cont
     }
   };
 
+  const handlePrintSigned = () => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(signedContractHTML);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+    }
+  };
+
   const markers = [
     { marker: 'contract_number', value: contractData.contractNumber, desc: 'Номер договора' },
     { marker: 'licensor_name', value: contractData.licensorName, desc: 'ФИО Лицензиара' },
@@ -180,7 +195,7 @@ export function ContractGenerator({ data, onBack, onUpdateContractNumber }: Cont
           </div>
         </div>
         <a
-          href="https://docs.google.com/document/d/11PniHoFhYQX-4GKWTWEMdvdfSmd9SW0rLAzpNdHqk8s/edit?usp=sharing"
+          href="https://docs.google.com/document/d/1MD0F4Ie0WQMCbZxHuwa0v23p836TFNV36MSEVbhBY7g/edit"
           target="_blank"
           rel="noopener noreferrer"
           className="text-xs px-3 py-1.5 rounded-lg bg-dark-700 text-dark-300 hover:text-white transition-colors flex items-center gap-1.5"
@@ -212,7 +227,12 @@ export function ContractGenerator({ data, onBack, onUpdateContractNumber }: Cont
                 </button>
               </div>
             ) : (
-              <p className="text-2xl font-bold text-white font-mono">{contractNumber}</p>
+              <div className="space-y-1">
+                <p className="text-2xl font-bold text-white font-mono">{contractNumber}</p>
+                <p className="text-xs text-primary-300/80">
+                  ЛИЦЕНЗИОННЫЙ ДОГОВОР № {contractNumber}
+                </p>
+              </div>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -347,6 +367,13 @@ export function ContractGenerator({ data, onBack, onUpdateContractNumber }: Cont
           >
             <Download size={16} />
             Скачать HTML
+          </button>
+          <button
+            onClick={handlePrintSigned}
+            className="px-4 py-3 rounded-lg bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 text-sm font-medium hover:bg-emerald-600/30 transition-colors flex items-center justify-center gap-2"
+          >
+            <Printer size={16} />
+            Подписать документ
           </button>
         </div>
         <div className="mt-3">
