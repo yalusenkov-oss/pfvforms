@@ -301,7 +301,11 @@ function saveDistribution(data) {
     if (lastRow % 2 === 0) {
       sheet.getRange(lastRow, 1, 1, row.length).setBackground('#F9F9F9');
     }
-    sheet.getRange(lastRow, 26, 1, 3).setNumberFormat('#,##0 ₽');
+    try {
+      sheet.getRange(lastRow, 26, 1, 3).setNumberFormat('#,##0 ₽');
+    } catch (e) {
+      Logger.log('Skip number format: ' + e);
+    }
 
     Logger.log('Distribution data saved successfully. Contract: ' + contractNumber);
 
