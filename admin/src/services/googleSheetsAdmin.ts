@@ -77,8 +77,12 @@ async function postToScript(payload: Record<string, any>): Promise<any> {
 
   const url = await getGoogleScriptUrl();
   if (!url) throw new Error('Google Script URL is not configured');
-  const getUrl = `${url}${url.includes('?') ? '&' : '?'}data=${encodeURIComponent(JSON.stringify(payload))}`;
-  const res = await fetch(getUrl, { method: 'GET', redirect: 'follow' });
+  // Dev: POST with text/plain to avoid CORS preflight
+  const res = await fetch(url, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    redirect: 'follow',
+  });
   const text = await res.text();
   if (!res.ok) {
     throw new Error(`HTTP ${res.status} when posting to script: ${text.slice(0, 300)}`);

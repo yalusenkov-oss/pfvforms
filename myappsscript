@@ -8,6 +8,7 @@ const SPREADSHEET_ID = SpreadsheetApp.getActiveSpreadsheet().getId();
 const DISTRIBUTION_SHEET_NAME = 'Дистрибуция';
 const PROMO_SHEET_NAME = 'Промо';
 const PROMO_CODES_SHEET_NAME = 'Промокоды';
+const WEB_LOG_SHEET_NAME = 'WebLogs';
 
 // ID шаблона документа
 const TEMPLATE_ID = '1MD0F4Ie0WQMCbZxHuwa0v23p836TFNV36MSEVbhBY7g';
@@ -136,6 +137,7 @@ function setupPromoCodesSheet(sheet) {
 // ═══════════════════════════════════════════════════════════════════════════
 function doPost(e) {
   try {
+    logWebRequest('POST', e);
     if (!e) throw new Error('No request data received');
 
     let data;
@@ -188,6 +190,7 @@ function doGet(e) {
 
   if (e.parameter.action === 'list') {
     try {
+      logWebRequest('GET', e);
       const sheetParam = e.parameter.sheet || '';
       const limit = e.parameter.limit ? parseInt(String(e.parameter.limit), 10) : null;
       const rows = listSheetRows(sheetParam, limit);
@@ -203,39 +206,16 @@ function doGet(e) {
   }
 
   if (e.parameter.data) {
-    try {
-      const dataString = decodeURIComponent(e.parameter.data);
-      const data = JSON.parse(dataString);
-
-      if (data.action === 'update') {
-        updateRowData(data);
-      } else if (data.action === 'promo_code_delete') {
-        deletePromoCode(data);
-      } else if (data.formType === 'promo_code') {
-        savePromoCode(data);
-      } else if (data.formType === 'distribution') {
-        saveDistribution(data);
-      } else if (data.formType === 'promo') {
-        savePromo(data);
-      } else {
-        throw new Error('Unknown formType or action');
-      }
-
-      return ContentService
-        .createTextOutput(JSON.stringify({
-          success: true,
-          message: 'Данные успешно сохранены',
-          formType: data.formType,
-          action: data.action
-        }))
-        .setMimeType(ContentService.MimeType.JSON);
-    } catch (error) {
-      return ContentService
-        .createTextOutput(JSON.stringify({ success: false, error: error.toString() }))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
+    logWebRequest('GET', e);
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: false,
+        error: 'GET write disabled. Use POST with JSON body.'
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
   }
 
+  logWebRequest('GET', e);
   return ContentService
     .createTextOutput(JSON.stringify({
       status: 'ok',
@@ -244,6 +224,26 @@ function doGet(e) {
       hasParameters: !!(e && e.parameter && Object.keys(e.parameter).length > 0)
     }))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+function logWebRequest(method, e) {
+  try {
+    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+    let sheet = spreadsheet.getSheetByName(WEB_LOG_SHEET_NAME);
+    if (!sheet) {
+      sheet = spreadsheet.insertSheet(WEB_LOG_SHEET_NAME);
+      sheet.getRange(1, 1, 1, 5).setValues([['ts', 'method', 'params', 'contentType', 'body']]);
+      sheet.setFrozenRows(1);
+    }
+
+    const params = e && e.parameter ? JSON.stringify(e.parameter) : '';
+    const contentType = e && e.postData ? (e.postData.type || '') : '';
+    const body = e && e.postData && e.postData.contents ? e.postData.contents : '';
+
+    sheet.appendRow([new Date(), method || '', params, contentType, body]);
+  } catch (err) {
+    Logger.log('logWebRequest error: ' + err);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -301,11 +301,7 @@ function saveDistribution(data) {
     if (lastRow % 2 === 0) {
       sheet.getRange(lastRow, 1, 1, row.length).setBackground('#F9F9F9');
     }
-    try {
-      sheet.getRange(lastRow, 26, 1, 3).setNumberFormat('#,##0 ₽');
-    } catch (e) {
-      Logger.log('Skip number format: ' + e);
-    }
+    // number format removed to avoid type conflicts
 
     Logger.log('Distribution data saved successfully. Contract: ' + contractNumber);
 

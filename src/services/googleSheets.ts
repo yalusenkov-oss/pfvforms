@@ -415,7 +415,11 @@ export async function submitToGoogleSheets(
         try {
           json = text ? JSON.parse(text) : null;
         } catch (parseErr) {
-          throw new Error(`Failed to parse response: ${text.substring(0, 200)}`);
+          // Do not retry on non-JSON HTML responses to avoid duplicate submissions
+          return {
+            success: false,
+            message: `Failed to parse response: ${text.substring(0, 200)}`,
+          };
         }
         if (json && typeof json.success === 'boolean') return json as SubmitResponse;
         return { success: true, message: 'Данные успешно отправлены' };
@@ -431,11 +435,11 @@ export async function submitToGoogleSheets(
         };
       }
 
-      // Dev: use GET with data param to avoid CORS preflight on Apps Script
-      const url = new URL(GOOGLE_SCRIPT_URL);
-      url.searchParams.set('data', JSON.stringify(preparedData));
-      const res = await fetchWithTimeout(url.toString(), {
-        method: 'GET',
+      // Dev: use POST with text/plain to avoid CORS preflight (simple request)
+      // Apps Script reads JSON from e.postData.contents
+      const res = await fetchWithTimeout(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify(preparedData),
         redirect: 'follow',
       }, 12000);
 
