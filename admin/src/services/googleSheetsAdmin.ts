@@ -49,11 +49,32 @@ async function getGoogleScriptUrl(): Promise<string> {
   return '';
 }
 
+function isProdHost(): boolean {
+  return typeof window !== 'undefined' && !/localhost|127\\.0\\.0\\.1/.test(window.location.hostname);
+}
+
 interface SheetRow {
   [key: string]: string | number | null;
 }
 
 async function postToScript(payload: Record<string, any>): Promise<any> {
+  if (isProdHost()) {
+    const res = await fetch('/api/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status} when posting to proxy: ${text.slice(0, 300)}`);
+    }
+    try {
+      return text ? JSON.parse(text) : null;
+    } catch {
+      throw new Error(`Response was not valid JSON: ${text.slice(0, 300)}`);
+    }
+  }
+
   const url = await getGoogleScriptUrl();
   if (!url) throw new Error('Google Script URL is not configured');
   const getUrl = `${url}${url.includes('?') ? '&' : '?'}data=${encodeURIComponent(JSON.stringify(payload))}`;
@@ -70,7 +91,8 @@ async function postToScript(payload: Record<string, any>): Promise<any> {
 }
 
 export async function fetchSheetRows(sheetName: string, options: { limit?: number } = {}): Promise<SheetRow[] | null> {
-  const url = await getGoogleScriptUrl();
+  const useProxy = isProdHost();
+  const url = useProxy ? '/api/list' : await getGoogleScriptUrl();
   if (!url) return null;
 
   let final = url;

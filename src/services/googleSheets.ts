@@ -237,7 +237,8 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
 }
 
 export async function fetchPromoCodes(): Promise<PromoCodeRecord[] | null> {
-  const url = await getGoogleScriptUrl();
+  const isProd = typeof window !== 'undefined' && !/localhost|127\\.0\\.0\\.1/.test(window.location.hostname);
+  const url = isProd ? '/api/list' : await getGoogleScriptUrl();
   if (!url) return null;
 
   let final = url;
@@ -374,20 +375,11 @@ export async function submitToGoogleSheets(
   formType: FormType,
   data: Record<string, string>
 ): Promise<SubmitResponse> {
-  const GOOGLE_SCRIPT_URL = await getGoogleScriptUrl();
-  
-  if (!GOOGLE_SCRIPT_URL) {
-    console.error('Google Script URL not configured. Data not sent.');
-    return {
-      success: false,
-      message:
-        'Google Script URL not configured. Set VITE_GOOGLE_SCRIPT_URL in .env (or configure env) and restart dev server.',
-    };
-  }
-
   const preparedData = formType === 'distribution' 
     ? prepareDistributionData(data)
     : preparePromoData(data);
+
+  const isProd = typeof window !== 'undefined' && !/localhost|127\\.0\\.0\\.1/.test(window.location.hostname);
 
   // Функция-обёртка для fetch с обработкой времени ожидания
   const fetchWithTimeout = (url: string, opts: RequestInit = {}, timeout = 10000) => {
@@ -412,7 +404,34 @@ export async function submitToGoogleSheets(
 
   while (attempt <= maxRetries) {
     try {
-      // Use GET with data param to avoid CORS preflight on Apps Script
+      if (isProd) {
+        const res = await fetchWithTimeout('/api/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(preparedData),
+        }, 12000);
+        const text = await res.text();
+        let json: any = null;
+        try {
+          json = text ? JSON.parse(text) : null;
+        } catch (parseErr) {
+          throw new Error(`Failed to parse response: ${text.substring(0, 200)}`);
+        }
+        if (json && typeof json.success === 'boolean') return json as SubmitResponse;
+        return { success: true, message: 'Данные успешно отправлены' };
+      }
+
+      const GOOGLE_SCRIPT_URL = await getGoogleScriptUrl();
+      if (!GOOGLE_SCRIPT_URL) {
+        console.error('Google Script URL not configured. Data not sent.');
+        return {
+          success: false,
+          message:
+            'Google Script URL not configured. Set VITE_GOOGLE_SCRIPT_URL in .env (or configure env) and restart dev server.',
+        };
+      }
+
+      // Dev: use GET with data param to avoid CORS preflight on Apps Script
       const url = new URL(GOOGLE_SCRIPT_URL);
       url.searchParams.set('data', JSON.stringify(preparedData));
       const res = await fetchWithTimeout(url.toString(), {
