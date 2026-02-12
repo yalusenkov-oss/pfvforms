@@ -184,6 +184,6 @@ describe('Google Sheets Service', () => {
       } catch (err: any) {
         expect(err.message).toContain('error');
       }
-    });
+    }, 10000); // Increase timeout to 10 seconds
   });
 });

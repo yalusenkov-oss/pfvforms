@@ -94,7 +94,7 @@ describe('API /submit endpoint', () => {
       }
     }
 
-    expect(cleanPayload.longField.length).toBe(maxFieldLength + 13); // 45000 + '[TRUNCATED]'
+    expect(cleanPayload.longField.length).toBe(maxFieldLength + 14); // 45000 + '...[TRUNCATED]' = 45014
     expect(cleanPayload.longField.endsWith('...[TRUNCATED]')).toBe(true);
   });
 

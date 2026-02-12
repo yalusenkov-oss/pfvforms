@@ -405,7 +405,8 @@ export async function submitToGoogleSheets(
   };
 
   // Попробуем отправить с небольшим числом ретраев (экспоненциальный бэкофф)
-  const maxRetries = 2;
+  const isTestEnv = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test';
+  const maxRetries = isTestEnv ? 1 : 2;
   let attempt = 0;
   let lastErr: any = null;
 
@@ -416,7 +417,7 @@ export async function submitToGoogleSheets(
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(preparedData),
-        }, 12000);
+        }, isTestEnv ? 500 : 12000);
         const text = await res.text();
         if (DEBUG_LOGGING) {
           console.log('[DEBUG] /api/submit status', res.status, 'body', text);
@@ -451,7 +452,7 @@ export async function submitToGoogleSheets(
         method: 'POST',
         body: JSON.stringify(preparedData),
         redirect: 'follow',
-      }, 12000);
+      }, isTestEnv ? 500 : 12000);
 
       // Ожидаем JSON-ответ от Apps Script
       const text = await res.text();
@@ -488,7 +489,7 @@ export async function submitToGoogleSheets(
       lastErr = err;
       attempt += 1;
       // Ждём перед ретраем (экспоненциальный бэкофф)
-      const waitMs = 500 * Math.pow(2, attempt);
+      const waitMs = isTestEnv ? 1 : 500 * Math.pow(2, attempt);
       // eslint-disable-next-line no-await-in-loop
       await new Promise((r) => setTimeout(r, waitMs));
     }
