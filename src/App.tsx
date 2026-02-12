@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Music, ChevronRight, ChevronLeft, Send, CheckCircle2, FileText, Shield, CreditCard, Disc3, Sparkles, AlertCircle, Megaphone, ArrowLeft, XCircle, Clock, ExternalLink, Home, Loader2 } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Send, CheckCircle2, FileText, Shield, CreditCard, Disc3, Sparkles, AlertCircle, Megaphone, ArrowLeft, XCircle, Clock, ExternalLink, Home, Loader2 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { StepOne, getTrackCount } from './components/StepOne';
 import { StepTwo } from './components/StepTwo';
@@ -7,8 +7,9 @@ import { StepThree } from './components/StepThree';
 import { StepFour } from './components/StepFour';
 import { StepPromo } from './components/StepPromo';
 import { submitToGoogleSheets } from './services/googleSheets';
+import SignPage from './pages/Sign';
 
-type AppMode = 'home' | 'distribution' | 'promo' | 'success' | 'fail' | 'result';
+type AppMode = 'home' | 'distribution' | 'promo' | 'success' | 'fail' | 'result' | 'sign';
 
 const DISTRIBUTION_STEPS = [
   { id: 1, label: 'Релиз', icon: Disc3 },
@@ -141,6 +142,7 @@ function getRouteFromHash(): AppMode {
   if (hash === 'result') return 'result';
   if (hash === 'distribution') return 'distribution';
   if (hash === 'promo') return 'promo';
+  if (hash.startsWith('sign')) return 'sign';
   return 'home';
 }
 
@@ -891,6 +893,11 @@ export function App() {
         <Footer />
       </div>
     );
+  }
+
+  // ═══ SIGN PAGE ═══
+  if (mode === 'sign') {
+    return <SignPage />;
   }
 
   // ═══ DISTRIBUTION PAGE ═══
