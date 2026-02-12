@@ -23,6 +23,7 @@ import {
   logout,
 } from './store';
 import { fetchSheetRows, updateSheetRow, createSignLink } from './services/googleSheetsAdmin';
+import { extractContractData, generateContractHTML } from './services/contractGenerator';
 
 type View =
   | { type: 'dashboard' }
@@ -309,12 +310,18 @@ export function App() {
     setRefreshKey(k => k + 1);
   };
 
-  const handleCreateSignLink = async (id: string) => {
+  const handleCreateSignLink = async (id: string, source: 'google' | 'internal' = 'google') => {
     const data = distributions.find(d => d.id === id);
     if (!data) return;
     try {
       if (!data.contractNumber) throw new Error('Нет номера договора');
-      await createSignLink(data.contractNumber, data.rowIndex);
+      const contractHtml = source === 'internal'
+        ? generateContractHTML(
+            { ...extractContractData(data), contractNumber: data.contractNumber },
+            { useSignatureMarkers: true }
+          )
+        : undefined;
+      await createSignLink(data.contractNumber, data.rowIndex, { contractHtml });
       loadRemote();
     } catch (e: any) {
       alert(e?.message || String(e));

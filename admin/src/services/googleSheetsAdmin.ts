@@ -240,7 +240,7 @@ export async function updateSheetRow(sheetName: string, rowIndex: number, update
   return postToScript({ action: 'update', sheet: sheetName, row: rowIndex, updates });
 }
 
-export async function createSignLink(contractNumber: string, rowIndex?: number) {
+export async function createSignLink(contractNumber: string, rowIndex?: number, options?: { contractHtml?: string }) {
   const signBaseUrl = await getSignBaseUrl();
   const signExpiresDays = await getSignExpiresDays();
   const res = await postToScript({
@@ -248,7 +248,8 @@ export async function createSignLink(contractNumber: string, rowIndex?: number) 
     contractNumber,
     row: rowIndex,
     signBaseUrl,
-    signExpiresDays
+    signExpiresDays,
+    contractHtml: options?.contractHtml
   });
   if (res && res.success === false) {
     throw new Error(res.error || 'Не удалось создать ссылку на подпись');

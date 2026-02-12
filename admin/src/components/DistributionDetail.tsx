@@ -8,7 +8,7 @@ interface DistributionDetailProps {
   onBack: () => void;
   onStatusChange: (id: string, status: DistributionData['status']) => void;
   onGenerateContract?: (id: string) => void;
-  onCreateSignLink?: (id: string) => void;
+  onCreateSignLink?: (id: string, source?: 'google' | 'internal') => void;
 }
 
 const ALL_STATUSES: DistributionData['status'][] = ['new', 'in_progress', 'paid', 'released', 'rejected'];
@@ -70,6 +70,7 @@ function formatPrice(p: number) {
 
 export function DistributionDetail({ data, onBack, onStatusChange, onGenerateContract, onCreateSignLink }: DistributionDetailProps) {
   const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [contractSource, setContractSource] = useState<'google' | 'internal'>('internal');
 
   const basePrice = PRICES[data.tariff]?.[data.releaseType] || 0;
   const karaokePerTrack = KARAOKE_PRICES[data.tariff] || 0;
@@ -186,8 +187,31 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
           <InfoRow label="Подписанный договор" value={data.signedUrl || ''} link />
           {onCreateSignLink && (
             <div className="py-2">
+              <div className="flex flex-wrap items-center gap-2 mb-2 text-xs text-dark-400">
+                <span>Источник договора:</span>
+                <div className="inline-flex rounded-lg border border-dark-600 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setContractSource('internal')}
+                    className={`px-2.5 py-1 ${contractSource === 'internal'
+                      ? 'bg-emerald-600/30 text-emerald-200'
+                      : 'bg-dark-800 text-dark-400 hover:text-white'}`}
+                  >
+                    Внутренний
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setContractSource('google')}
+                    className={`px-2.5 py-1 ${contractSource === 'google'
+                      ? 'bg-emerald-600/30 text-emerald-200'
+                      : 'bg-dark-800 text-dark-400 hover:text-white'}`}
+                  >
+                    Google Doc
+                  </button>
+                </div>
+              </div>
               <button
-                onClick={() => onCreateSignLink(data.id)}
+                onClick={() => onCreateSignLink(data.id, contractSource)}
                 className="text-xs px-3 py-1.5 rounded-lg bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600/30 transition-colors"
               >
                 Создать ссылку на подпись

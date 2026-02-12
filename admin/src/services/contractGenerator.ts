@@ -266,10 +266,19 @@ _________________                             _________________
 // ==========================================
 // HTML version of the contract for printing/PDF — exact template
 // ==========================================
-export function generateContractHTML(d: ContractData, options: { signatureUrl?: string } = {}): string {
+export function generateContractHTML(
+  d: ContractData,
+  options: { signatureUrl?: string; useSignatureMarkers?: boolean } = {}
+): string {
   const signatureUrl = options.signatureUrl || '';
-  const licenseeSignatureBlock = signatureUrl
-    ? `<div class="sig-image"><img src="${signatureUrl}" alt="signature" /></div>`
+  const useSignatureMarkers = options.useSignatureMarkers === true;
+  const licenseeSignatureBlock = useSignatureMarkers
+    ? `<div class="sig-line">{{signature_or}}</div>`
+    : signatureUrl
+      ? `<div class="sig-image"><img src="${signatureUrl}" alt="signature" /></div>`
+      : `<div class="sig-line"></div>`;
+  const licensorSignatureBlock = useSignatureMarkers
+    ? `<div class="sig-line">{{signature_client}}</div>`
     : `<div class="sig-line"></div>`;
   return `<!DOCTYPE html>
 <html lang="ru">
@@ -475,7 +484,7 @@ export function generateContractHTML(d: ContractData, options: { signatureUrl?: 
     <p>Банковские реквизиты / номер карты:<br>${d.bankDetails}</p>
     <p>Электронная почта:<br>${d.email}</p>
     <br><br>
-    <div class="sig-line"></div>
+    ${licensorSignatureBlock}
     <p>/ ${d.licensorName} /</p>
   </div>
   <div class="col">
@@ -552,7 +561,7 @@ export function generateContractHTML(d: ContractData, options: { signatureUrl?: 
 <div class="requisites" style="margin-top:40px;">
   <div class="col">
     <div class="col-title">ЛИЦЕНЗИАР:</div>
-    <div class="sig-line"></div>
+    ${licensorSignatureBlock}
     <p>/ ${d.licensorName} /</p>
   </div>
   <div class="col">
@@ -583,7 +592,7 @@ export function generateContractHTML(d: ContractData, options: { signatureUrl?: 
 <div class="requisites" style="margin-top:40px;">
   <div class="col">
     <div class="col-title">ЛИЦЕНЗИАР:</div>
-    <div class="sig-line"></div>
+    ${licensorSignatureBlock}
     <p>/ ${d.licensorName} /</p>
   </div>
   <div class="col">

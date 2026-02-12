@@ -732,30 +732,22 @@ function formatDate(date) {
 
 function insertSignature(body) {
   try {
-    const marker = '{{signature_or}}';
-    const range = body.findText(marker);
-    if (!range) {
-      Logger.log('Маркер {{signature_or}} не найден в документе');
-      return;
-    }
-
-    const el = range.getElement();
-    const text = el.asText();
-    const start = range.getStartOffset();
-    const end = range.getEndOffsetInclusive();
-
-    text.deleteText(start, end);
-
     const blob = DriveApp.getFileById(SIGNATURE_FILE_ID).getBlob();
-    const parent = el.getParent();
-
-    if (parent && parent.insertInlineImage) {
-      const img = parent.insertInlineImage(parent.getChildIndex(el) + 1, blob);
-      img.setWidth(200);
-      Logger.log('Подпись успешно вставлена');
-    } else {
-      Logger.log('Не удалось вставить подпись: родительский элемент не поддерживает изображения');
-    }
+    const markers = [
+      '{{signature_or}}',
+      '{{signature_or_1}}',
+      '{{signature_or_2}}',
+      '{{signature_or_3}}',
+      '{{signature_licensee}}',
+      '{{signature_licensor}}',
+      '\\\\{\\\\{\\\\s*signature_or\\\\s*\\\\}\\\\}',
+      '\\\\{\\\\{\\\\s*signature_licensee\\\\s*\\\\}\\\\}'
+    ];
+    let ok = false;
+    markers.forEach((m) => {
+      if (insertSignatureAtMarker(body, m, blob, 120)) ok = true;
+    });
+    if (!ok) Logger.log('Маркер подписи лицензиата не найден в документе');
   } catch (error) {
     Logger.log('Ошибка при вставке подписи: ' + error.toString());
   }
@@ -1638,22 +1630,27 @@ function findRowByContractNumber(sheet, headers, contractNumber) {
 }
 
 function insertSignatureAtMarker(body, marker, blob, widthPx) {
-  const range = body.findText(marker);
-  if (!range) return false;
+  let range = body.findText(marker);
+  let inserted = 0;
 
-  const el = range.getElement();
-  const text = el.asText();
-  const start = range.getStartOffset();
-  const end = range.getEndOffsetInclusive();
-  text.deleteText(start, end);
+  while (range) {
+    const el = range.getElement();
+    const text = el.asText();
+    const start = range.getStartOffset();
+    const end = range.getEndOffsetInclusive();
+    text.deleteText(start, end);
 
-  const parent = el.getParent();
-  if (parent && parent.insertInlineImage) {
-    const img = parent.insertInlineImage(parent.getChildIndex(el) + 1, blob);
-    if (widthPx) img.setWidth(widthPx);
-    return true;
+    const parent = el.getParent();
+    if (parent && parent.insertInlineImage) {
+      const img = parent.insertInlineImage(parent.getChildIndex(el) + 1, blob);
+      if (widthPx) img.setWidth(widthPx);
+      inserted++;
+    }
+
+    range = body.findText(marker, range);
   }
-  return false;
+
+  return inserted > 0;
 }
 
 function dataUrlToBlob(dataUrl) {
@@ -1674,6 +1671,21 @@ function buildDocUrls(docId) {
     previewUrl: `https://docs.google.com/document/d/${docId}/preview`,
     pdfUrl: `https://docs.google.com/document/d/${docId}/export?format=pdf`
   };
+}
+
+function createDocFromHtml(html, fileName) {
+  if (!html) throw new Error('Empty contractHtml');
+  if (typeof Drive === 'undefined' || !Drive.Files) {
+    throw new Error('Drive API not enabled. Enable Advanced Drive Service.');
+  }
+  const blob = Utilities.newBlob(String(html), MimeType.HTML, `${fileName}.html`);
+  const file = Drive.Files.insert(
+    { title: fileName, mimeType: MimeType.GOOGLE_DOCS },
+    blob,
+    { convert: true }
+  );
+  if (!file || !file.id) throw new Error('Failed to create doc from HTML');
+  return DriveApp.getFileById(file.id);
 }
 
 function createSignLink(data) {
@@ -1748,21 +1760,36 @@ function createSignLink(data) {
   };
 
   const templateFile = DriveApp.getFileById(TEMPLATE_ID);
-  if (!templateFile) return { success: false, error: 'Template not found' };
-
   const licensorName = replacements['{{licensor_name}}'] || 'Без имени';
   const fileName = `Договор №${contractNumber} - ${licensorName}`;
-  const docCopy = templateFile.makeCopy(fileName);
-  Utilities.sleep(1000);
+  const contractHtml = data.contractHtml ? String(data.contractHtml) : '';
+  let docFile = null;
+  let needsSignature = false;
+  if (contractHtml) {
+    docFile = createDocFromHtml(contractHtml, fileName);
+    needsSignature = true;
+  } else {
+    if (!templateFile) return { success: false, error: 'Template not found' };
+    const docCopy = templateFile.makeCopy(fileName);
+    Utilities.sleep(1000);
+    docFile = DriveApp.getFileById(docCopy.getId());
 
-  const doc = DocumentApp.openById(docCopy.getId());
-  const body = doc.getBody();
-  for (let marker in replacements) {
-    body.replaceText(marker, replacements[marker]);
+    const doc = DocumentApp.openById(docCopy.getId());
+    const body = doc.getBody();
+    for (let marker in replacements) {
+      body.replaceText(marker, replacements[marker]);
+    }
+    replaceInTables(body, replacements);
+    insertSignature(body); // подпись правообладателя
+    doc.saveAndClose();
   }
-  replaceInTables(body, replacements);
-  insertSignature(body); // подпись правообладателя
-  doc.saveAndClose();
+
+  if (needsSignature) {
+    const doc = DocumentApp.openById(docFile.getId());
+    const body = doc.getBody();
+    insertSignature(body); // подпись правообладателя (для HTML-версии)
+    doc.saveAndClose();
+  }
 
   const signBaseUrl = String(data.signBaseUrl || '').replace(/\/$/, '');
   if (!signBaseUrl) return { success: false, error: 'Missing signBaseUrl' };
@@ -1778,11 +1805,11 @@ function createSignLink(data) {
   sheet.getRange(rowIndex, signCols.signToken).setValue(token);
   sheet.getRange(rowIndex, signCols.signExpiresAt).setValue(expiresAt.toISOString());
   sheet.getRange(rowIndex, signCols.signLink).setValue(signUrl);
-  sheet.getRange(rowIndex, signCols.signDocId).setValue(docCopy.getId());
+  sheet.getRange(rowIndex, signCols.signDocId).setValue(docFile.getId());
   sheet.getRange(rowIndex, signCols.signedUrl).setValue('');
   sheet.getRange(rowIndex, signCols.signedAt).setValue('');
 
-  const urls = buildDocUrls(docCopy.getId());
+  const urls = buildDocUrls(docFile.getId());
   return {
     success: true,
     signUrl,
@@ -1860,7 +1887,17 @@ function submitSignature(data) {
     const body = doc.getBody();
     const blob = dataUrlToBlob(data.signature);
 
-    const ok = insertSignatureAtMarker(body, '{{signature_client}}', blob, 200);
+    const clientMarkers = [
+      '{{signature_client}}',
+      '{{signature_client_1}}',
+      '{{signature_client_2}}',
+      '{{signature_client_3}}',
+      '\\\\{\\\\{\\\\s*signature_client\\\\s*\\\\}\\\\}'
+    ];
+    let ok = false;
+    clientMarkers.forEach((m) => {
+      if (insertSignatureAtMarker(body, m, blob, 120)) ok = true;
+    });
     if (!ok) return { success: false, error: 'Signature marker not found' };
 
     doc.saveAndClose();
