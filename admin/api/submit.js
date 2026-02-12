@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 
-const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz7FmVZm6C4d8QecFslgeSRCCmi4zSi-H8YuA1dIEVE6Nj4KZllOsbA8JSUFf03epdfvQ/exec';
+const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxV8xHP0O09Q7KqMWmsApHOiSw9oNMDb6JKonoVnOBwbL95-v9duxnNZLca55yQJQk7OQ/exec';
 
 function getScriptUrl() {
   if (process.env.GOOGLE_SCRIPT_URL) return process.env.GOOGLE_SCRIPT_URL;
