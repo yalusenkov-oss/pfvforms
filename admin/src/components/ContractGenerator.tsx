@@ -20,7 +20,7 @@ import {
   generateContractHTML,
   ContractData,
 } from '../services/contractGenerator';
-import { createSignLink } from '../services/googleSheetsAdmin';
+import { createSignLink, updateSheetRow } from '../services/googleSheetsAdmin';
 import { cn } from '../utils/cn';
 
 interface ContractGeneratorProps {
@@ -166,6 +166,16 @@ export function ContractGenerator({ data, onBack, onUpdateContractNumber }: Cont
     setSignCreating(true);
     setSignError('');
     try {
+      if (data.rowIndex) {
+        try {
+          await updateSheetRow('distribution', data.rowIndex, {
+            contract_html: signableContractHTML,
+            sign_source: 'internal',
+          });
+        } catch {
+          // ignore and try createSignLink with payload below
+        }
+      }
       const res = await createSignLink(contractNumber, data.rowIndex, {
         contractHtml: signableContractHTML,
         signSource: 'internal',

@@ -1658,9 +1658,14 @@ function createSignLink(data) {
 
   const licensorName = replacements['{{licensor_name}}'] || 'Без имени';
   const fileName = `Договор №${contractNumber} - ${licensorName}`;
-  const contractHtml = data.contractHtml ? String(data.contractHtml) : '';
+  let contractHtml = data.contractHtml ? String(data.contractHtml) : '';
   const signCols = getSignColumns(sheet);
   const extraCols = getSignExtraColumns(sheet);
+
+  if (!contractHtml) {
+    const existingHtml = row[extraCols.contractHtml - 1];
+    if (existingHtml) contractHtml = String(existingHtml);
+  }
 
   if (!contractHtml) {
     return { success: false, error: 'Missing contractHtml for internal signing' };
