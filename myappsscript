@@ -1728,11 +1728,7 @@ function getSignData(data) {
     }
 
   const contractHtml = row[contractHtmlIdx] || '';
-  const signSource = row[signSourceIdx] || '';
   const signedPdfId = row[signedPdfIdIdx] || '';
-  if (String(signSource).toLowerCase() !== 'internal') {
-    return { success: false, error: 'Google Docs disabled' };
-  }
   if (!contractHtml) return { success: false, error: 'Internal contract HTML missing' };
 
   return {
