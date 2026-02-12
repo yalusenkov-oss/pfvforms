@@ -86,7 +86,9 @@ export default async function handler(req, res) {
         contractNumber: payload.contractNumber,
         row: payload.row,
         signBaseUrl,
-        signExpiresDays
+        signExpiresDays,
+        contractHtml: payload.contractHtml,
+        signSource: payload.signSource || 'internal'
       };
     } else if (action === 'get') {
       scriptPayload = { action: 'sign_get', token: payload.token };

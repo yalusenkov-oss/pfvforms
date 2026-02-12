@@ -172,6 +172,18 @@ export function ContractGenerator({ data, onBack, onUpdateContractNumber }: Cont
       });
       if (res?.signUrl) {
         setSignLink(res.signUrl);
+        try {
+          const token = new URL(res.signUrl).searchParams.get('token');
+          if (token) {
+            const check = await fetch(`/api/sign?action=get&token=${encodeURIComponent(token)}`);
+            const checkData = await check.json();
+            if (!checkData?.success || !checkData?.contractHtml) {
+              setSignError(checkData?.error || 'Документ не найден в сервисе подписи');
+            }
+          }
+        } catch {
+          // ignore verification errors
+        }
       } else {
         setSignError('Ссылка на подпись не получена');
       }

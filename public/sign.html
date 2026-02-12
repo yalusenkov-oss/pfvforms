@@ -278,21 +278,17 @@
         const data = await res.json();
         if (!data.success) throw new Error(data.error || 'Не удалось загрузить документ');
 
-        if (data.contractHtml) {
-          preview.removeAttribute('src');
-          preview.srcdoc = data.contractHtml;
-          const blob = new Blob([data.contractHtml], { type: 'text/html' });
-          const blobUrl = URL.createObjectURL(blob);
-          docLink.href = blobUrl;
-          docLink.textContent = 'Открыть HTML';
-          pdfLink.href = data.signedUrl || data.pdfUrl || '#';
-        } else {
-          docLink.textContent = 'Открыть';
-          docLink.href = data.docUrl || '#';
-          pdfLink.href = data.pdfUrl || '#';
-          preview.src = data.previewUrl || '';
-          preview.removeAttribute('srcdoc');
+        if (!data.contractHtml) {
+          throw new Error('Документ не найден. Попросите администратора пересоздать ссылку.');
         }
+
+        preview.removeAttribute('src');
+        preview.srcdoc = data.contractHtml;
+        const blob = new Blob([data.contractHtml], { type: 'text/html' });
+        const blobUrl = URL.createObjectURL(blob);
+        docLink.href = blobUrl;
+        docLink.textContent = 'Открыть HTML';
+        pdfLink.href = data.signedUrl || '#';
 
         statusEl.textContent = data.status === 'signed' ? 'Договор уже подписан.' : 'Документ готов к подписи.';
         statusEl.classList.toggle('success', data.status !== 'signed');
@@ -305,7 +301,8 @@
           pdfLink.href = data.signedUrl;
         }
       } catch (e) {
-        statusEl.textContent = e.message || 'Ошибка загрузки.';
+        const msg = e && e.message ? e.message : 'Ошибка загрузки.';
+        statusEl.textContent = msg;
         statusEl.classList.add('error');
       }
     }
