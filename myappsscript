@@ -1549,33 +1549,51 @@ function createPdfFromHtml(html, fileName) {
   }
 }
 
+function buildDriveDownloadUrl(fileId) {
+  return `https://drive.google.com/uc?export=download&id=${fileId}`;
+}
+
 function storeContractHtml(html, fileName) {
   const text = String(html || '');
   if (!text) return { mode: 'inline', value: '' };
-  // Google Sheets cell limit is 50,000 chars, keep safe margin
-  if (text.length <= 48000) {
-    return { mode: 'inline', value: text };
-  }
   const safeName = fileName ? `${fileName} (html)` : 'Contract HTML';
   const blob = Utilities.newBlob(text, MimeType.HTML, `${safeName}.html`);
   const file = DriveApp.createFile(blob);
-  return { mode: 'drive', value: `drive:${file.getId()}` };
+  // Store only a download link in the sheet, never full HTML
+  return { mode: 'drive', value: buildDriveDownloadUrl(file.getId()) };
 }
 
 function resolveContractHtml(value) {
   const text = String(value || '');
   if (!text) return '';
+  let fileId = '';
   if (text.indexOf('drive:') === 0) {
-    const fileId = text.slice('drive:'.length).trim();
-    if (!fileId) return '';
-    try {
-      return DriveApp.getFileById(fileId).getBlob().getDataAsString();
-    } catch (e) {
-      Logger.log('resolveContractHtml error: ' + e);
-      return '';
+    fileId = text.slice('drive:'.length).trim();
+  } else {
+    // Match common Drive URL formats
+    let m = text.match(/drive\.google\.com\/uc\?export=download&id=([^&]+)/i);
+    if (m && m[1]) fileId = m[1];
+    if (!fileId) {
+      m = text.match(/drive\.google\.com\/file\/d\/([^/]+)/i);
+      if (m && m[1]) fileId = m[1];
+    }
+    if (!fileId) {
+      m = text.match(/drive\.google\.com\/open\?id=([^&]+)/i);
+      if (m && m[1]) fileId = m[1];
     }
   }
-  return text;
+
+  if (!fileId) {
+    // Not a Drive link, treat as inline HTML (legacy)
+    return text;
+  }
+
+  try {
+    return DriveApp.getFileById(fileId).getBlob().getDataAsString();
+  } catch (e) {
+    Logger.log('resolveContractHtml error: ' + e);
+    return '';
+  }
 }
 
 function embedOwnerSignatureInHtml(html) {
