@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Подписание договора</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Playfair+Display:wght@600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap');
 
     :root {
       --bg: #ffffff;
@@ -14,173 +14,372 @@
       --accent: #7c3aed;
       --accent-2: #6d28d9;
       --text: #111827;
+      --text-secondary: #6b7280;
+      --text-tertiary: #9ca3af;
       --muted: #6b7280;
       --danger: #ef4444;
-      --border: rgba(124, 58, 237, 0.18);
+      --success: #10b981;
+      --border: rgba(124, 58, 237, 0.12);
+      --shadow: 0 4px 20px rgba(124, 58, 237, 0.08);
     }
 
     * { box-sizing: border-box; }
+    
+    html {
+      scroll-behavior: smooth;
+    }
+    
     body {
       margin: 0;
-      font-family: 'Manrope', sans-serif;
+      font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       color: var(--text);
-      background: linear-gradient(180deg, #f5f3ff 0%, #ffffff 45%, rgba(245, 243, 255, 0.4) 100%);
+      background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 50%, rgba(245, 243, 255, 0.3) 100%);
       min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
     .wrap {
-      max-width: 1100px;
+      max-width: 1200px;
       margin: 0 auto;
-      padding: 32px 20px 60px;
+      padding: 20px;
+    }
+
+    header {
+      background: #ffffff;
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 20px;
+      margin: -20px -20px 40px -20px;
+      box-shadow: 0 2px 12px rgba(124, 58, 237, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 18px;
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+    }
+
+    .header-title {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .header-title h2 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 0.3px;
+    }
+
+    .header-title p {
+      margin: 0;
+      font-size: 11px;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-home {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 10px;
+      background: rgba(124, 58, 237, 0.08);
+      color: var(--accent);
+      border: 1px solid var(--border);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .btn-home:hover {
+      background: rgba(124, 58, 237, 0.12);
+      border-color: rgba(124, 58, 237, 0.25);
+      transform: translateY(-1px);
     }
 
     .hero {
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      margin-bottom: 24px;
+      gap: 8px;
+      margin-bottom: 32px;
     }
 
     .title {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(28px, 4vw, 42px);
-      letter-spacing: 0.5px;
+      font-size: clamp(28px, 5vw, 42px);
+      letter-spacing: -0.5px;
       margin: 0;
+      font-weight: 700;
+      color: var(--text);
     }
 
     .subtitle {
-      color: var(--muted);
+      color: var(--text-secondary);
       margin: 0;
+      font-size: 15px;
+      line-height: 1.6;
     }
 
     .grid {
       display: grid;
-      gap: 18px;
-      grid-template-columns: 1.1fr 0.9fr;
+      gap: 24px;
+      grid-template-columns: 1fr 1fr;
+      margin-bottom: 40px;
     }
 
-    @media (max-width: 900px) {
+    @media (max-width: 1000px) {
       .grid { grid-template-columns: 1fr; }
     }
 
     .card {
-      background: var(--panel);
-      border: 1px solid rgba(124, 58, 237, 0.12);
-      border-radius: 18px;
-      padding: 18px;
-      box-shadow: 0 8px 30px rgba(17, 24, 39, 0.08);
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card:hover {
+      box-shadow: 0 8px 32px rgba(124, 58, 237, 0.12);
+      border-color: rgba(124, 58, 237, 0.2);
     }
 
     .card h3 {
-      margin: 0 0 12px;
-      font-size: 16px;
+      margin: 0 0 8px;
+      font-size: 18px;
+      font-weight: 700;
       color: var(--accent);
-      letter-spacing: 0.4px;
+      letter-spacing: 0.3px;
+    }
+
+    .card > .status:first-of-type {
+      margin-top: 4px;
+      margin-bottom: 20px;
     }
 
     .doc-actions {
       display: flex;
-      gap: 10px;
+      gap: 12px;
       flex-wrap: wrap;
-      margin-bottom: 12px;
+      margin-bottom: 20px;
     }
 
     .btn {
-      border: 1px solid rgba(124, 58, 237, 0.2);
+      border: 1px solid var(--border);
       color: var(--accent);
       background: rgba(124, 58, 237, 0.06);
-      padding: 8px 14px;
-      border-radius: 10px;
+      padding: 10px 16px;
+      border-radius: 12px;
       text-decoration: none;
       font-size: 13px;
+      font-weight: 600;
       transition: all 0.2s ease;
+      cursor: pointer;
+      font-family: 'Manrope', sans-serif;
     }
-    .btn:hover { border-color: rgba(124, 58, 237, 0.4); background: rgba(124, 58, 237, 0.12); }
+
+    .btn:hover {
+      border-color: rgba(124, 58, 237, 0.3);
+      background: rgba(124, 58, 237, 0.12);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.15);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
 
     .btn-primary {
-      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
       border-color: #7c3aed;
       color: #ffffff;
-      font-weight: 600;
+      font-weight: 700;
+      width: 100%;
+      padding: 14px 20px;
+      font-size: 14px;
+      box-shadow: 0 6px 20px rgba(124, 58, 237, 0.3);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%);
+      box-shadow: 0 8px 28px rgba(124, 58, 237, 0.4);
+      border-color: #6d28d9;
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
     }
 
     .status {
-      font-size: 12px;
-      color: var(--muted);
-      margin-bottom: 10px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 0;
+      line-height: 1.5;
     }
 
-    .status.error { color: var(--danger); }
-    .status.success { color: var(--accent); }
+    .status.error {
+      color: var(--danger);
+      background: rgba(239, 68, 68, 0.08);
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      margin-bottom: 16px;
+    }
+
+    .status.success {
+      color: var(--success);
+      background: rgba(16, 185, 129, 0.08);
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      margin-bottom: 16px;
+      font-weight: 600;
+    }
 
     .preview {
       width: 100%;
-      aspect-ratio: 4/5;
-      border-radius: 12px;
-      border: 1px solid rgba(124, 58, 237, 0.16);
+      aspect-ratio: 1/1.4;
+      border-radius: 14px;
+      border: 1px solid var(--border);
       background: #ffffff;
+      flex: 1;
+      min-height: 400px;
     }
 
     .signature-wrap {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 16px;
+      flex: 1;
     }
 
     canvas {
       width: 100%;
-      height: 160px;
+      height: 200px;
       background: #ffffff;
-      border-radius: 12px;
-      border: 1px dashed rgba(124, 58, 237, 0.35);
+      border-radius: 14px;
+      border: 2px dashed rgba(124, 58, 237, 0.25);
       cursor: crosshair;
+      transition: all 0.2s ease;
+    }
+
+    canvas:focus {
+      outline: none;
+      border-color: rgba(124, 58, 237, 0.5);
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+    }
+
+    canvas:hover {
+      border-color: rgba(124, 58, 237, 0.35);
+      background: rgba(124, 58, 237, 0.02);
     }
 
     .hint {
-      color: var(--muted);
+      color: var(--text-tertiary);
       font-size: 12px;
+      line-height: 1.5;
     }
 
     .footer-actions {
       display: flex;
-      gap: 10px;
+      gap: 12px;
       flex-wrap: wrap;
     }
 
     .pill {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 6px 10px;
+      gap: 8px;
+      padding: 8px 16px;
       border-radius: 999px;
       font-size: 12px;
-      background: rgba(124, 58, 237, 0.08);
-      color: var(--accent);
-      border: 1px solid rgba(124, 58, 237, 0.3);
+      font-weight: 600;
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--success);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding-top: 40px;
+      margin-top: 40px;
+      text-align: center;
+    }
+
+    footer p {
+      color: var(--text-tertiary);
+      font-size: 12px;
+      margin: 0;
     }
   </style>
 </head>
 <body>
+  <header>
+    <div class="header-left">
+      <div class="header-logo">🎵</div>
+      <div class="header-title">
+        <h2>PFVMUSIC</h2>
+        <p>Издательство</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <a href="/" class="btn-home">🏠 На главную</a>
+    </div>
+  </header>
+
   <div class="wrap">
-    <header class="hero">
+    <section class="hero">
       <h1 class="title">Подписание договора</h1>
       <p class="subtitle">Проверьте документ и оставьте подпись. Подписанный договор будет доступен для скачивания сразу после подтверждения.</p>
-      <span id="pill" class="pill" style="display:none;">Готово к подписи</span>
-    </header>
+      <span id="pill" class="pill" style="display:none;">✓ Готово к подписи</span>
+    </section>
 
     <div class="grid">
       <section class="card">
-        <h3>Документ</h3>
+        <h3>📄 Документ</h3>
         <div class="status" id="status">Загрузка документа…</div>
         <div class="doc-actions">
-          <a id="docLink" class="btn" href="#" target="_blank" rel="noopener">Открыть</a>
+          <a id="docLink" class="btn" href="#" target="_blank" rel="noopener">Открыть HTML</a>
           <a id="pdfLink" class="btn" href="#" target="_blank" rel="noopener">Скачать PDF</a>
         </div>
         <iframe id="preview" class="preview" title="preview" src=""></iframe>
       </section>
 
       <section class="card">
-        <h3>Подпись</h3>
+        <h3>✍️ Подпись</h3>
         <div class="signature-wrap">
           <div class="status" id="signStatus">Подпишите в поле ниже.</div>
           <canvas id="signature"></canvas>
@@ -192,6 +391,10 @@
         </div>
       </section>
     </div>
+
+    <footer>
+      <p>© 2026 PFVMUSIC. Все права защищены.</p>
+    </footer>
   </div>
 
   <script>
