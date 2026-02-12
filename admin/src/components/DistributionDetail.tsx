@@ -173,6 +173,7 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
           <InfoRow label="Кем выдан" value={data.passportIssuedBy} />
           <InfoRow label="Дата выдачи" value={formatDate(data.passportIssuedDate)} />
           <InfoRow label="Банковские реквизиты" value={data.bankDetails} mono />
+          <InfoRow label="Чек оплаты" value={data.paymentProofUrl || ''} link />
           <InfoRow label="Email" value={data.email} />
           <InfoRow label="Контакты" value={data.contacts} />
           <InfoRow label="Профили артиста" value={data.artistProfileLinks} link />

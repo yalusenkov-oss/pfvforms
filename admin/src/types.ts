@@ -51,6 +51,7 @@ export interface DistributionData {
   id: string;
   totalPrice: number;
   contractNumber?: string;
+  paymentProofUrl?: string;
   rowIndex?: number;
   signStatus?: string;
   signLink?: string;

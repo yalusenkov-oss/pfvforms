@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { ChangeEvent } from 'react';
 import { Input, StepCard, InfoBox, Divider } from './UI';
 import { CreditCard, MessageCircle, Send, ExternalLink, Building2, Smartphone, Heart, Calculator, ReceiptText, MessageSquare, UserCheck, Megaphone, TicketPercent, CheckCircle2, XCircle } from 'lucide-react';
 import { calcTotal, getTrackCount } from './StepOne';
@@ -27,6 +28,8 @@ export function StepFour({ data, onChange, onGoToPromo }: StepFourProps) {
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoMessage, setPromoMessage] = useState<string>('');
   const [promoError, setPromoError] = useState<string>('');
+  const [paymentProofName, setPaymentProofName] = useState<string>('');
+  const [paymentProofError, setPaymentProofError] = useState<string>('');
 
   const tariffMap: Record<string, string> = {
     'Базовый': 'basic',
@@ -137,6 +140,44 @@ export function StepFour({ data, onChange, onGoToPromo }: StepFourProps) {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tariff, releaseType, base, karaoke, promoCodes]);
+
+  const handlePaymentProofChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setPaymentProofError('');
+    const file = e.target.files?.[0];
+    if (!file) {
+      setPaymentProofName('');
+      onChange('paymentProof', '');
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      setPaymentProofName('');
+      onChange('paymentProof', '');
+      setPaymentProofError('Загрузите изображение (JPG/PNG).');
+      return;
+    }
+    const maxSizeMb = 8;
+    if (file.size > maxSizeMb * 1024 * 1024) {
+      setPaymentProofName('');
+      onChange('paymentProof', '');
+      setPaymentProofError(`Файл слишком большой. Максимум ${maxSizeMb} МБ.`);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : '';
+      if (!result) {
+        setPaymentProofError('Не удалось прочитать файл. Попробуйте ещё раз.');
+        return;
+      }
+      setPaymentProofName(file.name);
+      onChange('paymentProof', result);
+    };
+    reader.onerror = () => {
+      setPaymentProofError('Ошибка чтения файла.');
+    };
+    reader.readAsDataURL(file);
+  };
 
   return (
     <div className="space-y-6">
@@ -384,6 +425,42 @@ export function StepFour({ data, onChange, onGoToPromo }: StepFourProps) {
               <p className="text-3xl font-extrabold bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">
                 {totalAfterDiscount.toLocaleString('ru-RU')} ₽
               </p>
+            </div>
+
+            <div className="pt-4 mt-2 border-t border-purple-200/60">
+              <p className="text-sm font-semibold text-gray-800 mb-2">
+                Загрузите фото оплаты
+              </p>
+              <label className="flex flex-col gap-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePaymentProofChange}
+                  className="block w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200"
+                />
+                <span className="text-xs text-gray-500">
+                  Фото чека или подтверждения оплаты. Без файла отправка формы недоступна.
+                </span>
+              </label>
+              {paymentProofName && (
+                <div className="mt-2 text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                  Загружен файл: <span className="font-semibold">{paymentProofName}</span>
+                </div>
+              )}
+              {paymentProofError && (
+                <div className="mt-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                  {paymentProofError}
+                </div>
+              )}
+              {data.paymentProof && (
+                <div className="mt-3">
+                  <img
+                    src={data.paymentProof}
+                    alt="Подтверждение оплаты"
+                    className="max-h-40 rounded-lg border border-purple-200/70 bg-white p-2"
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>

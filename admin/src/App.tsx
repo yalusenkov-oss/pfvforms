@@ -184,6 +184,7 @@ export function App() {
         status: (r.status as any) || r.contractStatus || r.contract_status || 'new',
         totalPrice: normalizeNumber(r.totalPrice ?? r.total ?? r.total_price),
         contractNumber: r.contractNumber || r.contract_number || '',
+        paymentProofUrl: r.paymentProofUrl || r.payment_proof_url || '',
         signStatus: r.signStatus || r.sign_status || '',
         signLink: r.signLink || r.sign_link || '',
         signExpiresAt: r.signExpiresAt || r.sign_expires_at || '',

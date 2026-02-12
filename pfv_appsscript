@@ -17,6 +17,8 @@ const TEMPLATE_ID = '1MD0F4Ie0WQMCbZxHuwa0v23p836TFNV36MSEVbhBY7g';
 const SIGNATURE_FILE_ID = '19Ot12RgTizoTHUitr6Sl7SiiEZ0ZAoXn';
 // ID папки для HTML договоров (оставьте пустым для авто-создания)
 const CONTRACTS_HTML_FOLDER_ID = '';
+// ID папки для чеков оплаты (оставьте пустым для авто-создания)
+const PAYMENT_PROOFS_FOLDER_ID = '';
 
 // Настройки Telegram уведомлений
 const TELEGRAM_CONFIG = {
@@ -80,7 +82,7 @@ function setupDistributionSheet(sheet) {
     'release_date', 'cover_link', 'tiktok_excerpt', 'tiktok_full', 'yandex_presave',
     'karaoke', 'tracks_json', 'licensor_name', 'passport_series_number', 'passport_issued_by',
     'passport_issue_date', 'bank_details', 'email', 'contact', 'artist_profile_links',
-    'base_price', 'karaoke_price', 'total_price', 'contract_number', 'percentage',
+    'base_price', 'karaoke_price', 'total_price', 'payment_proof_url', 'contract_number', 'percentage',
     'contract_status', 'music_author', 'lyrics_author', 'lyrics_texts', 'document_status', 'telegram_status',
     'sign_status', 'sign_token', 'sign_expires_at', 'sign_link', 'sign_doc_id', 'signed_url', 'signed_at',
     'contract_html', 'sign_source', 'signed_pdf_id'
@@ -325,6 +327,15 @@ function saveDistribution(data) {
 
     const contractNumber = generateContractNumber();
     const percentage = getTariffPercentage(data.tariff);
+    let paymentProofUrl = '';
+    if (data.paymentProof) {
+      try {
+        const proofFile = storePaymentProof(data.paymentProof, contractNumber, data.fullName || '');
+        paymentProofUrl = proofFile ? proofFile.getUrl() : '';
+      } catch (e) {
+        Logger.log('saveDistribution paymentProof error: ' + e);
+      }
+    }
 
     const tracksArray = normalizeTracksInput(data.tracks || data.tracks_json || []);
     const authorsFromTracks = extractAuthorsFromTracks(tracksArray);
@@ -364,6 +375,7 @@ function saveDistribution(data) {
       Number(data.basePrice || 0),
       Number(data.karaokePrice || 0),
       Number(data.totalPrice || 0),
+      paymentProofUrl,
       contractNumber,
       percentage + '%',
       '',
@@ -1119,6 +1131,7 @@ function mapDistributionRow(headers, row) {
     basePrice: normalizeNumber(raw.base_price),
     karaokePrice: normalizeNumber(raw.karaoke_price),
     totalPrice: normalizeNumber(raw.total_price),
+    paymentProofUrl: raw.payment_proof_url || '',
     contractNumber: raw.contract_number || '',
     percentage: raw.percentage || '',
     contractStatus: raw.contract_status || '',
@@ -1623,6 +1636,30 @@ function getOrCreateContractsHtmlFolder() {
   const existing = DriveApp.getFoldersByName(folderName);
   if (existing.hasNext()) return existing.next();
   return DriveApp.createFolder(folderName);
+}
+
+function getOrCreatePaymentProofsFolder() {
+  if (PAYMENT_PROOFS_FOLDER_ID) {
+    try {
+      return DriveApp.getFolderById(PAYMENT_PROOFS_FOLDER_ID);
+    } catch (e) {
+      Logger.log('getOrCreatePaymentProofsFolder: invalid folder id: ' + e);
+    }
+  }
+  const folderName = 'PFV Payment Proofs';
+  const existing = DriveApp.getFoldersByName(folderName);
+  if (existing.hasNext()) return existing.next();
+  return DriveApp.createFolder(folderName);
+}
+
+function storePaymentProof(dataUrl, contractNumber, licensorName) {
+  const blob = dataUrlToBlob(dataUrl);
+  const safeName = `Оплата ${contractNumber || 'PFV'} - ${licensorName || 'Клиент'}`.trim();
+  blob.setName(`${safeName}`);
+  const folder = getOrCreatePaymentProofsFolder();
+  const file = folder.createFile(blob);
+  makeFilePublic(file);
+  return file;
 }
 
 function storeContractHtml(html, fileName, existingValue) {

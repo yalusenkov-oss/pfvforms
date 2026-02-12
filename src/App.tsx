@@ -98,6 +98,7 @@ function validateStep4(data: Record<string, string>): ValidationResult {
   const errors: string[] = [];
   
   if (!data.contactInfo?.trim()) errors.push('Укажите контакты для связи');
+  if (!data.paymentProof?.trim()) errors.push('Загрузите фото оплаты');
   
   return { valid: errors.length === 0, errors };
 }
@@ -303,6 +304,8 @@ export function App() {
     setPromoData({});
     setPromoErrors([]);
   };
+
+  const canSubmitDistribution = !!formData.paymentProof;
 
   // ═══ HOME PAGE ═══
   if (mode === 'home') {
@@ -1081,7 +1084,7 @@ export function App() {
             <button
               type="button"
               onClick={handleDistributionSubmit}
-              disabled={submitting}
+              disabled={submitting || !canSubmitDistribution}
               className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-200/50 hover:shadow-purple-300/50 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               {submitting ? (
