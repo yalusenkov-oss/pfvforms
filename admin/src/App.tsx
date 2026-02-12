@@ -310,20 +310,18 @@ export function App() {
     setRefreshKey(k => k + 1);
   };
 
-  const handleCreateSignLink = async (id: string, source: 'google' | 'internal' = 'google') => {
+  const handleCreateSignLink = async (id: string) => {
     const data = distributions.find(d => d.id === id);
     if (!data) return;
     try {
       if (!data.contractNumber) throw new Error('Нет номера договора');
-      const contractHtml = source === 'internal'
-        ? generateContractHTML(
-            { ...extractContractData(data), contractNumber: data.contractNumber },
-            { useSignatureMarkers: true }
-          )
-        : undefined;
+      const contractHtml = generateContractHTML(
+        { ...extractContractData(data), contractNumber: data.contractNumber },
+        { useSignatureMarkers: true }
+      );
       await createSignLink(data.contractNumber, data.rowIndex, {
         contractHtml,
-        signSource: source
+        signSource: 'internal'
       });
       loadRemote();
     } catch (e: any) {
