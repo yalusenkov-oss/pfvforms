@@ -1549,6 +1549,35 @@ function createPdfFromHtml(html, fileName) {
   }
 }
 
+function storeContractHtml(html, fileName) {
+  const text = String(html || '');
+  if (!text) return { mode: 'inline', value: '' };
+  // Google Sheets cell limit is 50,000 chars, keep safe margin
+  if (text.length <= 48000) {
+    return { mode: 'inline', value: text };
+  }
+  const safeName = fileName ? `${fileName} (html)` : 'Contract HTML';
+  const blob = Utilities.newBlob(text, MimeType.HTML, `${safeName}.html`);
+  const file = DriveApp.createFile(blob);
+  return { mode: 'drive', value: `drive:${file.getId()}` };
+}
+
+function resolveContractHtml(value) {
+  const text = String(value || '');
+  if (!text) return '';
+  if (text.indexOf('drive:') === 0) {
+    const fileId = text.slice('drive:'.length).trim();
+    if (!fileId) return '';
+    try {
+      return DriveApp.getFileById(fileId).getBlob().getDataAsString();
+    } catch (e) {
+      Logger.log('resolveContractHtml error: ' + e);
+      return '';
+    }
+  }
+  return text;
+}
+
 function embedOwnerSignatureInHtml(html) {
   try {
     const blob = DriveApp.getFileById(SIGNATURE_FILE_ID).getBlob();
@@ -1674,7 +1703,7 @@ function createSignLink(data) {
 
   if (!contractHtml) {
     const existingHtml = row[extraCols.contractHtml - 1];
-    if (existingHtml) contractHtml = String(existingHtml);
+    if (existingHtml) contractHtml = resolveContractHtml(existingHtml);
   }
 
   if (!contractHtml) {
@@ -1682,7 +1711,8 @@ function createSignLink(data) {
   }
 
   const htmlWithOwnerSig = embedOwnerSignatureInHtml(contractHtml);
-  sheet.getRange(rowIndex, extraCols.contractHtml).setValue(htmlWithOwnerSig);
+  const stored = storeContractHtml(htmlWithOwnerSig, fileName);
+  sheet.getRange(rowIndex, extraCols.contractHtml).setValue(stored.value);
   sheet.getRange(rowIndex, extraCols.signSource).setValue('internal');
   sheet.getRange(rowIndex, signCols.signDocId).setValue('');
 
@@ -1742,7 +1772,7 @@ function getSignData(data) {
       return { success: false, error: 'Token expired' };
     }
 
-  const contractHtml = row[contractHtmlIdx] || '';
+  const contractHtml = resolveContractHtml(row[contractHtmlIdx] || '');
   const signedPdfId = row[signedPdfIdIdx] || '';
   if (!contractHtml) return { success: false, error: 'Internal contract HTML missing' };
 
@@ -1783,7 +1813,7 @@ function submitSignature(data) {
       return { success: false, error: 'Token expired' };
     }
 
-    const contractHtml = row[extraCols.contractHtml - 1];
+    const contractHtml = resolveContractHtml(row[extraCols.contractHtml - 1]);
     if (!contractHtml) return { success: false, error: 'Internal contract HTML missing' };
 
     // Internal HTML flow: inject signature and render PDF
