@@ -20,6 +20,7 @@ import {
   generateContractHTML,
   ContractData,
 } from '../services/contractGenerator';
+import { createSignLink } from '../services/googleSheetsAdmin';
 import { cn } from '../utils/cn';
 
 interface ContractGeneratorProps {
@@ -79,6 +80,11 @@ export function ContractGenerator({ data, onBack, onUpdateContractNumber }: Cont
   const [showPreview, setShowPreview] = useState(false);
   const [showMarkers, setShowMarkers] = useState(false);
   const [textCopied, setTextCopied] = useState(false);
+  const [showSignPreview, setShowSignPreview] = useState(false);
+  const [signLink, setSignLink] = useState(data.signLink || '');
+  const [signCreating, setSignCreating] = useState(false);
+  const [signError, setSignError] = useState('');
+  const [signCopied, setSignCopied] = useState(false);
 
   // Build contract data with current contract number
   const contractData: ContractData = useMemo(() => {
@@ -88,10 +94,16 @@ export function ContractGenerator({ data, onBack, onUpdateContractNumber }: Cont
 
   const contractText = useMemo(() => generateContractText(contractData), [contractData]);
   const contractHTML = useMemo(() => generateContractHTML(contractData), [contractData]);
-  const signedContractHTML = useMemo(
-    () => generateContractHTML(contractData, { signatureUrl: '/signature.png' }),
+  const signableContractHTML = useMemo(
+    () => generateContractHTML(contractData, { useSignatureMarkers: true }),
     [contractData]
   );
+  const signPreviewHTML = useMemo(() => {
+    let html = signableContractHTML;
+    html = html.replace(/\{\{\s*signature_or\s*\}\}/g, '<img src="/signature.png" alt="signature" style="height:60px;width:auto;" />');
+    html = html.replace(/\{\{\s*signature_client\s*\}\}/g, '');
+    return html;
+  }, [signableContractHTML]);
 
   const handleRegenerateNumber = () => {
     const newNumber = generateContractNumber();
@@ -141,15 +153,40 @@ export function ContractGenerator({ data, onBack, onUpdateContractNumber }: Cont
     }
   };
 
-  const handlePrintSigned = () => {
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(signedContractHTML);
-      printWindow.document.close();
-      setTimeout(() => {
-        printWindow.print();
-      }, 500);
+  const handleOpenSignPreview = () => {
+    setShowSignPreview(true);
+    setSignError('');
+  };
+
+  const handleCreateSignLink = async () => {
+    if (!contractNumber) {
+      setSignError('Нет номера договора');
+      return;
     }
+    setSignCreating(true);
+    setSignError('');
+    try {
+      const res = await createSignLink(contractNumber, data.rowIndex, {
+        contractHtml: signableContractHTML,
+        signSource: 'internal',
+      });
+      if (res?.signUrl) {
+        setSignLink(res.signUrl);
+      } else {
+        setSignError('Ссылка на подпись не получена');
+      }
+    } catch (e: any) {
+      setSignError(e?.message || String(e));
+    } finally {
+      setSignCreating(false);
+    }
+  };
+
+  const handleCopySignLink = () => {
+    if (!signLink) return;
+    navigator.clipboard.writeText(signLink);
+    setSignCopied(true);
+    setTimeout(() => setSignCopied(false), 2000);
   };
 
   const markers = [
@@ -363,7 +400,7 @@ export function ContractGenerator({ data, onBack, onUpdateContractNumber }: Cont
             Скачать HTML
           </button>
           <button
-            onClick={handlePrintSigned}
+            onClick={handleOpenSignPreview}
             className="px-4 py-3 rounded-lg bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 text-sm font-medium hover:bg-emerald-600/30 transition-colors flex items-center justify-center gap-2"
           >
             <Printer size={16} />
@@ -410,6 +447,56 @@ export function ContractGenerator({ data, onBack, onUpdateContractNumber }: Cont
             <pre className="text-xs text-dark-200 whitespace-pre-wrap font-mono leading-relaxed bg-dark-900/50 rounded-lg p-6 border border-dark-700/50 max-h-[600px] overflow-y-auto">
               {contractText}
             </pre>
+          </div>
+        </div>
+      )}
+
+      {/* Sign Preview */}
+      {showSignPreview && (
+        <div className="bg-dark-800/50 border border-dark-700 rounded-xl overflow-hidden animate-fade-in">
+          <div className="px-5 py-3 border-b border-dark-700 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileText size={16} className="text-emerald-400" />
+              <h3 className="text-sm font-semibold text-white">Подписание договора</h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleCreateSignLink}
+                disabled={signCreating}
+                className="text-xs px-2.5 py-1 rounded bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600/30 transition-colors disabled:opacity-60"
+              >
+                {signCreating ? 'Создание…' : 'Создать ссылку'}
+              </button>
+              {signLink && (
+                <>
+                  <button
+                    onClick={handleCopySignLink}
+                    className="text-xs px-2.5 py-1 rounded bg-dark-700 text-dark-300 hover:text-white transition-colors flex items-center gap-1"
+                  >
+                    <Copy size={12} />
+                    {signCopied ? 'Скопировано' : 'Копировать ссылку'}
+                  </button>
+                  <a
+                    href={signLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs px-2.5 py-1 rounded bg-dark-700 text-dark-300 hover:text-white transition-colors"
+                  >
+                    Открыть ссылку
+                  </a>
+                </>
+              )}
+            </div>
+          </div>
+          <div className="px-5 py-3 text-xs text-dark-400">
+            {signError ? <span className="text-red-400">{signError}</span> : 'Проверьте документ и создайте ссылку на подпись.'}
+          </div>
+          <div className="p-5">
+            <iframe
+              title="sign-preview"
+              className="w-full min-h-[700px] rounded-lg border border-dark-700"
+              srcDoc={signPreviewHTML}
+            />
           </div>
         </div>
       )}
