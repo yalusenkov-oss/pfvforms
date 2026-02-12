@@ -4,7 +4,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 // Настройки
-const SPREADSHEET_ID = SpreadsheetApp.getActiveSpreadsheet().getId();
+const SPREADSHEET_ID = '1XlxC6URSsl1UGk2DDw7c8XiJdtz_UHi8ZhTz7S7zXTc';
 const DISTRIBUTION_SHEET_NAME = 'Дистрибуция';
 const PROMO_SHEET_NAME = 'Промо';
 const PROMO_CODES_SHEET_NAME = 'Промокоды';
@@ -27,6 +27,23 @@ const TELEGRAM_CONFIG = {
   NOTIFY_PROMO: true,          // Уведомлять о новых промо
   NOTIFY_PROMO_CODE: false,    // Уведомлять о промокодах
   NOTIFY_DOC_GENERATED: true   // Уведомлять когда договор сгенерирован
+};
+
+// Отдельные настройки для разных чатов/ботов (если нужны)
+const TELEGRAM_DISTRIBUTION = {
+  ENABLED: true,
+  BOT_TOKEN: '',
+  CHAT_ID: '',
+  THREAD_ID: null,
+  DEBUG_MODE: false
+};
+
+const TELEGRAM_PROMO = {
+  ENABLED: true,
+  BOT_TOKEN: '',
+  CHAT_ID: '',
+  THREAD_ID: null,
+  DEBUG_MODE: false
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -62,7 +79,8 @@ function setupDistributionSheet(sheet) {
     'karaoke', 'tracks_json', 'licensor_name', 'passport_series_number', 'passport_issued_by',
     'passport_issue_date', 'bank_details', 'email', 'contact', 'artist_profile_links',
     'base_price', 'karaoke_price', 'total_price', 'contract_number', 'percentage',
-    'contract_status', 'music_author', 'lyrics_author', 'document_status'
+    'contract_status', 'music_author', 'lyrics_author', 'lyrics_texts', 'document_status', 'telegram_status',
+    'sign_status', 'sign_token', 'sign_expires_at', 'sign_link', 'sign_doc_id', 'signed_url', 'signed_at'
   ];
 
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
@@ -91,7 +109,7 @@ function setupPromoSheet(sheet) {
   const headers = [
     'timestamp', 'Type', 'release_link', 'upc_or_name', 'release_date',
     'genre', 'focus_track', 'additional_info', 'artist_and_title', 'release_description',
-    'artist_info', 'artist_photos', 'social_links', 'contact_info', 'status'
+    'artist_info', 'artist_photos', 'social_links', 'contact_info', 'status', 'telegram_status'
   ];
 
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
@@ -161,10 +179,17 @@ function doPost(e) {
       Logger.log('Parsed data: ' + JSON.stringify(data));
     }
 
+    let result = null;
     if (data.action === 'update') {
       updateRowData(data);
     } else if (data.action === 'promo_code_delete') {
       deletePromoCode(data);
+    } else if (data.action === 'sign_create') {
+      result = createSignLink(data);
+    } else if (data.action === 'sign_get') {
+      result = getSignData(data);
+    } else if (data.action === 'sign_submit') {
+      result = submitSignature(data);
     } else if (data.formType === 'promo_code') {
       savePromoCode(data);
     } else if (data.formType === 'distribution') {
@@ -175,7 +200,7 @@ function doPost(e) {
       throw new Error('Unknown formType or action: ' + (data.formType || data.action || 'undefined'));
     }
 
-    const responsePayload = {
+    const responsePayload = result || {
       success: true,
       message: 'Данные успешно сохранены',
       formType: data.formType,
@@ -186,12 +211,7 @@ function doPost(e) {
     }
 
     return ContentService
-      .createTextOutput(JSON.stringify({
-        success: true,
-        message: 'Данные успешно сохранены',
-        formType: data.formType,
-        action: data.action
-      }))
+      .createTextOutput(JSON.stringify(responsePayload))
       .setMimeType(ContentService.MimeType.JSON);
 
   } catch (error) {
@@ -209,6 +229,21 @@ function doPost(e) {
 function doGet(e) {
   if (!e) e = { parameter: {} };
   if (!e.parameter) e.parameter = {};
+
+  if (e.parameter.action === 'sign_get') {
+    try {
+      logWebRequest('GET', e);
+      const result = getSignData({ token: e.parameter.token || '' });
+      return ContentService
+        .createTextOutput(JSON.stringify(result))
+        .setMimeType(ContentService.MimeType.JSON);
+    } catch (error) {
+      Logger.log('doGet sign_get error: ' + error.toString());
+      return ContentService
+        .createTextOutput(JSON.stringify({ success: false, error: error.toString() }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  }
 
   if (e.parameter.action === 'list') {
     try {
@@ -286,6 +321,15 @@ function saveDistribution(data) {
     const contractNumber = generateContractNumber();
     const percentage = getTariffPercentage(data.tariff);
 
+    const tracksArray = normalizeTracksInput(data.tracks || data.tracks_json || []);
+    const authorsFromTracks = extractAuthorsFromTracks(tracksArray);
+    const musicAuthorValue = (data.musicAuthor && String(data.musicAuthor).trim())
+      ? data.musicAuthor
+      : (authorsFromTracks.composers.length ? authorsFromTracks.composers.join(', ') : (data.fullName || ''));
+    const lyricsAuthorValue = (data.lyricsAuthor && String(data.lyricsAuthor).trim())
+      ? data.lyricsAuthor
+      : (authorsFromTracks.lyricists.length ? authorsFromTracks.lyricists.join(', ') : (data.fullName || ''));
+
     const row = [
       new Date(data.timestamp || new Date()),
       getTariffName(data.tariff),
@@ -303,7 +347,7 @@ function saveDistribution(data) {
       data.tiktokFull || '',
       data.yandexPreSave || '',
       data.addKaraoke === 'yes' ? 'Да' : 'Нет',
-      JSON.stringify(data.tracks || []),
+      JSON.stringify(tracksArray, null, 2),
       data.fullName || '',
       data.passportNumber || '',
       data.issuedBy || '',
@@ -318,8 +362,17 @@ function saveDistribution(data) {
       contractNumber,
       percentage + '%',
       '',
-      data.musicAuthor || '',
-      data.lyricsAuthor || '',
+      musicAuthorValue || '',
+      lyricsAuthorValue || '',
+      collectLyricsFromTracks(tracksArray) || '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
       ''
     ];
 
@@ -343,8 +396,8 @@ function saveDistribution(data) {
         releaseType: getReleaseTypeName(data.releaseType),
         releaseDate: data.releaseDate || '',
         workTitle: data.releaseName || '',
-        musicAuthor: data.musicAuthor || data.fullName || '',
-        lyricsAuthor: data.lyricsAuthor || data.fullName || '',
+        musicAuthor: musicAuthorValue || '',
+        lyricsAuthor: lyricsAuthorValue || '',
         email: data.email || '',
         contact: data.contactInfo || '',
         sheetUrl: SpreadsheetApp.getActiveSpreadsheet().getUrl()
@@ -713,13 +766,14 @@ function insertSignature(body) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 function sendDistributionNotification(data) {
-  if (!TELEGRAM_CONFIG.ENABLED || !TELEGRAM_CONFIG.BOT_TOKEN || !TELEGRAM_CONFIG.CHAT_ID) {
+  const cfg = getTelegramConfig('distribution');
+  if (!cfg.ENABLED || !cfg.BOT_TOKEN || !cfg.CHAT_ID) {
     return;
   }
 
   try {
     const message = buildDistributionMessage(data);
-    const result = sendToTelegramAPI(message);
+    const result = sendToTelegramAPI(message, cfg);
 
     if (!result.ok) {
       throw new Error(result.description || "Ошибка Telegram API");
@@ -728,20 +782,21 @@ function sendDistributionNotification(data) {
     Logger.log("✅ Уведомление о дистрибуции отправлено");
   } catch (error) {
     Logger.log("🚨 Ошибка отправки Telegram: " + error.message);
-    if (TELEGRAM_CONFIG.DEBUG_MODE) {
-      sendDebugInfo("Ошибка отправки дистрибуции: " + error.message);
+    if (cfg.DEBUG_MODE) {
+      sendDebugInfo("Ошибка отправки дистрибуции: " + error.message, cfg);
     }
   }
 }
 
 function sendPromoNotification(data) {
-  if (!TELEGRAM_CONFIG.ENABLED || !TELEGRAM_CONFIG.BOT_TOKEN || !TELEGRAM_CONFIG.CHAT_ID) {
+  const cfg = getTelegramConfig('promo');
+  if (!cfg.ENABLED || !cfg.BOT_TOKEN || !cfg.CHAT_ID) {
     return;
   }
 
   try {
     const message = buildPromoMessage(data);
-    const result = sendToTelegramAPI(message);
+    const result = sendToTelegramAPI(message, cfg);
 
     if (!result.ok) {
       throw new Error(result.description || "Ошибка Telegram API");
@@ -750,20 +805,21 @@ function sendPromoNotification(data) {
     Logger.log("✅ Уведомление о промо отправлено");
   } catch (error) {
     Logger.log("🚨 Ошибка отправки Telegram: " + error.message);
-    if (TELEGRAM_CONFIG.DEBUG_MODE) {
-      sendDebugInfo("Ошибка отправки промо: " + error.message);
+    if (cfg.DEBUG_MODE) {
+      sendDebugInfo("Ошибка отправки промо: " + error.message, cfg);
     }
   }
 }
 
 function sendPromoCodeNotification(data) {
-  if (!TELEGRAM_CONFIG.ENABLED || !TELEGRAM_CONFIG.BOT_TOKEN || !TELEGRAM_CONFIG.CHAT_ID) {
+  const cfg = getTelegramConfig('promo_code');
+  if (!cfg.ENABLED || !cfg.BOT_TOKEN || !cfg.CHAT_ID) {
     return;
   }
 
   try {
     const message = buildPromoCodeMessage(data);
-    const result = sendToTelegramAPI(message);
+    const result = sendToTelegramAPI(message, cfg);
 
     if (!result.ok) {
       throw new Error(result.description || "Ошибка Telegram API");
@@ -776,13 +832,14 @@ function sendPromoCodeNotification(data) {
 }
 
 function sendDocumentGeneratedNotification(data) {
-  if (!TELEGRAM_CONFIG.ENABLED || !TELEGRAM_CONFIG.BOT_TOKEN || !TELEGRAM_CONFIG.CHAT_ID) {
+  const cfg = getTelegramConfig('document');
+  if (!cfg.ENABLED || !cfg.BOT_TOKEN || !cfg.CHAT_ID) {
     return;
   }
 
   try {
     const message = buildDocumentMessage(data);
-    const result = sendToTelegramAPI(message);
+    const result = sendToTelegramAPI(message, cfg);
 
     if (!result.ok) {
       throw new Error(result.description || "Ошибка Telegram API");
@@ -894,13 +951,13 @@ function buildDocumentMessage(data) {
   return messageParts.join("\n");
 }
 
-function sendToTelegramAPI(message) {
-  const url = `https://api.telegram.org/bot${TELEGRAM_CONFIG.BOT_TOKEN}/sendMessage`;
+function sendToTelegramAPI(message, cfg) {
+  const url = `https://api.telegram.org/bot${cfg.BOT_TOKEN}/sendMessage`;
 
   const chatIdsToTry = [
-    TELEGRAM_CONFIG.CHAT_ID,
-    `-100${TELEGRAM_CONFIG.CHAT_ID}`,
-    `@${TELEGRAM_CONFIG.CHAT_ID}`
+    cfg.CHAT_ID,
+    `-100${cfg.CHAT_ID}`,
+    `@${cfg.CHAT_ID}`
   ];
 
   let lastError;
@@ -915,8 +972,8 @@ function sendToTelegramAPI(message) {
       };
 
       // Добавляем thread_id если указан
-      if (TELEGRAM_CONFIG.THREAD_ID) {
-        payload.message_thread_id = TELEGRAM_CONFIG.THREAD_ID;
+      if (cfg.THREAD_ID) {
+        payload.message_thread_id = cfg.THREAD_ID;
       }
 
       const response = UrlFetchApp.fetch(url, {
@@ -938,21 +995,21 @@ function sendToTelegramAPI(message) {
   throw new Error(`Telegram API: ${lastError || "Не удалось отправить сообщение"}`);
 }
 
-function sendDebugInfo(text) {
-  if (!TELEGRAM_CONFIG.DEBUG_MODE || !TELEGRAM_CONFIG.BOT_TOKEN || !TELEGRAM_CONFIG.CHAT_ID) {
+function sendDebugInfo(text, cfg) {
+  if (!cfg || !cfg.DEBUG_MODE || !cfg.BOT_TOKEN || !cfg.CHAT_ID) {
     return;
   }
 
   try {
-    const debugUrl = `https://api.telegram.org/bot${TELEGRAM_CONFIG.BOT_TOKEN}/sendMessage`;
+    const debugUrl = `https://api.telegram.org/bot${cfg.BOT_TOKEN}/sendMessage`;
     const payload = {
-      chat_id: TELEGRAM_CONFIG.CHAT_ID,
+      chat_id: cfg.CHAT_ID,
       text: "🛠 DEBUG:\n" + text,
       parse_mode: "MarkdownV2"
     };
 
-    if (TELEGRAM_CONFIG.THREAD_ID) {
-      payload.message_thread_id = TELEGRAM_CONFIG.THREAD_ID;
+    if (cfg.THREAD_ID) {
+      payload.message_thread_id = cfg.THREAD_ID;
     }
 
     UrlFetchApp.fetch(debugUrl, {
@@ -969,6 +1026,150 @@ function sendDebugInfo(text) {
 // ═══════════════════════════════════════════════════════════════════════════
 // АДМИН-ПАНЕЛЬ: Чтение данных
 // ═══════════════════════════════════════════════════════════════════════════
+function getTelegramConfig(kind) {
+  const base = TELEGRAM_CONFIG || {};
+  let override = null;
+  if (kind === 'distribution' || kind === 'document') override = TELEGRAM_DISTRIBUTION;
+  if (kind === 'promo' || kind === 'promo_code') override = TELEGRAM_PROMO;
+
+  if (!override) return base;
+
+  return {
+    ENABLED: typeof override.ENABLED === 'boolean' ? override.ENABLED : base.ENABLED,
+    BOT_TOKEN: override.BOT_TOKEN || base.BOT_TOKEN,
+    CHAT_ID: override.CHAT_ID || base.CHAT_ID,
+    THREAD_ID: override.THREAD_ID != null ? override.THREAD_ID : base.THREAD_ID,
+    DEBUG_MODE: typeof override.DEBUG_MODE === 'boolean' ? override.DEBUG_MODE : base.DEBUG_MODE
+  };
+}
+
+function getOrCreateColumn(sheet, headerName) {
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  let idx = headers.indexOf(headerName);
+  if (idx >= 0) return idx + 1; // 1-based
+  idx = headers.length + 1;
+  sheet.getRange(1, idx).setValue(headerName);
+  return idx;
+}
+
+function sendPendingNotifications() {
+  const distCfg = getTelegramConfig('distribution');
+  const promoCfg = getTelegramConfig('promo');
+
+  if ((!distCfg.ENABLED || !distCfg.BOT_TOKEN || !distCfg.CHAT_ID) &&
+      (!promoCfg.ENABLED || !promoCfg.BOT_TOKEN || !promoCfg.CHAT_ID)) {
+    SpreadsheetApp.getActiveSpreadsheet().toast(
+      'Telegram не настроен. Проверьте ENABLED, BOT_TOKEN и CHAT_ID',
+      'Telegram',
+      7
+    );
+    return;
+  }
+
+  const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+
+  // ───── Distribution ─────
+  if (TELEGRAM_CONFIG.NOTIFY_DISTRIBUTION && distCfg.ENABLED && distCfg.BOT_TOKEN && distCfg.CHAT_ID) {
+    const sheet = spreadsheet.getSheetByName(DISTRIBUTION_SHEET_NAME);
+    if (sheet) {
+      const data = sheet.getDataRange().getValues();
+      const headers = data[0] || [];
+      const idx = {
+        contractNumber: headers.indexOf('contract_number'),
+        licensorName: headers.indexOf('licensor_name'),
+        pseudonym: headers.indexOf('pseudonym'),
+        tariff: headers.indexOf('tariff'),
+        releaseType: headers.indexOf('release_type'),
+        releaseDate: headers.indexOf('release_date'),
+        workTitle: headers.indexOf('work_title'),
+        musicAuthor: headers.indexOf('music_author'),
+        lyricsAuthor: headers.indexOf('lyrics_author'),
+        email: headers.indexOf('email'),
+        contact: headers.indexOf('contact')
+      };
+
+      const telegramCol = getOrCreateColumn(sheet, 'telegram_status');
+      for (let r = 1; r < data.length; r++) {
+        const row = data[r];
+        const currentStatus = row[telegramCol - 1];
+        if (currentStatus) continue; // already sent
+        if (!row[idx.contractNumber]) continue;
+
+        try {
+          sendDistributionNotification({
+            contractNumber: row[idx.contractNumber] || '',
+            licensorName: row[idx.licensorName] || '',
+            pseudonym: row[idx.pseudonym] || '',
+            tariff: row[idx.tariff] || '',
+            releaseType: row[idx.releaseType] || '',
+            releaseDate: row[idx.releaseDate] || '',
+            workTitle: row[idx.workTitle] || '',
+            musicAuthor: row[idx.musicAuthor] || row[idx.licensorName] || '',
+            lyricsAuthor: row[idx.lyricsAuthor] || row[idx.licensorName] || '',
+            email: row[idx.email] || '',
+            contact: row[idx.contact] || '',
+            sheetUrl: SpreadsheetApp.getActiveSpreadsheet().getUrl()
+          });
+
+          sheet.getRange(r + 1, telegramCol).setValue('Sent ' + new Date().toISOString());
+        } catch (e) {
+          sheet.getRange(r + 1, telegramCol).setValue('Error: ' + e.message);
+        }
+      }
+    }
+  }
+
+  // ───── Promo ─────
+  if (TELEGRAM_CONFIG.NOTIFY_PROMO && promoCfg.ENABLED && promoCfg.BOT_TOKEN && promoCfg.CHAT_ID) {
+    const sheet = spreadsheet.getSheetByName(PROMO_SHEET_NAME);
+    if (sheet) {
+      const data = sheet.getDataRange().getValues();
+      const headers = data[0] || [];
+      const idx = {
+        promoType: headers.indexOf('Type'),
+        releaseLink: headers.indexOf('release_link'),
+        upcOrName: headers.indexOf('upc_or_name'),
+        releaseDate: headers.indexOf('release_date'),
+        genre: headers.indexOf('genre'),
+        focusTrack: headers.indexOf('focus_track'),
+        artistAndTitle: headers.indexOf('artist_and_title'),
+        contactInfo: headers.indexOf('contact_info')
+      };
+
+      const telegramCol = getOrCreateColumn(sheet, 'telegram_status');
+      for (let r = 1; r < data.length; r++) {
+        const row = data[r];
+        const currentStatus = row[telegramCol - 1];
+        if (currentStatus) continue;
+
+        try {
+          sendPromoNotification({
+            promoType: row[idx.promoType] || '',
+            releaseLink: row[idx.releaseLink] || '',
+            upcOrName: row[idx.upcOrName] || '',
+            releaseDate: row[idx.releaseDate] || '',
+            genre: row[idx.genre] || '',
+            focusTrack: row[idx.focusTrack] || '',
+            artistAndTitle: row[idx.artistAndTitle] || '',
+            contactInfo: row[idx.contactInfo] || '',
+            sheetUrl: SpreadsheetApp.getActiveSpreadsheet().getUrl()
+          });
+
+          sheet.getRange(r + 1, telegramCol).setValue('Sent ' + new Date().toISOString());
+        } catch (e) {
+          sheet.getRange(r + 1, telegramCol).setValue('Error: ' + e.message);
+        }
+      }
+    }
+  }
+
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    'Проверка уведомлений завершена',
+    'Telegram',
+    5
+  );
+}
+
 function listSheetRows(sheetParam, limit) {
   initializeSheets();
 
@@ -1058,7 +1259,13 @@ function mapDistributionRow(headers, row) {
     contractStatus: raw.contract_status || '',
     musicAuthor: raw.music_author || '',
     lyricsAuthor: raw.lyrics_author || '',
-    documentStatus: raw.document_status || ''
+    documentStatus: raw.document_status || '',
+    signStatus: raw.sign_status || '',
+    signLink: raw.sign_link || '',
+    signExpiresAt: raw.sign_expires_at || '',
+    signDocId: raw.sign_doc_id || '',
+    signedUrl: raw.signed_url || '',
+    signedAt: raw.signed_at || ''
   };
 }
 
@@ -1260,6 +1467,468 @@ function normalizePromoType(value) {
   return map[value] || value;
 }
 
+function normalizeTracksInput(input) {
+  if (!input) return [];
+  if (Array.isArray(input)) return input;
+
+  let current = input;
+  for (let i = 0; i < 3; i++) {
+    if (Array.isArray(current)) return current;
+    if (current == null) return [];
+    if (typeof current !== 'string') return [];
+
+    const text = String(current).trim();
+    if (!text) return [];
+
+    try {
+      const parsed = JSON.parse(text);
+      if (Array.isArray(parsed)) return parsed;
+      if (typeof parsed === 'string') {
+        current = parsed;
+        continue;
+      }
+    } catch (e) {
+      // попытка распарсить двойную сериализацию ("[...]" как строку)
+      try {
+        const unescaped = text
+          .replace(/^"+|"+$/g, '')
+          .replace(/\\"/g, '"')
+          .replace(/\\n/g, '\n')
+          .replace(/\\t/g, '\t')
+          .replace(/\\r/g, '\r');
+        const parsed2 = JSON.parse(unescaped);
+        if (Array.isArray(parsed2)) return parsed2;
+        if (typeof parsed2 === 'string') {
+          current = parsed2;
+          continue;
+        }
+      } catch (e2) {
+        // fallback: вытащить JSON массив между [ и ]
+        const start = text.indexOf('[');
+        const end = text.lastIndexOf(']');
+        if (start >= 0 && end > start) {
+          const slice = text.slice(start, end + 1);
+          try {
+            const parsed3 = JSON.parse(slice);
+            if (Array.isArray(parsed3)) return parsed3;
+          } catch (e3) {
+            try {
+              const unescapedSlice = slice
+                .replace(/\\"/g, '"')
+                .replace(/\\n/g, '\n')
+                .replace(/\\t/g, '\t')
+                .replace(/\\r/g, '\r');
+              const parsed4 = JSON.parse(unescapedSlice);
+              if (Array.isArray(parsed4)) return parsed4;
+            } catch (e4) {
+              break;
+            }
+          }
+        } else {
+          break;
+        }
+      }
+    }
+  }
+
+  Logger.log('normalizeTracksInput: invalid JSON string');
+  return [];
+}
+
+function repairTracksJson() {
+  const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = spreadsheet.getSheetByName(DISTRIBUTION_SHEET_NAME);
+  if (!sheet) throw new Error('Sheet "' + DISTRIBUTION_SHEET_NAME + '" not found');
+
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0] || [];
+  const tracksIdx = headers.indexOf('tracks_json');
+  if (tracksIdx < 0) throw new Error('Column "tracks_json" not found');
+
+  const musicAuthorIdx = headers.indexOf('music_author');
+  const lyricsAuthorIdx = headers.indexOf('lyrics_author');
+  const lyricsTextCol = getOrCreateColumn(sheet, 'lyrics_texts');
+
+  let fixedCount = 0;
+  let authorsFixed = 0;
+  let lyricsFixed = 0;
+  let skipped = 0;
+  for (let r = 1; r < data.length; r++) {
+    const raw = data[r][tracksIdx];
+    if (!raw) continue;
+    const normalized = normalizeTracksInput(raw);
+    if (!Array.isArray(normalized) || normalized.length === 0) {
+      if (String(raw).indexOf('[') >= 0) {
+        Logger.log(`repairTracksJson: skip row ${r + 1} (parse failed)`);
+        skipped++;
+      }
+      continue;
+    }
+
+    const pretty = JSON.stringify(normalized, null, 2);
+    if (String(raw) !== pretty) {
+      sheet.getRange(r + 1, tracksIdx + 1).setValue(pretty);
+      fixedCount++;
+    }
+
+    if (musicAuthorIdx >= 0 && lyricsAuthorIdx >= 0) {
+      const currentMusic = data[r][musicAuthorIdx];
+      const currentLyrics = data[r][lyricsAuthorIdx];
+      if (!currentMusic || !currentLyrics) {
+        const authors = extractAuthorsFromTracks(normalized);
+        const musicValue = currentMusic || (authors.composers.length ? authors.composers.join(', ') : '');
+        const lyricsValue = currentLyrics || (authors.lyricists.length ? authors.lyricists.join(', ') : '');
+
+        if (musicValue && musicValue !== currentMusic) {
+          sheet.getRange(r + 1, musicAuthorIdx + 1).setValue(musicValue);
+          authorsFixed++;
+        }
+        if (lyricsValue && lyricsValue !== currentLyrics) {
+          sheet.getRange(r + 1, lyricsAuthorIdx + 1).setValue(lyricsValue);
+          authorsFixed++;
+        }
+      }
+    }
+
+    const currentLyricsText = data[r][lyricsTextCol - 1];
+    if (!currentLyricsText) {
+      const lyricsText = collectLyricsFromTracks(normalized);
+      if (lyricsText) {
+        sheet.getRange(r + 1, lyricsTextCol).setValue(lyricsText);
+        lyricsFixed++;
+      }
+    }
+  }
+
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    `Починено tracks_json: ${fixedCount} | Авторы: ${authorsFixed} | Тексты: ${lyricsFixed} | Пропуск: ${skipped}`,
+    'Автопочинка',
+    5
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ПОДПИСАНИЕ ДОГОВОРОВ
+// ═══════════════════════════════════════════════════════════════════════════
+function generateSignToken() {
+  return Utilities.getUuid().replace(/-/g, '');
+}
+
+function getSignColumns(sheet) {
+  return {
+    signStatus: getOrCreateColumn(sheet, 'sign_status'),
+    signToken: getOrCreateColumn(sheet, 'sign_token'),
+    signExpiresAt: getOrCreateColumn(sheet, 'sign_expires_at'),
+    signLink: getOrCreateColumn(sheet, 'sign_link'),
+    signDocId: getOrCreateColumn(sheet, 'sign_doc_id'),
+    signedUrl: getOrCreateColumn(sheet, 'signed_url'),
+    signedAt: getOrCreateColumn(sheet, 'signed_at')
+  };
+}
+
+function findRowByContractNumber(sheet, headers, contractNumber) {
+  if (!contractNumber) return -1;
+  const idx = headers.indexOf('contract_number');
+  if (idx < 0) return -1;
+  const values = sheet.getRange(2, idx + 1, sheet.getLastRow() - 1, 1).getValues();
+  for (let i = 0; i < values.length; i++) {
+    if (String(values[i][0]) === String(contractNumber)) return i + 2;
+  }
+  return -1;
+}
+
+function insertSignatureAtMarker(body, marker, blob, widthPx) {
+  const range = body.findText(marker);
+  if (!range) return false;
+
+  const el = range.getElement();
+  const text = el.asText();
+  const start = range.getStartOffset();
+  const end = range.getEndOffsetInclusive();
+  text.deleteText(start, end);
+
+  const parent = el.getParent();
+  if (parent && parent.insertInlineImage) {
+    const img = parent.insertInlineImage(parent.getChildIndex(el) + 1, blob);
+    if (widthPx) img.setWidth(widthPx);
+    return true;
+  }
+  return false;
+}
+
+function dataUrlToBlob(dataUrl) {
+  const text = String(dataUrl || '');
+  const marker = ';base64,';
+  if (text.indexOf('data:') !== 0 || text.indexOf(marker) < 0) {
+    throw new Error('Invalid signature data');
+  }
+  const parts = text.split(marker);
+  const contentType = parts[0].slice(5);
+  const bytes = Utilities.base64Decode(parts[1] || '');
+  return Utilities.newBlob(bytes, contentType, 'signature.png');
+}
+
+function buildDocUrls(docId) {
+  return {
+    docUrl: `https://docs.google.com/document/d/${docId}/edit`,
+    previewUrl: `https://docs.google.com/document/d/${docId}/preview`,
+    pdfUrl: `https://docs.google.com/document/d/${docId}/export?format=pdf`
+  };
+}
+
+function createSignLink(data) {
+  initializeSheets();
+  const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = spreadsheet.getSheetByName(DISTRIBUTION_SHEET_NAME);
+  if (!sheet) throw new Error('Sheet "' + DISTRIBUTION_SHEET_NAME + '" not found');
+
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const rowIndex = data.row ? parseInt(String(data.row), 10) : findRowByContractNumber(sheet, headers, data.contractNumber);
+  if (!rowIndex || rowIndex < 2) return { success: false, error: 'Row not found for contract' };
+
+  const row = sheet.getRange(rowIndex, 1, 1, headers.length).getValues()[0];
+  const idx = {
+    contractNumber: headers.indexOf("contract_number"),
+    licensorName: headers.indexOf("licensor_name"),
+    tariff: headers.indexOf("tariff"),
+    passportSeriesNumber: headers.indexOf("passport_series_number"),
+    passportIssuedBy: headers.indexOf("passport_issued_by"),
+    passportIssueDate: headers.indexOf("passport_issue_date"),
+    bankDetails: headers.indexOf("bank_details"),
+    email: headers.indexOf("email"),
+    pseudonym: headers.indexOf("pseudonym"),
+    workTitle: headers.indexOf("work_title"),
+    musicAuthor: headers.indexOf("music_author"),
+    lyricsAuthor: headers.indexOf("lyrics_author")
+  };
+
+  const contractNumber = row[idx.contractNumber] || data.contractNumber;
+  if (!contractNumber) return { success: false, error: 'Missing contract_number' };
+
+  const currentDate = new Date();
+  const formattedDate = formatDate(currentDate);
+  const futureDate = new Date();
+  futureDate.setFullYear(currentDate.getFullYear() + 4);
+  const formattedFutureDate = formatDate(futureDate);
+
+  let percentageText = '';
+  const tariff = row[idx.tariff] || '';
+  switch (tariff) {
+    case 'Базовый':
+      percentageText = '55% (Пятьдесят пять процентов)';
+      break;
+    case 'Продвинутый':
+      percentageText = '70% (Семьдесят процентов)';
+      break;
+    case 'Премиум':
+      percentageText = '90% (Девяносто процентов)';
+      break;
+    case 'Платинум':
+      percentageText = '95% (Девяносто пять процентов)';
+      break;
+    default:
+      percentageText = '55% (Пятьдесят пять процентов)';
+  }
+
+  const replacements = {
+    '{{contract_number}}': contractNumber,
+    '{{licensor_name}}': row[idx.licensorName] || 'Без имени',
+    '{{date}}': formattedDate,
+    '{{future_date}}': formattedFutureDate,
+    '{{percentage}}': percentageText,
+    '{{passport_series_number}}': row[idx.passportSeriesNumber] || '',
+    '{{passport_issued_by}}': row[idx.passportIssuedBy] || '',
+    '{{passport_issue_date}}': row[idx.passportIssueDate] || '',
+    '{{bank_details}}': row[idx.bankDetails] || '',
+    '{{email}}': row[idx.email] || '',
+    '{{pseudonym}}': row[idx.pseudonym] || '',
+    '{{work_title}}': row[idx.workTitle] || '',
+    '{{music_author}}': row[idx.musicAuthor] || '',
+    '{{lyrics_author}}': row[idx.lyricsAuthor] || ''
+  };
+
+  const templateFile = DriveApp.getFileById(TEMPLATE_ID);
+  if (!templateFile) return { success: false, error: 'Template not found' };
+
+  const licensorName = replacements['{{licensor_name}}'] || 'Без имени';
+  const fileName = `Договор №${contractNumber} - ${licensorName}`;
+  const docCopy = templateFile.makeCopy(fileName);
+  Utilities.sleep(1000);
+
+  const doc = DocumentApp.openById(docCopy.getId());
+  const body = doc.getBody();
+  for (let marker in replacements) {
+    body.replaceText(marker, replacements[marker]);
+  }
+  replaceInTables(body, replacements);
+  insertSignature(body); // подпись правообладателя
+  doc.saveAndClose();
+
+  const signBaseUrl = String(data.signBaseUrl || '').replace(/\/$/, '');
+  if (!signBaseUrl) return { success: false, error: 'Missing signBaseUrl' };
+
+  const token = generateSignToken();
+  const expiresDays = Number(data.signExpiresDays || 7);
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + (Number.isFinite(expiresDays) && expiresDays > 0 ? expiresDays : 7));
+
+  const signUrl = `${signBaseUrl}/sign.html?token=${token}`;
+  const signCols = getSignColumns(sheet);
+  sheet.getRange(rowIndex, signCols.signStatus).setValue('pending');
+  sheet.getRange(rowIndex, signCols.signToken).setValue(token);
+  sheet.getRange(rowIndex, signCols.signExpiresAt).setValue(expiresAt.toISOString());
+  sheet.getRange(rowIndex, signCols.signLink).setValue(signUrl);
+  sheet.getRange(rowIndex, signCols.signDocId).setValue(docCopy.getId());
+  sheet.getRange(rowIndex, signCols.signedUrl).setValue('');
+  sheet.getRange(rowIndex, signCols.signedAt).setValue('');
+
+  const urls = buildDocUrls(docCopy.getId());
+  return {
+    success: true,
+    signUrl,
+    expiresAt: expiresAt.toISOString(),
+    docUrl: urls.docUrl,
+    previewUrl: urls.previewUrl,
+    pdfUrl: urls.pdfUrl
+  };
+}
+
+function getSignData(data) {
+  const token = String(data.token || '').trim();
+  if (!token) return { success: false, error: 'Missing token' };
+
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(DISTRIBUTION_SHEET_NAME);
+  if (!sheet) return { success: false, error: 'Sheet not found' };
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const signCols = getSignColumns(sheet);
+
+  const signTokenIdx = signCols.signToken - 1;
+  const signExpiresIdx = signCols.signExpiresAt - 1;
+  const signDocIdIdx = signCols.signDocId - 1;
+  const signStatusIdx = signCols.signStatus - 1;
+  const signedUrlIdx = signCols.signedUrl - 1;
+
+  const dataRange = sheet.getDataRange().getValues();
+  for (let r = 1; r < dataRange.length; r++) {
+    const row = dataRange[r];
+    if (String(row[signTokenIdx]) !== token) continue;
+
+    const expiresAt = row[signExpiresIdx] ? new Date(row[signExpiresIdx]) : null;
+    if (expiresAt && expiresAt.getTime() < Date.now()) {
+      return { success: false, error: 'Token expired' };
+    }
+
+    const docId = row[signDocIdIdx];
+    if (!docId) return { success: false, error: 'Document not found' };
+
+    const urls = buildDocUrls(docId);
+    return {
+      success: true,
+      status: row[signStatusIdx] || 'pending',
+      signedUrl: row[signedUrlIdx] || '',
+      expiresAt: expiresAt ? expiresAt.toISOString() : '',
+      ...urls
+    };
+  }
+
+  return { success: false, error: 'Token not found' };
+}
+
+function submitSignature(data) {
+  const token = String(data.token || '').trim();
+  if (!token) return { success: false, error: 'Missing token' };
+  if (!data.signature) return { success: false, error: 'Missing signature' };
+
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(DISTRIBUTION_SHEET_NAME);
+  if (!sheet) return { success: false, error: 'Sheet not found' };
+  const signCols = getSignColumns(sheet);
+  const dataRange = sheet.getDataRange().getValues();
+
+  for (let r = 1; r < dataRange.length; r++) {
+    const row = dataRange[r];
+    if (String(row[signCols.signToken - 1]) !== token) continue;
+
+    const expiresAt = row[signCols.signExpiresAt - 1] ? new Date(row[signCols.signExpiresAt - 1]) : null;
+    if (expiresAt && expiresAt.getTime() < Date.now()) {
+      return { success: false, error: 'Token expired' };
+    }
+
+    const docId = row[signCols.signDocId - 1];
+    if (!docId) return { success: false, error: 'Document not found' };
+
+    const doc = DocumentApp.openById(docId);
+    const body = doc.getBody();
+    const blob = dataUrlToBlob(data.signature);
+
+    const ok = insertSignatureAtMarker(body, '{{signature_client}}', blob, 200);
+    if (!ok) return { success: false, error: 'Signature marker not found' };
+
+    doc.saveAndClose();
+
+    const docFile = DriveApp.getFileById(docId);
+    const pdfBlob = docFile.getAs(MimeType.PDF).setName(docFile.getName() + ' (signed).pdf');
+    let pdfFile = null;
+    const parents = docFile.getParents();
+    if (parents.hasNext()) {
+      pdfFile = parents.next().createFile(pdfBlob);
+    } else {
+      pdfFile = DriveApp.createFile(pdfBlob);
+    }
+
+    const signedUrl = pdfFile.getUrl();
+    const downloadUrl = `https://drive.google.com/uc?export=download&id=${pdfFile.getId()}`;
+
+    sheet.getRange(r + 1, signCols.signStatus).setValue('signed');
+    sheet.getRange(r + 1, signCols.signedUrl).setValue(signedUrl);
+    sheet.getRange(r + 1, signCols.signedAt).setValue(new Date().toISOString());
+
+    return { success: true, signedUrl, downloadUrl };
+  }
+
+  return { success: false, error: 'Token not found' };
+}
+
+function extractAuthorsFromTracks(tracks) {
+  const composers = new Set();
+  const lyricists = new Set();
+
+  const addNames = (set, value) => {
+    if (!value) return;
+    if (Array.isArray(value)) {
+      value.forEach(v => addNames(set, v));
+      return;
+    }
+    const text = String(value);
+    text.split(',').map(s => s.trim()).filter(Boolean).forEach(name => set.add(name));
+  };
+
+  (tracks || []).forEach(track => {
+    if (!track) return;
+    addNames(composers, track.composers || track.musicAuthors || track.musicAuthor);
+    addNames(lyricists, track.lyricists || track.lyricsAuthors || track.lyricsAuthor);
+  });
+
+  return {
+    composers: Array.from(composers),
+    lyricists: Array.from(lyricists)
+  };
+}
+
+function collectLyricsFromTracks(tracks) {
+  const parts = [];
+  (tracks || []).forEach(track => {
+    if (!track) return;
+    const lyrics = track.lyrics || track.lyricsText || track.text || '';
+    if (!lyrics) return;
+    const num = track.number ? String(track.number) : '';
+    const name = track.name ? String(track.name) : '';
+    const title = [num, name].filter(Boolean).join('. ');
+    parts.push(title ? `${title}\n${lyrics}` : String(lyrics));
+  });
+  if (!parts.length) return '';
+  return parts.join('\n\n---\n\n');
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Функция для ручного обновления заголовков
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1281,9 +1950,11 @@ function onOpen() {
   const ui = SpreadsheetApp.getUi();
   ui.createMenu('📄 PFVMUSIC')
     .addItem('🔄 Обновить заголовки таблиц', 'updateExistingSheets')
+    .addItem('🛠 Починить данные треков', 'repairTracksJson')
     .addSeparator()
     .addItem('📝 Генерировать договоры', 'generateLicenseDocuments')
     .addSeparator()
+    .addItem('📲 Отправить уведомления (ручной запуск)', 'sendPendingNotifications')
     .addItem('📲 Тест Telegram (дистрибуция)', 'testTelegramDistribution')
     .addItem('📲 Тест Telegram (промо)', 'testTelegramPromo')
     .addToUi();

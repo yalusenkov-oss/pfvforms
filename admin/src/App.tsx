@@ -22,7 +22,7 @@ import {
   isAuthenticated,
   logout,
 } from './store';
-import { fetchSheetRows, updateSheetRow } from './services/googleSheetsAdmin';
+import { fetchSheetRows, updateSheetRow, createSignLink } from './services/googleSheetsAdmin';
 
 type View =
   | { type: 'dashboard' }
@@ -183,6 +183,11 @@ export function App() {
         status: (r.status as any) || r.contractStatus || r.contract_status || 'new',
         totalPrice: normalizeNumber(r.totalPrice ?? r.total ?? r.total_price),
         contractNumber: r.contractNumber || r.contract_number || '',
+        signStatus: r.signStatus || r.sign_status || '',
+        signLink: r.signLink || r.sign_link || '',
+        signExpiresAt: r.signExpiresAt || r.sign_expires_at || '',
+        signedUrl: r.signedUrl || r.signed_url || '',
+        signedAt: r.signedAt || r.signed_at || '',
       }));
       setDistributions(mapped as DistributionData[]);
 
@@ -304,6 +309,18 @@ export function App() {
     setRefreshKey(k => k + 1);
   };
 
+  const handleCreateSignLink = async (id: string) => {
+    const data = distributions.find(d => d.id === id);
+    if (!data) return;
+    try {
+      if (!data.contractNumber) throw new Error('Нет номера договора');
+      await createSignLink(data.contractNumber, data.rowIndex);
+      loadRemote();
+    } catch (e: any) {
+      alert(e?.message || String(e));
+    }
+  };
+
   const handlePromoDelete = (id: string) => {
     deletePromo(id);
     if (view.type === 'promo-detail' && view.id === id) {
@@ -355,6 +372,7 @@ export function App() {
             onBack={() => setView({ type: 'distributions' })}
             onStatusChange={handleDistStatusChange}
             onGenerateContract={(id) => setView({ type: 'distribution-contract', id })}
+            onCreateSignLink={handleCreateSignLink}
           />
         );
       }

@@ -8,6 +8,7 @@ interface DistributionDetailProps {
   onBack: () => void;
   onStatusChange: (id: string, status: DistributionData['status']) => void;
   onGenerateContract?: (id: string) => void;
+  onCreateSignLink?: (id: string) => void;
 }
 
 const ALL_STATUSES: DistributionData['status'][] = ['new', 'in_progress', 'paid', 'released', 'rejected'];
@@ -67,7 +68,7 @@ function formatPrice(p: number) {
   return p.toLocaleString('ru-RU') + ' ₽';
 }
 
-export function DistributionDetail({ data, onBack, onStatusChange, onGenerateContract }: DistributionDetailProps) {
+export function DistributionDetail({ data, onBack, onStatusChange, onGenerateContract, onCreateSignLink }: DistributionDetailProps) {
   const [showStatusMenu, setShowStatusMenu] = useState(false);
 
   const basePrice = PRICES[data.tariff]?.[data.releaseType] || 0;
@@ -176,6 +177,23 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
           <InfoRow label="Email" value={data.email} />
           <InfoRow label="Контакты" value={data.contacts} />
           <InfoRow label="Профили артиста" value={data.artistProfileLinks} link />
+        </Section>
+
+        {/* Signing */}
+        <Section title="Подписание" icon={<FileText size={16} className="text-emerald-400" />}>
+          <InfoRow label="Статус" value={data.signStatus || 'Не создано'} />
+          <InfoRow label="Ссылка на подпись" value={data.signLink || ''} link />
+          <InfoRow label="Подписанный договор" value={data.signedUrl || ''} link />
+          {onCreateSignLink && (
+            <div className="py-2">
+              <button
+                onClick={() => onCreateSignLink(data.id)}
+                className="text-xs px-3 py-1.5 rounded-lg bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600/30 transition-colors"
+              >
+                Создать ссылку на подпись
+              </button>
+            </div>
+          )}
         </Section>
       </div>
 

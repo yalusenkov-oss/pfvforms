@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Подписание договора</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Playfair+Display:wght@600&display=swap');
+
+    :root {
+      --bg: #0c0f14;
+      --panel: #121721;
+      --panel-2: #0f141d;
+      --accent: #38f2b2;
+      --accent-2: #6ee7ff;
+      --text: #eef2f7;
+      --muted: #9aa3b2;
+      --danger: #ff6b6b;
+      --border: rgba(255, 255, 255, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Manrope', sans-serif;
+      color: var(--text);
+      background: radial-gradient(1200px 700px at 80% -10%, rgba(56, 242, 178, 0.18), transparent),
+                  radial-gradient(900px 600px at 10% 10%, rgba(110, 231, 255, 0.14), transparent),
+                  var(--bg);
+      min-height: 100vh;
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 20px 60px;
+    }
+
+    .hero {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(28px, 4vw, 42px);
+      letter-spacing: 0.5px;
+      margin: 0;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .grid {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: 1.1fr 0.9fr;
+    }
+
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(18, 23, 33, 0.95), rgba(15, 20, 29, 0.98));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    }
+
+    .card h3 {
+      margin: 0 0 12px;
+      font-size: 16px;
+      color: var(--accent);
+      letter-spacing: 0.4px;
+    }
+
+    .doc-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .btn {
+      border: 1px solid var(--border);
+      color: var(--text);
+      background: transparent;
+      padding: 8px 14px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-size: 13px;
+      transition: all 0.2s ease;
+    }
+    .btn:hover { border-color: rgba(56, 242, 178, 0.5); color: var(--accent); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, rgba(56, 242, 178, 0.22), rgba(110, 231, 255, 0.12));
+      border-color: rgba(56, 242, 178, 0.5);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .status {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .status.error { color: var(--danger); }
+    .status.success { color: var(--accent); }
+
+    .preview {
+      width: 100%;
+      aspect-ratio: 4/5;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #0b0f16;
+    }
+
+    .signature-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    canvas {
+      width: 100%;
+      height: 220px;
+      background: #0d111a;
+      border-radius: 12px;
+      border: 1px dashed rgba(56, 242, 178, 0.4);
+      cursor: crosshair;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .footer-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: rgba(56, 242, 178, 0.08);
+      color: var(--accent);
+      border: 1px solid rgba(56, 242, 178, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <h1 class="title">Подписание договора</h1>
+      <p class="subtitle">Проверьте документ и оставьте подпись. Подписанный договор будет доступен для скачивания сразу после подтверждения.</p>
+      <span id="pill" class="pill" style="display:none;">Готово к подписи</span>
+    </header>
+
+    <div class="grid">
+      <section class="card">
+        <h3>Документ</h3>
+        <div class="status" id="status">Загрузка документа…</div>
+        <div class="doc-actions">
+          <a id="docLink" class="btn" href="#" target="_blank" rel="noopener">Открыть</a>
+          <a id="pdfLink" class="btn" href="#" target="_blank" rel="noopener">Скачать PDF</a>
+        </div>
+        <iframe id="preview" class="preview" title="preview" src=""></iframe>
+      </section>
+
+      <section class="card">
+        <h3>Подпись</h3>
+        <div class="signature-wrap">
+          <div class="status" id="signStatus">Подпишите в поле ниже.</div>
+          <canvas id="signature"></canvas>
+          <div class="hint">Рисуйте мышью или пальцем. Только рисование — подпись не сохраняется отдельно.</div>
+          <div class="footer-actions">
+            <button id="clearBtn" class="btn" type="button">Очистить</button>
+            <button id="submitBtn" class="btn btn-primary" type="button">Подписать и скачать</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const statusEl = document.getElementById('status');
+    const signStatusEl = document.getElementById('signStatus');
+    const docLink = document.getElementById('docLink');
+    const pdfLink = document.getElementById('pdfLink');
+    const preview = document.getElementById('preview');
+    const pill = document.getElementById('pill');
+    const canvas = document.getElementById('signature');
+    const clearBtn = document.getElementById('clearBtn');
+    const submitBtn = document.getElementById('submitBtn');
+
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token');
+
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+    let hasStroke = false;
+
+    function resizeCanvas() {
+      const ratio = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * ratio;
+      canvas.height = rect.height * ratio;
+      ctx.scale(ratio, ratio);
+      ctx.lineWidth = 2.2;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#38f2b2';
+    }
+
+    function startDraw(e) {
+      drawing = true;
+      hasStroke = true;
+      const p = getPoint(e);
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+    }
+
+    function draw(e) {
+      if (!drawing) return;
+      const p = getPoint(e);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+    }
+
+    function endDraw() {
+      drawing = false;
+      ctx.closePath();
+    }
+
+    function getPoint(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', endDraw);
+    canvas.addEventListener('mouseleave', endDraw);
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e); });
+    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); });
+    canvas.addEventListener('touchend', (e) => { e.preventDefault(); endDraw(e); });
+
+    clearBtn.addEventListener('click', () => {
+      const rect = canvas.getBoundingClientRect();
+      ctx.clearRect(0, 0, rect.width, rect.height);
+      hasStroke = false;
+    });
+
+    async function loadDoc() {
+      if (!token) {
+        statusEl.textContent = 'Ссылка недействительна. Нет токена.';
+        statusEl.classList.add('error');
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/sign?action=get&token=${encodeURIComponent(token)}`);
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Не удалось загрузить документ');
+
+        docLink.href = data.docUrl || '#';
+        pdfLink.href = data.pdfUrl || '#';
+        preview.src = data.previewUrl || '';
+
+        statusEl.textContent = data.status === 'signed' ? 'Договор уже подписан.' : 'Документ готов к подписи.';
+        statusEl.classList.toggle('success', data.status !== 'signed');
+        pill.style.display = 'inline-flex';
+
+        if (data.status === 'signed' && data.signedUrl) {
+          signStatusEl.textContent = 'Подписанный договор готов. Можно скачать.';
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Подписано';
+          pdfLink.href = data.signedUrl;
+        }
+      } catch (e) {
+        statusEl.textContent = e.message || 'Ошибка загрузки.';
+        statusEl.classList.add('error');
+      }
+    }
+
+    async function submitSignature() {
+      if (!token) return;
+      if (!hasStroke) {
+        signStatusEl.textContent = 'Подпись пустая. Нарисуйте подпись.';
+        signStatusEl.classList.add('error');
+        return;
+      }
+
+      signStatusEl.textContent = 'Отправляем подпись…';
+      signStatusEl.classList.remove('error');
+
+      try {
+        const signature = canvas.toDataURL('image/png');
+        const res = await fetch('/api/sign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'submit', token, signature })
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Не удалось подписать');
+
+        signStatusEl.textContent = 'Готово. Начинаем скачивание…';
+        signStatusEl.classList.add('success');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Подписано';
+
+        if (data.downloadUrl) {
+          window.location.href = data.downloadUrl;
+        } else if (data.signedUrl) {
+          window.location.href = data.signedUrl;
+        }
+      } catch (e) {
+        signStatusEl.textContent = e.message || 'Ошибка подписания.';
+        signStatusEl.classList.add('error');
+      }
+    }
+
+    submitBtn.addEventListener('click', submitSignature);
+    window.addEventListener('resize', resizeCanvas);
+
+    resizeCanvas();
+    loadDoc();
+  </script>
+</body>
+</html>

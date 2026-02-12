@@ -52,6 +52,11 @@ export interface DistributionData {
   totalPrice: number;
   contractNumber?: string;
   rowIndex?: number;
+  signStatus?: string;
+  signLink?: string;
+  signExpiresAt?: string;
+  signedUrl?: string;
+  signedAt?: string;
 }
 
 // ===== Promo Types =====

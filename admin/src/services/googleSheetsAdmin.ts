@@ -1,6 +1,8 @@
 // Admin Google Sheets helper — fetch rows from the Apps Script web app
 // Attempts (in order): import.meta.env -> window global -> config.json (base-relative, then root)
 let _cachedGoogleScriptUrl: string | null = null;
+let _cachedSignBaseUrl: string | null = null;
+let _cachedSignExpiresDays: number | null = null;
 async function getGoogleScriptUrl(): Promise<string> {
   if (_cachedGoogleScriptUrl) return _cachedGoogleScriptUrl;
 
@@ -47,6 +49,99 @@ async function getGoogleScriptUrl(): Promise<string> {
   }
 
   return '';
+}
+
+async function getSignBaseUrl(): Promise<string> {
+  if (_cachedSignBaseUrl) return _cachedSignBaseUrl;
+
+  try {
+    const envUrl = ((import.meta as any)?.env?.VITE_SIGN_BASE_URL as string) || '';
+    if (envUrl) {
+      _cachedSignBaseUrl = envUrl.replace(/\/$/, '');
+      return _cachedSignBaseUrl;
+    }
+  } catch {
+    // ignore
+  }
+
+  try {
+    // @ts-ignore
+    const w = (window as any);
+    if (w && w.VITE_SIGN_BASE_URL) {
+      _cachedSignBaseUrl = String(w.VITE_SIGN_BASE_URL).replace(/\/$/, '');
+      return _cachedSignBaseUrl;
+    }
+  } catch {
+    // ignore
+  }
+
+  const base = ((import.meta as any)?.env?.BASE_URL as string) || '/';
+  const baseWithSlash = base.replace(/\/?$/, '/');
+  const candidates = [baseWithSlash + 'config.json', '/config.json', 'config.json'];
+  for (const path of candidates) {
+    try {
+      const res = await fetch(path, { cache: 'no-store' });
+      if (res.ok) {
+        const obj = await res.json();
+        if (obj?.VITE_SIGN_BASE_URL) {
+          _cachedSignBaseUrl = String(obj.VITE_SIGN_BASE_URL).replace(/\/$/, '');
+          return _cachedSignBaseUrl;
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return '';
+}
+
+async function getSignExpiresDays(): Promise<number> {
+  if (_cachedSignExpiresDays != null) return _cachedSignExpiresDays;
+  try {
+    const envVal = (import.meta as any)?.env?.VITE_SIGN_EXPIRES_DAYS;
+    const parsed = Number(envVal);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      _cachedSignExpiresDays = parsed;
+      return parsed;
+    }
+  } catch {
+    // ignore
+  }
+
+  try {
+    // @ts-ignore
+    const w = (window as any);
+    const parsed = Number(w?.VITE_SIGN_EXPIRES_DAYS);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      _cachedSignExpiresDays = parsed;
+      return parsed;
+    }
+  } catch {
+    // ignore
+  }
+
+  const base = ((import.meta as any)?.env?.BASE_URL as string) || '/';
+  const baseWithSlash = base.replace(/\/?$/, '/');
+  const candidates = [baseWithSlash + 'config.json', '/config.json', 'config.json'];
+  for (const path of candidates) {
+    try {
+      const res = await fetch(path, { cache: 'no-store' });
+      if (res.ok) {
+        const obj = await res.json();
+        const parsed = Number(obj?.VITE_SIGN_EXPIRES_DAYS);
+        if (Number.isFinite(parsed) && parsed > 0) {
+          _cachedSignExpiresDays = parsed;
+          return parsed;
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  _cachedSignExpiresDays = 7;
+  return 7;
 }
 
 function isProdHost(): boolean {
@@ -143,6 +238,22 @@ export async function fetchSheetRows(sheetName: string, options: { limit?: numbe
 
 export async function updateSheetRow(sheetName: string, rowIndex: number, updates: Record<string, any>) {
   return postToScript({ action: 'update', sheet: sheetName, row: rowIndex, updates });
+}
+
+export async function createSignLink(contractNumber: string, rowIndex?: number) {
+  const signBaseUrl = await getSignBaseUrl();
+  const signExpiresDays = await getSignExpiresDays();
+  const res = await postToScript({
+    action: 'sign_create',
+    contractNumber,
+    row: rowIndex,
+    signBaseUrl,
+    signExpiresDays
+  });
+  if (res && res.success === false) {
+    throw new Error(res.error || 'Не удалось создать ссылку на подпись');
+  }
+  return res;
 }
 
 export async function fetchPromoCodes(): Promise<SheetRow[] | null> {

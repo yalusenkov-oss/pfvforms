@@ -1,3 +1,5 @@
 {
-  "VITE_GOOGLE_SCRIPT_URL": "https://script.google.com/macros/s/AKfycbz7FmVZm6C4d8QecFslgeSRCCmi4zSi-H8YuA1dIEVE6Nj4KZllOsbA8JSUFf03epdfvQ/exec"
+  "VITE_GOOGLE_SCRIPT_URL": "https://script.google.com/macros/s/AKfycby0W_ys_VLHkU1SrhC-2goNoZgq88wxwc9Qmx3xBQWbq8zbaGbAal7zeB8SeGLFp5nm0w/exec",
+  "VITE_SIGN_BASE_URL": "https://pfvforms.vercel.app",
+  "VITE_SIGN_EXPIRES_DAYS": 7
 }
