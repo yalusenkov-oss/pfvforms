@@ -1833,9 +1833,15 @@ function createSignLink(data) {
   const licensorName = replacements['{{licensor_name}}'] || 'Без имени';
   const fileName = `Договор №${contractNumber} - ${licensorName}`;
   const contractHtml = data.contractHtml ? String(data.contractHtml) : '';
+  const signSource = String(data.signSource || data.contractSource || data.source || '').toLowerCase();
+  const wantsInternal = signSource === 'internal';
   let docFile = null;
   const signCols = getSignColumns(sheet);
   const extraCols = getSignExtraColumns(sheet);
+
+  if (wantsInternal && !contractHtml) {
+    return { success: false, error: 'Missing contractHtml for internal signing' };
+  }
 
   if (contractHtml) {
     // Internal mode: store HTML and skip Google Docs
@@ -1926,6 +1932,10 @@ function getSignData(data) {
     const docId = row[signDocIdIdx] || '';
     const signedPdfId = row[signedPdfIdIdx] || '';
     const urls = docId ? buildDocUrls(docId) : { docUrl: '', previewUrl: '', pdfUrl: '' };
+
+    if (String(signSource).toLowerCase() === 'internal' && !contractHtml) {
+      return { success: false, error: 'Internal contract HTML missing' };
+    }
 
     return {
       success: true,

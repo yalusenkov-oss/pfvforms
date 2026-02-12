@@ -321,7 +321,10 @@ export function App() {
             { useSignatureMarkers: true }
           )
         : undefined;
-      await createSignLink(data.contractNumber, data.rowIndex, { contractHtml });
+      await createSignLink(data.contractNumber, data.rowIndex, {
+        contractHtml,
+        signSource: source
+      });
       loadRemote();
     } catch (e: any) {
       alert(e?.message || String(e));
