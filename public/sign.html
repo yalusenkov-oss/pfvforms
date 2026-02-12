@@ -8,15 +8,15 @@
     @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Playfair+Display:wght@600&display=swap');
 
     :root {
-      --bg: #0c0f14;
-      --panel: #121721;
-      --panel-2: #0f141d;
-      --accent: #38f2b2;
-      --accent-2: #6ee7ff;
-      --text: #eef2f7;
-      --muted: #9aa3b2;
-      --danger: #ff6b6b;
-      --border: rgba(255, 255, 255, 0.08);
+      --bg: #ffffff;
+      --panel: #ffffff;
+      --panel-2: #f8fafc;
+      --accent: #7c3aed;
+      --accent-2: #6d28d9;
+      --text: #111827;
+      --muted: #6b7280;
+      --danger: #ef4444;
+      --border: rgba(124, 58, 237, 0.18);
     }
 
     * { box-sizing: border-box; }
@@ -24,9 +24,7 @@
       margin: 0;
       font-family: 'Manrope', sans-serif;
       color: var(--text);
-      background: radial-gradient(1200px 700px at 80% -10%, rgba(56, 242, 178, 0.18), transparent),
-                  radial-gradient(900px 600px at 10% 10%, rgba(110, 231, 255, 0.14), transparent),
-                  var(--bg);
+      background: linear-gradient(180deg, #f5f3ff 0%, #ffffff 45%, rgba(245, 243, 255, 0.4) 100%);
       min-height: 100vh;
     }
 
@@ -66,11 +64,11 @@
     }
 
     .card {
-      background: linear-gradient(180deg, rgba(18, 23, 33, 0.95), rgba(15, 20, 29, 0.98));
-      border: 1px solid var(--border);
+      background: var(--panel);
+      border: 1px solid rgba(124, 58, 237, 0.12);
       border-radius: 18px;
       padding: 18px;
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 8px 30px rgba(17, 24, 39, 0.08);
     }
 
     .card h3 {
@@ -88,21 +86,21 @@
     }
 
     .btn {
-      border: 1px solid var(--border);
-      color: var(--text);
-      background: transparent;
+      border: 1px solid rgba(124, 58, 237, 0.2);
+      color: var(--accent);
+      background: rgba(124, 58, 237, 0.06);
       padding: 8px 14px;
       border-radius: 10px;
       text-decoration: none;
       font-size: 13px;
       transition: all 0.2s ease;
     }
-    .btn:hover { border-color: rgba(56, 242, 178, 0.5); color: var(--accent); }
+    .btn:hover { border-color: rgba(124, 58, 237, 0.4); background: rgba(124, 58, 237, 0.12); }
 
     .btn-primary {
-      background: linear-gradient(135deg, rgba(56, 242, 178, 0.22), rgba(110, 231, 255, 0.12));
-      border-color: rgba(56, 242, 178, 0.5);
-      color: var(--accent);
+      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      border-color: #7c3aed;
+      color: #ffffff;
       font-weight: 600;
     }
 
@@ -119,8 +117,8 @@
       width: 100%;
       aspect-ratio: 4/5;
       border-radius: 12px;
-      border: 1px solid var(--border);
-      background: #0b0f16;
+      border: 1px solid rgba(124, 58, 237, 0.16);
+      background: #ffffff;
     }
 
     .signature-wrap {
@@ -134,7 +132,7 @@
       height: 160px;
       background: #ffffff;
       border-radius: 12px;
-      border: 1px dashed rgba(56, 242, 178, 0.4);
+      border: 1px dashed rgba(124, 58, 237, 0.35);
       cursor: crosshair;
     }
 
@@ -156,9 +154,9 @@
       padding: 6px 10px;
       border-radius: 999px;
       font-size: 12px;
-      background: rgba(56, 242, 178, 0.08);
+      background: rgba(124, 58, 237, 0.08);
       color: var(--accent);
-      border: 1px solid rgba(56, 242, 178, 0.3);
+      border: 1px solid rgba(124, 58, 237, 0.3);
     }
   </style>
 </head>

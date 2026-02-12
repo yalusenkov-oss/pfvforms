@@ -482,13 +482,24 @@ export function ContractGenerator({ data, onBack, onUpdateContractNumber }: Cont
               <h3 className="text-sm font-semibold text-white">Подписание договора</h3>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={handleCreateSignLink}
-                disabled={signCreating}
-                className="text-xs px-2.5 py-1 rounded bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600/30 transition-colors disabled:opacity-60"
-              >
-                {signCreating ? 'Создание…' : 'Создать ссылку'}
-              </button>
+              {data.signedUrl ? (
+                <a
+                  href={data.signedUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs px-2.5 py-1 rounded bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600/30 transition-colors"
+                >
+                  Подписанный договор
+                </a>
+              ) : (
+                <button
+                  onClick={handleCreateSignLink}
+                  disabled={signCreating}
+                  className="text-xs px-2.5 py-1 rounded bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600/30 transition-colors disabled:opacity-60"
+                >
+                  {signCreating ? 'Создание…' : 'Создать ссылку'}
+                </button>
+              )}
               {signLink && (
                 <>
                   <button

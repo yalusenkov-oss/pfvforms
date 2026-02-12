@@ -19,7 +19,7 @@ function formatPrice(p: number) {
   return p.toLocaleString('ru-RU') + ' ₽';
 }
 
-const ALL_STATUSES: DistributionData['status'][] = ['new', 'in_progress', 'paid', 'released', 'rejected'];
+const ALL_STATUSES: DistributionData['status'][] = ['new', 'in_progress', 'paid', 'signed', 'released', 'rejected'];
 
 export function DistributionList({ distributions, onView, onDelete, onStatusChange, onGenerateContract }: DistributionListProps) {
   const [search, setSearch] = useState('');

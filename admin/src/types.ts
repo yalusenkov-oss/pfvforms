@@ -47,7 +47,7 @@ export interface DistributionData {
   artistProfileLinks: string;
   // Meta
   submittedAt: string;
-  status: 'new' | 'in_progress' | 'paid' | 'released' | 'rejected';
+  status: 'new' | 'in_progress' | 'paid' | 'signed' | 'released' | 'rejected';
   id: string;
   totalPrice: number;
   contractNumber?: string;
@@ -144,6 +144,7 @@ export const STATUS_LABELS: Record<string, string> = {
   new: 'Новый',
   in_progress: 'В работе',
   paid: 'Оплачен',
+  signed: 'Подписан',
   released: 'Выпущен',
   rejected: 'Отклонён',
   done: 'Готово',
@@ -153,6 +154,7 @@ export const STATUS_COLORS: Record<string, string> = {
   new: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
   in_progress: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
   paid: 'bg-green-500/20 text-green-400 border-green-500/30',
+  signed: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
   released: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
   rejected: 'bg-red-500/20 text-red-400 border-red-500/30',
   done: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',

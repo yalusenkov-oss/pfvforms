@@ -11,7 +11,7 @@ interface DistributionDetailProps {
   onCreateSignLink?: (id: string) => void;
 }
 
-const ALL_STATUSES: DistributionData['status'][] = ['new', 'in_progress', 'paid', 'released', 'rejected'];
+const ALL_STATUSES: DistributionData['status'][] = ['new', 'in_progress', 'paid', 'signed', 'released', 'rejected'];
 
 function InfoRow({ label, value, mono, link }: { label: string; value: string; mono?: boolean; link?: boolean }) {
   const [copied, setCopied] = useState(false);
