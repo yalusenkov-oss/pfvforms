@@ -1,13 +1,16 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 
-const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz7FmVZm6C4d8QecFslgeSRCCmi4zSi-H8YuA1dIEVE6Nj4KZllOsbA8JSUFf03epdfvQ/exec';
-
 function readConfigValue(key) {
   if (process.env[key]) return process.env[key];
+  if (key === 'VITE_GOOGLE_SCRIPT_URL' && process.env.GOOGLE_SCRIPT_URL) {
+    return process.env.GOOGLE_SCRIPT_URL;
+  }
   const candidates = [
     join(process.cwd(), 'public', 'config.json'),
-    join(process.cwd(), 'config.json')
+    join(process.cwd(), 'config.json'),
+    join(process.cwd(), 'dist', 'config.json'),
+    join(process.cwd(), 'admin', 'public', 'config.json')
   ];
 
   for (const configPath of candidates) {
@@ -22,12 +25,7 @@ function readConfigValue(key) {
 
 function getScriptUrl() {
   const url = readConfigValue('VITE_GOOGLE_SCRIPT_URL');
-  if (url) return url;
-  if (DEFAULT_SCRIPT_URL) {
-    console.warn('[api/sign] Falling back to DEFAULT_SCRIPT_URL. config.json not found.');
-    return DEFAULT_SCRIPT_URL;
-  }
-  return '';
+  return url || '';
 }
 
 function getSignBaseUrl(req) {

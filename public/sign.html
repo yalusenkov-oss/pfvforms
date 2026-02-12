@@ -278,9 +278,21 @@
         const data = await res.json();
         if (!data.success) throw new Error(data.error || 'Не удалось загрузить документ');
 
-        docLink.href = data.docUrl || '#';
-        pdfLink.href = data.pdfUrl || '#';
-        preview.src = data.previewUrl || '';
+        if (data.contractHtml) {
+          preview.removeAttribute('src');
+          preview.srcdoc = data.contractHtml;
+          const blob = new Blob([data.contractHtml], { type: 'text/html' });
+          const blobUrl = URL.createObjectURL(blob);
+          docLink.href = blobUrl;
+          docLink.textContent = 'Открыть HTML';
+          pdfLink.href = data.signedUrl || data.pdfUrl || '#';
+        } else {
+          docLink.textContent = 'Открыть';
+          docLink.href = data.docUrl || '#';
+          pdfLink.href = data.pdfUrl || '#';
+          preview.src = data.previewUrl || '';
+          preview.removeAttribute('srcdoc');
+        }
 
         statusEl.textContent = data.status === 'signed' ? 'Договор уже подписан.' : 'Документ готов к подписи.';
         statusEl.classList.toggle('success', data.status !== 'signed');
