@@ -49,12 +49,17 @@
       background: #ffffff;
       backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--border);
-      padding: 16px 20px;
-      margin: -20px -20px 40px -20px;
       box-shadow: 0 2px 12px rgba(124, 58, 237, 0.06);
+    }
+
+    .header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 16px;
     }
 
     .header-left {
@@ -64,17 +69,23 @@
     }
 
     .header-logo {
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       border-radius: 12px;
-      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      background: white;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
-      font-weight: 700;
-      font-size: 18px;
-      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+      box-shadow: 0 2px 8px rgba(124, 58, 237, 0.15);
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .header-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      padding: 4px;
     }
 
     .header-title {
@@ -102,13 +113,14 @@
     .header-actions {
       display: flex;
       gap: 12px;
+      margin-left: auto;
     }
 
     .btn-home {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 8px 16px;
+      padding: 10px 16px;
       border-radius: 10px;
       background: rgba(124, 58, 237, 0.08);
       color: var(--accent);
@@ -123,7 +135,12 @@
     .btn-home:hover {
       background: rgba(124, 58, 237, 0.12);
       border-color: rgba(124, 58, 237, 0.25);
-      transform: translateY(-1px);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.15);
+    }
+
+    .btn-home:active {
+      transform: translateY(0);
     }
 
     .hero {
@@ -181,6 +198,17 @@
       font-weight: 700;
       color: var(--accent);
       letter-spacing: 0.3px;
+      display: flex;
+      align-items: center;
+    }
+
+    .card h3 svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      stroke-width: 2;
+      margin-right: 6px;
+      flex-shrink: 0;
     }
 
     .card > .status:first-of-type {
@@ -332,6 +360,12 @@
       border: 1px solid rgba(16, 185, 129, 0.3);
     }
 
+    .pill svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
     footer {
       border-top: 1px solid var(--border);
       padding-top: 40px;
@@ -348,15 +382,19 @@
 </head>
 <body>
   <header>
-    <div class="header-left">
-      <div class="header-logo">🎵</div>
-      <div class="header-title">
-        <h2>PFVMUSIC</h2>
-        <p>Издательство</p>
+    <div class="header-inner">
+      <div class="header-left">
+        <div class="header-logo">
+          <img src="/Frame%203.png" alt="PFVMUSIC" />
+        </div>
+        <div class="header-title">
+          <h2>PFVMUSIC</h2>
+          <p>Издательство</p>
+        </div>
       </div>
-    </div>
-    <div class="header-actions">
-      <a href="/" class="btn-home">🏠 На главную</a>
+      <div class="header-actions">
+        <a href="/" class="btn-home">На главную</a>
+      </div>
     </div>
   </header>
 
@@ -364,12 +402,23 @@
     <section class="hero">
       <h1 class="title">Подписание договора</h1>
       <p class="subtitle">Проверьте документ и оставьте подпись. Подписанный договор будет доступен для скачивания сразу после подтверждения.</p>
-      <span id="pill" class="pill" style="display:none;">✓ Готово к подписи</span>
+      <span id="pill" class="pill" style="display:none;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"></path>
+        </svg>
+        Готово к подписи
+      </span>
     </section>
 
     <div class="grid">
       <section class="card">
-        <h3>📄 Документ</h3>
+        <h3>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline; margin-right: 6px; vertical-align: middle;">
+            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+            <polyline points="13 2 13 9 20 9"></polyline>
+          </svg>
+          Документ
+        </h3>
         <div class="status" id="status">Загрузка документа…</div>
         <div class="doc-actions">
           <a id="docLink" class="btn" href="#" target="_blank" rel="noopener">Открыть HTML</a>
@@ -379,7 +428,13 @@
       </section>
 
       <section class="card">
-        <h3>✍️ Подпись</h3>
+        <h3>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline; margin-right: 6px; vertical-align: middle;">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+          </svg>
+          Подпись
+        </h3>
         <div class="signature-wrap">
           <div class="status" id="signStatus">Подпишите в поле ниже.</div>
           <canvas id="signature"></canvas>
