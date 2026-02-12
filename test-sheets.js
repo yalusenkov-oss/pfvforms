@@ -5,7 +5,23 @@
  * Использование: node test-sheets.js [distribution|promo-detailed|promo-weekly]
  */
 
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzogGGEaJXU7QA9QAB5Oz9HwGmWm8DsDezr1M-wwAmc8L9XkP0lQBHxfyCqOKIgNhJypg/exec';
+import fs from 'node:fs';
+import path from 'node:path';
+
+function resolveScriptUrl() {
+  if (process.env.SCRIPT_URL) return process.env.SCRIPT_URL;
+  try {
+    const cfgPath = path.resolve(process.cwd(), 'public', 'config.json');
+    const raw = fs.readFileSync(cfgPath, 'utf8');
+    const cfg = JSON.parse(raw);
+    if (cfg?.VITE_GOOGLE_SCRIPT_URL) return String(cfg.VITE_GOOGLE_SCRIPT_URL);
+  } catch {
+    // ignore
+  }
+  return 'https://script.google.com/macros/s/AKfycbzogGGEaJXU7QA9QAB5Oz9HwGmWm8DsDezr1M-wwAmc8L9XkP0lQBHxfyCqOKIgNhJypg/exec';
+}
+
+const SCRIPT_URL = resolveScriptUrl();
 
 // Тестовые данные для дистрибуции
 const testDistributionData = {
@@ -162,6 +178,89 @@ async function testGoogleSheets(testType = 'distribution') {
   }
 }
 
+async function fetchLastDistributionRow() {
+  const url = new URL(SCRIPT_URL);
+  url.searchParams.set('action', 'list');
+  url.searchParams.set('sheet', 'distributions');
+  url.searchParams.set('limit', '1');
+
+  const res = await fetch(url.toString(), { method: 'GET', redirect: 'follow' });
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status} when listing distributions: ${text.slice(0, 300)}`);
+  }
+  let json;
+  try {
+    json = text ? JSON.parse(text) : null;
+  } catch (e) {
+    throw new Error(`Response was not valid JSON when listing: ${text.slice(0, 300)}`);
+  }
+  const rows = Array.isArray(json) ? json : (json && Array.isArray(json.rows) ? json.rows : []);
+  if (!rows.length) return null;
+  return rows[rows.length - 1];
+}
+
+async function ensureDistributionRow() {
+  let row = await fetchLastDistributionRow();
+  if (row) return row;
+
+  await testGoogleSheets('distribution');
+  row = await fetchLastDistributionRow();
+  return row;
+}
+
+async function testSignCreate({ large }) {
+  const row = await ensureDistributionRow();
+  if (!row || !row._row) {
+    throw new Error('Не удалось получить строку дистрибуции для теста подписи');
+  }
+
+  const padding = large ? 60000 : 2000;
+  const contractHtml = `<html><body><h1>Test Contract</h1><p>${'A'.repeat(padding)}</p></body></html>`;
+  const payload = {
+    action: 'sign_create',
+    row: row._row,
+    contractNumber: row.contractNumber || row.contract_number || '',
+    signBaseUrl: 'https://example.com',
+    signExpiresDays: 7,
+    contractHtml,
+    signSource: 'internal'
+  };
+
+  console.log(large ? '🧪 Тест sign_create (large HTML)...' : '🧪 Тест sign_create (small HTML)...');
+  console.log('HTML length:', contractHtml.length);
+
+  const response = await fetch(SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify(payload),
+    redirect: 'follow',
+  });
+
+  const text = await response.text();
+  let json = null;
+  try {
+    json = text ? JSON.parse(text) : null;
+  } catch (e) {
+    // non-JSON
+  }
+
+  console.log('📥 Ответ сервера:');
+  console.log('Статус:', response.status, response.statusText);
+  console.log('Ответ:', json || text.substring(0, 300));
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status} from sign_create`);
+  }
+  if (!json) {
+    throw new Error(`Response was not valid JSON: ${text.slice(0, 300)}`);
+  }
+  if (json && json.success === false) {
+    throw new Error(json.error || 'sign_create failed');
+  }
+  console.log('\n✅ sign_create успешно');
+}
+
 // Проверка доступности URL
 async function checkUrl() {
   console.log('🔍 Проверка доступности URL...\n');
@@ -214,19 +313,31 @@ async function main() {
   promo-detailed    - Тест отправки детального промо
   promo-weekly      - Тест отправки еженедельного промо
   check             - Проверка доступности URL скрипта
+  sign-create-small - Тест создания ссылки (малый HTML)
+  sign-create-large - Тест создания ссылки (большой HTML > 50k)
   help              - Показать эту справку
 
 Примеры:
   node test-sheets.js distribution
   node test-sheets.js promo-detailed
   node test-sheets.js check
+  node test-sheets.js sign-create-large
     `);
     return;
   }
 
   if (command === 'check') {
     await checkUrl();
+    return;
   } else {
+    if (command === 'sign-create-small') {
+      await testSignCreate({ large: false });
+      return;
+    }
+    if (command === 'sign-create-large') {
+      await testSignCreate({ large: true });
+      return;
+    }
     await testGoogleSheets(command);
   }
 }
