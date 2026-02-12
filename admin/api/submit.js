@@ -74,10 +74,43 @@ export default async function handler(req, res) {
       payload = JSON.parse(payload.data);
     }
 
+    // Remove or truncate large fields to avoid Google Sheets 50000 char limit per cell
+    const fieldsToExclude = [
+      'contractHTML',
+      'contract_html',
+      'contractText',
+      'contract_text',
+      'signableContractHTML',
+      'signable_contract_html',
+      'signPreviewHTML',
+      'sign_preview_html',
+      'signatureImage',
+      'signature_image',
+      'fullContractHTML',
+      'full_contract_html',
+    ];
+
+    const maxFieldLength = 45000; // Leave 5000 char margin for safety
+    const cleanPayload = {};
+
+    for (const [key, value] of Object.entries(payload)) {
+      // Skip excluded fields entirely
+      if (fieldsToExclude.includes(key)) {
+        continue;
+      }
+
+      // Truncate string fields that exceed limit
+      if (typeof value === 'string' && value.length > maxFieldLength) {
+        cleanPayload[key] = value.substring(0, maxFieldLength) + '...[TRUNCATED]';
+      } else {
+        cleanPayload[key] = value;
+      }
+    }
+
     const response = await fetch(scriptUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(cleanPayload),
       redirect: 'follow'
     });
     const text = await response.text();
