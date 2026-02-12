@@ -185,6 +185,8 @@ function doPost(e) {
     let result = null;
     if (data.action === 'update') {
       updateRowData(data);
+    } else if (data.action === 'delete') {
+      deleteRowData(data);
     } else if (data.action === 'promo_code_delete') {
       deletePromoCode(data);
     } else if (data.action === 'sign_create') {
@@ -538,6 +540,36 @@ function deletePromoCode(data) {
     Logger.log('deletePromoCode error: ' + error.toString());
     throw error;
   }
+}
+
+function deleteRowData(data) {
+  const sheetParam = data.sheet || '';
+  const rowNum = parseInt(String(data.row || ''), 10);
+
+  if (!sheetParam || !rowNum) {
+    throw new Error('Missing delete parameters');
+  }
+
+  const normalized = String(sheetParam || '').toLowerCase().trim();
+  let sheetName = sheetParam;
+
+  if (normalized === 'distributions' || normalized === 'distribution' || normalized === 'дистрибуция') {
+    sheetName = DISTRIBUTION_SHEET_NAME;
+  } else if (normalized === 'promos' || normalized === 'promo' || normalized === 'промо') {
+    sheetName = PROMO_SHEET_NAME;
+  } else if (normalized === 'promocodes' || normalized === 'promo_codes' || normalized === 'промокоды') {
+    sheetName = PROMO_CODES_SHEET_NAME;
+  }
+
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(sheetName);
+  if (!sheet) throw new Error('Sheet "' + sheetName + '" not found');
+
+  if (rowNum < 2 || rowNum > sheet.getLastRow()) {
+    throw new Error('Invalid row for delete: ' + rowNum);
+  }
+
+  sheet.deleteRow(rowNum);
+  Logger.log(`Row ${rowNum} deleted from ${sheetName}`);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

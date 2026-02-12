@@ -240,6 +240,10 @@ export async function updateSheetRow(sheetName: string, rowIndex: number, update
   return postToScript({ action: 'update', sheet: sheetName, row: rowIndex, updates });
 }
 
+export async function deleteSheetRow(sheetName: string, rowIndex: number) {
+  return postToScript({ action: 'delete', sheet: sheetName, row: rowIndex });
+}
+
 export async function createSignLink(
   contractNumber: string,
   rowIndex?: number,

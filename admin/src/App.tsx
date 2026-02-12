@@ -22,7 +22,7 @@ import {
   isAuthenticated,
   logout,
 } from './store';
-import { fetchSheetRows, updateSheetRow, createSignLink } from './services/googleSheetsAdmin';
+import { fetchSheetRows, updateSheetRow, deleteSheetRow, createSignLink } from './services/googleSheetsAdmin';
 import { extractContractData, generateContractHTML } from './services/contractGenerator';
 
 type View =
@@ -287,7 +287,20 @@ export function App() {
     setRefreshKey(k => k + 1);
   };
 
-  const handleDistDelete = (id: string) => {
+  const handleDistDelete = async (id: string) => {
+    const row = distributions.find(d => d.id === id)?.rowIndex;
+    if (row) {
+      try {
+        await deleteSheetRow('distributions', row);
+        if ((view.type === 'distribution-detail' || view.type === 'distribution-contract') && view.id === id) {
+          setView({ type: 'distributions' });
+        }
+        loadRemote();
+        return;
+      } catch {
+        // fall back to local
+      }
+    }
     deleteDistribution(id);
     if ((view.type === 'distribution-detail' || view.type === 'distribution-contract') && view.id === id) {
       setView({ type: 'distributions' });
@@ -329,7 +342,20 @@ export function App() {
     }
   };
 
-  const handlePromoDelete = (id: string) => {
+  const handlePromoDelete = async (id: string) => {
+    const row = promos.find(p => p.id === id)?.rowIndex;
+    if (row) {
+      try {
+        await deleteSheetRow('promos', row);
+        if (view.type === 'promo-detail' && view.id === id) {
+          setView({ type: 'promos' });
+        }
+        loadRemote();
+        return;
+      } catch {
+        // fall back to local
+      }
+    }
     deletePromo(id);
     if (view.type === 'promo-detail' && view.id === id) {
       setView({ type: 'promos' });
