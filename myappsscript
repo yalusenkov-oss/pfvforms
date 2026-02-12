@@ -1526,17 +1526,27 @@ function createDocFromHtml(html, fileName) {
 
 function createPdfFromHtml(html, fileName) {
   if (!html) throw new Error('Empty contractHtml');
-  if (typeof Drive === 'undefined' || !Drive.Files) {
-    throw new Error('Drive API not enabled. Enable Advanced Drive Service.');
+  const htmlBlob = Utilities.newBlob(String(html), MimeType.HTML, `${fileName}.html`);
+
+  // Always use DriveApp to avoid Advanced Drive Service dependency
+  const tempFile = DriveApp.createFile(htmlBlob);
+  try {
+    const pdfBlob = tempFile.getAs(MimeType.PDF).setName(`${fileName} (signed).pdf`);
+    let pdfFile = null;
+    const parents = tempFile.getParents();
+    if (parents.hasNext()) {
+      pdfFile = parents.next().createFile(pdfBlob);
+    } else {
+      pdfFile = DriveApp.createFile(pdfBlob);
+    }
+    return pdfFile;
+  } finally {
+    try {
+      tempFile.setTrashed(true);
+    } catch (e) {
+      Logger.log('createPdfFromHtml: failed to trash temp file: ' + e);
+    }
   }
-  const blob = Utilities.newBlob(String(html), MimeType.HTML, `${fileName}.html`);
-  const file = Drive.Files.insert(
-    { title: `${fileName} (signed)`, mimeType: MimeType.PDF },
-    blob,
-    { convert: true }
-  );
-  if (!file || !file.id) throw new Error('Failed to create PDF from HTML');
-  return DriveApp.getFileById(file.id);
 }
 
 function embedOwnerSignatureInHtml(html) {
