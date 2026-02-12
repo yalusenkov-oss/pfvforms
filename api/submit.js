@@ -21,6 +21,24 @@ function getScriptUrl() {
   return '';
 }
 
+async function readJsonBody(req) {
+  return await new Promise((resolve) => {
+    let data = '';
+    req.on('data', (chunk) => {
+      data += chunk;
+    });
+    req.on('end', () => {
+      if (!data) return resolve(null);
+      try {
+        resolve(JSON.parse(data));
+      } catch {
+        resolve(null);
+      }
+    });
+    req.on('error', () => resolve(null));
+  });
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -44,6 +62,10 @@ export default async function handler(req, res) {
     }
 
     let payload = req.body || {};
+    if (!payload || Object.keys(payload).length === 0) {
+      const raw = await readJsonBody(req);
+      if (raw && typeof raw === 'object') payload = raw;
+    }
     if (payload && payload.data && typeof payload.data === 'string') {
       payload = JSON.parse(payload.data);
     }
