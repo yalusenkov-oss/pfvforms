@@ -7,7 +7,6 @@ import {
   Copy,
   Check,
   RefreshCw,
-  ExternalLink,
   Eye,
   Edit3,
   ChevronDown,
@@ -194,15 +193,10 @@ export function ContractGenerator({ data, onBack, onUpdateContractNumber }: Cont
             </p>
           </div>
         </div>
-        <a
-          href="https://docs.google.com/document/d/1MD0F4Ie0WQMCbZxHuwa0v23p836TFNV36MSEVbhBY7g/edit"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs px-3 py-1.5 rounded-lg bg-dark-700 text-dark-300 hover:text-white transition-colors flex items-center gap-1.5"
-        >
-          <ExternalLink size={14} />
-          Шаблон в Google Docs
-        </a>
+        <div className="text-xs px-3 py-1.5 rounded-lg bg-dark-700 text-dark-300 flex items-center gap-1.5">
+          <FileText size={14} />
+          Внутренний шаблон
+        </div>
       </div>
 
       {/* Contract Number */}
@@ -431,7 +425,7 @@ export function ContractGenerator({ data, onBack, onUpdateContractNumber }: Cont
             <p>1. Проверьте все данные в таблице маркеров выше — они будут подставлены в шаблон</p>
             <p>2. При необходимости измените номер договора (редактирование или генерация нового)</p>
             <p>3. Скачайте договор в формате HTML для печати или сохранения в PDF (через «Печать → Сохранить как PDF»)</p>
-            <p>4. Или скопируйте текст для вставки в Google Docs / Word</p>
+            <p>4. Или скопируйте текст и используйте его в нужном редакторе</p>
             <p className="text-dark-500 mt-2">
               Проценты роялти: Базовый — 55%, Продвинутый — 70%, Премиум — 90%, Платинум — 95%
             </p>

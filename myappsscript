@@ -542,171 +542,9 @@ function deletePromoCode(data) {
 // ГЕНЕРАЦИЯ ЛИЦЕНЗИОННЫХ ДОКУМЕНТОВ
 // ═══════════════════════════════════════════════════════════════════════════
 function generateLicenseDocuments() {
-  try {
-    const templateId = TEMPLATE_ID;
-    Logger.log("ID шаблона:", templateId);
-
-    const templateFile = DriveApp.getFileById(templateId);
-    if (!templateFile) {
-      throw new Error("Шаблон с указанным ID не найден. Проверьте TEMPLATE_ID.");
-    }
-    Logger.log("Шаблон найден:", templateFile.getName());
-
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(DISTRIBUTION_SHEET_NAME);
-    if (!sheet) {
-      throw new Error("Не найден лист '" + DISTRIBUTION_SHEET_NAME + "'");
-    }
-    Logger.log("Лист найден:", sheet.getName());
-
-    const rows = sheet.getDataRange().getValues();
-    const headers = rows[0];
-    Logger.log("Заголовки столбцов:", headers);
-
-    const indices = {
-      contractNumber: headers.indexOf("contract_number"),
-      licensorName: headers.indexOf("licensor_name"),
-      tariff: headers.indexOf("tariff"),
-      passportSeriesNumber: headers.indexOf("passport_series_number"),
-      passportIssuedBy: headers.indexOf("passport_issued_by"),
-      passportIssueDate: headers.indexOf("passport_issue_date"),
-      bankDetails: headers.indexOf("bank_details"),
-      email: headers.indexOf("email"),
-      pseudonym: headers.indexOf("pseudonym"),
-      workTitle: headers.indexOf("work_title"),
-      musicAuthor: headers.indexOf("music_author"),
-      lyricsAuthor: headers.indexOf("lyrics_author"),
-      documentStatus: headers.indexOf("document_status")
-    };
-
-    Logger.log("Индексы столбцов:", indices);
-
-    for (let key in indices) {
-      if (indices[key] < 0) {
-        throw new Error(`Столбец '${key}' не найден. Проверьте заголовки таблицы.`);
-      }
-    }
-
-    const currentDate = new Date();
-    const formattedDate = formatDate(currentDate);
-
-    const futureDate = new Date();
-    futureDate.setFullYear(currentDate.getFullYear() + 4);
-    const formattedFutureDate = formatDate(futureDate);
-
-    let processedCount = 0;
-
-    rows.slice(1).forEach((row, index) => {
-      const rowIndex = index + 2;
-      Logger.log(`Обработка строки ${rowIndex}`);
-
-      if (row[indices.documentStatus] === "Completed") {
-        Logger.log(`Строка ${rowIndex} уже обработана. Пропуск.`);
-        return;
-      }
-
-      const contractNumber = row[indices.contractNumber];
-      if (!contractNumber) {
-        Logger.log(`Строка ${rowIndex}: нет номера договора. Пропуск.`);
-        return;
-      }
-
-      const licensorName = row[indices.licensorName] || 'Без имени';
-      const fileName = `Договор №${contractNumber} - ${licensorName}`;
-      Logger.log(`Создание документа: ${fileName}`);
-
-      try {
-        const docCopy = templateFile.makeCopy(fileName);
-        Utilities.sleep(2000);
-
-        const doc = DocumentApp.openById(docCopy.getId());
-        const body = doc.getBody();
-
-        const tariff = row[indices.tariff] || '';
-        Logger.log(`Тариф для строки ${rowIndex}: ${tariff}`);
-
-        let percentageText = '';
-        switch (tariff) {
-          case 'Базовый':
-            percentageText = '55% (Пятьдесят пять процентов)';
-            break;
-          case 'Продвинутый':
-            percentageText = '70% (Семьдесят процентов)';
-            break;
-          case 'Премиум':
-            percentageText = '90% (Девяносто процентов)';
-            break;
-          case 'Платинум':
-            percentageText = '95% (Девяносто пять процентов)';
-            break;
-          default:
-            percentageText = '55% (Пятьдесят пять процентов)';
-        }
-
-        const replacements = {
-          '{{contract_number}}': contractNumber,
-          '{{licensor_name}}': licensorName,
-          '{{date}}': formattedDate,
-          '{{future_date}}': formattedFutureDate,
-          '{{percentage}}': percentageText,
-          '{{passport_series_number}}': row[indices.passportSeriesNumber] || '',
-          '{{passport_issued_by}}': row[indices.passportIssuedBy] || '',
-          '{{passport_issue_date}}': row[indices.passportIssueDate] || '',
-          '{{bank_details}}': row[indices.bankDetails] || '',
-          '{{email}}': row[indices.email] || '',
-          '{{pseudonym}}': row[indices.pseudonym] || '',
-          '{{work_title}}': row[indices.workTitle] || '',
-          '{{music_author}}': row[indices.musicAuthor] || '',
-          '{{lyrics_author}}': row[indices.lyricsAuthor] || ''
-        };
-
-        Logger.log("Значения для замены:", replacements);
-
-        for (let marker in replacements) {
-          body.replaceText(marker, replacements[marker]);
-        }
-
-        replaceInTables(body, replacements);
-        insertSignature(body);
-        doc.saveAndClose();
-
-        Logger.log(`Документ для ${fileName} успешно создан.`);
-        sheet.getRange(rowIndex, indices.documentStatus + 1).setValue("Completed");
-        processedCount++;
-
-        // Отправка уведомления о созданном документе
-        if (TELEGRAM_CONFIG.ENABLED && TELEGRAM_CONFIG.NOTIFY_DOC_GENERATED) {
-          const docUrl = docCopy.getUrl();
-          sendDocumentGeneratedNotification({
-            contractNumber: contractNumber,
-            licensorName: licensorName,
-            pseudonym: row[indices.pseudonym] || '',
-            workTitle: row[indices.workTitle] || '',
-            docUrl: docUrl
-          });
-        }
-
-      } catch (docError) {
-        Logger.log(`Ошибка при создании документа для договора №${contractNumber}: ${docError.message}`);
-        sheet.getRange(rowIndex, indices.documentStatus + 1).setValue("Error: " + docError.message);
-      }
-    });
-
-    Logger.log(`Процесс создания документов завершён. Обработано строк: ${processedCount}`);
-
-    SpreadsheetApp.getActiveSpreadsheet().toast(
-      `Создано документов: ${processedCount}`,
-      'Генерация завершена',
-      5
-    );
-
-  } catch (error) {
-    Logger.log("Произошла ошибка: " + error.message);
-    SpreadsheetApp.getActiveSpreadsheet().toast(
-      error.message,
-      'Ошибка генерации документов',
-      10
-    );
-  }
+  const msg = 'Генерация через Google Docs отключена. Используйте внутренний шаблон.';
+  Logger.log(msg);
+  SpreadsheetApp.getActiveSpreadsheet().toast(msg, 'PFVMUSIC', 7);
 }
 
 function replaceInTables(body, replacements) {
@@ -1683,18 +1521,7 @@ function buildDocUrls(docId) {
 }
 
 function createDocFromHtml(html, fileName) {
-  if (!html) throw new Error('Empty contractHtml');
-  if (typeof Drive === 'undefined' || !Drive.Files) {
-    throw new Error('Drive API not enabled. Enable Advanced Drive Service.');
-  }
-  const blob = Utilities.newBlob(String(html), MimeType.HTML, `${fileName}.html`);
-  const file = Drive.Files.insert(
-    { title: fileName, mimeType: MimeType.GOOGLE_DOCS },
-    blob,
-    { convert: true }
-  );
-  if (!file || !file.id) throw new Error('Failed to create doc from HTML');
-  return DriveApp.getFileById(file.id);
+  throw new Error('Google Docs disabled. Use internal HTML signing flow.');
 }
 
 function createPdfFromHtml(html, fileName) {
@@ -1829,46 +1656,20 @@ function createSignLink(data) {
     '{{lyrics_author}}': row[idx.lyricsAuthor] || ''
   };
 
-  const templateFile = DriveApp.getFileById(TEMPLATE_ID);
   const licensorName = replacements['{{licensor_name}}'] || 'Без имени';
   const fileName = `Договор №${contractNumber} - ${licensorName}`;
   const contractHtml = data.contractHtml ? String(data.contractHtml) : '';
-  const signSource = String(data.signSource || data.contractSource || data.source || '').toLowerCase();
-  const wantsInternal = signSource === 'internal';
-  let docFile = null;
   const signCols = getSignColumns(sheet);
   const extraCols = getSignExtraColumns(sheet);
 
-  if (wantsInternal && !contractHtml) {
+  if (!contractHtml) {
     return { success: false, error: 'Missing contractHtml for internal signing' };
   }
 
-  if (contractHtml) {
-    // Internal mode: store HTML and skip Google Docs
-    const htmlWithOwnerSig = embedOwnerSignatureInHtml(contractHtml);
-    sheet.getRange(rowIndex, extraCols.contractHtml).setValue(htmlWithOwnerSig);
-    sheet.getRange(rowIndex, extraCols.signSource).setValue('internal');
-    sheet.getRange(rowIndex, signCols.signDocId).setValue('');
-  } else {
-    // Google Docs mode
-    if (!templateFile) return { success: false, error: 'Template not found' };
-    const docCopy = templateFile.makeCopy(fileName);
-    Utilities.sleep(1000);
-    docFile = DriveApp.getFileById(docCopy.getId());
-
-    const doc = DocumentApp.openById(docCopy.getId());
-    const body = doc.getBody();
-    for (let marker in replacements) {
-      body.replaceText(marker, replacements[marker]);
-    }
-    replaceInTables(body, replacements);
-    insertSignature(body); // подпись правообладателя
-    doc.saveAndClose();
-
-    sheet.getRange(rowIndex, extraCols.contractHtml).setValue('');
-    sheet.getRange(rowIndex, extraCols.signSource).setValue('google');
-    sheet.getRange(rowIndex, signCols.signDocId).setValue(docFile.getId());
-  }
+  const htmlWithOwnerSig = embedOwnerSignatureInHtml(contractHtml);
+  sheet.getRange(rowIndex, extraCols.contractHtml).setValue(htmlWithOwnerSig);
+  sheet.getRange(rowIndex, extraCols.signSource).setValue('internal');
+  sheet.getRange(rowIndex, signCols.signDocId).setValue('');
 
   const signBaseUrl = String(data.signBaseUrl || '').replace(/\/$/, '');
   if (!signBaseUrl) return { success: false, error: 'Missing signBaseUrl' };
@@ -1887,14 +1688,13 @@ function createSignLink(data) {
   sheet.getRange(rowIndex, signCols.signedAt).setValue('');
   sheet.getRange(rowIndex, extraCols.signedPdfId).setValue('');
 
-  const urls = docFile ? buildDocUrls(docFile.getId()) : { docUrl: '', previewUrl: '', pdfUrl: '' };
   return {
     success: true,
     signUrl,
     expiresAt: expiresAt.toISOString(),
-    docUrl: urls.docUrl,
-    previewUrl: urls.previewUrl,
-    pdfUrl: urls.pdfUrl
+    docUrl: '',
+    previewUrl: '',
+    pdfUrl: ''
   };
 }
 
@@ -1927,27 +1727,27 @@ function getSignData(data) {
       return { success: false, error: 'Token expired' };
     }
 
-    const contractHtml = row[contractHtmlIdx] || '';
-    const signSource = row[signSourceIdx] || '';
-    const docId = row[signDocIdIdx] || '';
-    const signedPdfId = row[signedPdfIdIdx] || '';
-    const urls = docId ? buildDocUrls(docId) : { docUrl: '', previewUrl: '', pdfUrl: '' };
-
-    if (String(signSource).toLowerCase() === 'internal' && !contractHtml) {
-      return { success: false, error: 'Internal contract HTML missing' };
-    }
-
-    return {
-      success: true,
-      status: row[signStatusIdx] || 'pending',
-      signedUrl: row[signedUrlIdx] || '',
-      expiresAt: expiresAt ? expiresAt.toISOString() : '',
-      signSource: signSource || (contractHtml ? 'internal' : 'google'),
-      contractHtml: contractHtml || '',
-      signedPdfId: signedPdfId || '',
-      ...urls
-    };
+  const contractHtml = row[contractHtmlIdx] || '';
+  const signSource = row[signSourceIdx] || '';
+  const signedPdfId = row[signedPdfIdIdx] || '';
+  if (String(signSource).toLowerCase() !== 'internal') {
+    return { success: false, error: 'Google Docs disabled' };
   }
+  if (!contractHtml) return { success: false, error: 'Internal contract HTML missing' };
+
+  return {
+    success: true,
+    status: row[signStatusIdx] || 'pending',
+    signedUrl: row[signedUrlIdx] || '',
+    expiresAt: expiresAt ? expiresAt.toISOString() : '',
+    signSource: 'internal',
+    contractHtml: contractHtml || '',
+    signedPdfId: signedPdfId || '',
+    docUrl: '',
+    previewUrl: '',
+    pdfUrl: ''
+  };
+}
 
   return { success: false, error: 'Token not found' };
 }
@@ -1973,69 +1773,27 @@ function submitSignature(data) {
     }
 
     const contractHtml = row[extraCols.contractHtml - 1];
-    const docId = row[signCols.signDocId - 1];
+    if (!contractHtml) return { success: false, error: 'Internal contract HTML missing' };
 
-    if (contractHtml) {
-      // Internal HTML flow: inject signature and render PDF
-      const signedHtml = injectSignatureIntoHtml(contractHtml, data.signature);
-      const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-      const idx = {
-        contractNumber: headers.indexOf("contract_number"),
-        licensorName: headers.indexOf("licensor_name")
-      };
-      const contractNumber = row[idx.contractNumber] || 'UNKNOWN';
-      const licensorName = row[idx.licensorName] || 'Без имени';
-      const fileName = `Договор №${contractNumber} - ${licensorName}`;
+    // Internal HTML flow: inject signature and render PDF
+    const signedHtml = injectSignatureIntoHtml(contractHtml, data.signature);
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const idx = {
+      contractNumber: headers.indexOf("contract_number"),
+      licensorName: headers.indexOf("licensor_name")
+    };
+    const contractNumber = row[idx.contractNumber] || 'UNKNOWN';
+    const licensorName = row[idx.licensorName] || 'Без имени';
+    const fileName = `Договор №${contractNumber} - ${licensorName}`;
 
-      const pdfFile = createPdfFromHtml(signedHtml, fileName);
-      const signedUrl = pdfFile.getUrl();
-      const downloadUrl = `https://drive.google.com/uc?export=download&id=${pdfFile.getId()}`;
-
-      sheet.getRange(r + 1, signCols.signStatus).setValue('signed');
-      sheet.getRange(r + 1, signCols.signedUrl).setValue(signedUrl);
-      sheet.getRange(r + 1, signCols.signedAt).setValue(new Date().toISOString());
-      sheet.getRange(r + 1, extraCols.signedPdfId).setValue(pdfFile.getId());
-
-      return { success: true, signedUrl, downloadUrl };
-    }
-
-    if (!docId) return { success: false, error: 'Document not found' };
-
-    const doc = DocumentApp.openById(docId);
-    const body = doc.getBody();
-    const blob = dataUrlToBlob(data.signature);
-
-    const clientMarkers = [
-      '{{signature_client}}',
-      '{{signature_client_1}}',
-      '{{signature_client_2}}',
-      '{{signature_client_3}}',
-      '\\\\{\\\\{\\\\s*signature_client\\\\s*\\\\}\\\\}'
-    ];
-    let ok = false;
-    clientMarkers.forEach((m) => {
-      if (insertSignatureAtMarker(body, m, blob, 120)) ok = true;
-    });
-    if (!ok) return { success: false, error: 'Signature marker not found' };
-
-    doc.saveAndClose();
-
-    const docFile = DriveApp.getFileById(docId);
-    const pdfBlob = docFile.getAs(MimeType.PDF).setName(docFile.getName() + ' (signed).pdf');
-    let pdfFile = null;
-    const parents = docFile.getParents();
-    if (parents.hasNext()) {
-      pdfFile = parents.next().createFile(pdfBlob);
-    } else {
-      pdfFile = DriveApp.createFile(pdfBlob);
-    }
-
+    const pdfFile = createPdfFromHtml(signedHtml, fileName);
     const signedUrl = pdfFile.getUrl();
     const downloadUrl = `https://drive.google.com/uc?export=download&id=${pdfFile.getId()}`;
 
     sheet.getRange(r + 1, signCols.signStatus).setValue('signed');
     sheet.getRange(r + 1, signCols.signedUrl).setValue(signedUrl);
     sheet.getRange(r + 1, signCols.signedAt).setValue(new Date().toISOString());
+    sheet.getRange(r + 1, extraCols.signedPdfId).setValue(pdfFile.getId());
 
     return { success: true, signedUrl, downloadUrl };
   }
