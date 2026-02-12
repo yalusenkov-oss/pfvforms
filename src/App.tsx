@@ -149,6 +149,9 @@ function getRouteFromHash(): AppMode {
 
 export function App() {
   const [mode, setMode] = useState<AppMode>(getRouteFromHash());
+  const scrollToTopInstant = useCallback(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, []);
   
   // Listen for hash changes
   useEffect(() => {
@@ -160,7 +163,7 @@ export function App() {
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
-  
+
   // Update hash when mode changes
   const navigateTo = useCallback((newMode: AppMode) => {
     if (newMode === 'home') {
@@ -185,6 +188,15 @@ export function App() {
   const [promoSubmitted, setPromoSubmitted] = useState(false);
   const [promoSubmitting, setPromoSubmitting] = useState(false);
   const [promoErrors, setPromoErrors] = useState<string[]>([]);
+
+  // Hard reset scroll after mode/form state switches to prevent blank viewport on mobile browsers.
+  useEffect(() => {
+    if (submitted || promoSubmitted || mode === 'success' || mode === 'fail' || mode === 'result') {
+      requestAnimationFrame(() => {
+        scrollToTopInstant();
+      });
+    }
+  }, [mode, submitted, promoSubmitted, scrollToTopInstant]);
 
   const handleChange = useCallback((key: string, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -244,6 +256,7 @@ export function App() {
     try {
       const result = await submitToGoogleSheets('distribution', normalized);
       if (result.success) {
+        scrollToTopInstant();
         setSubmitted(true);
       } else {
         setValidationErrors([result.message]);
@@ -253,7 +266,7 @@ export function App() {
       setValidationErrors(['Ошибка при отправке формы. Попробуйте ещё раз.']);
     } finally {
       setSubmitting(false);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToTopInstant();
     }
   };
   
@@ -272,6 +285,7 @@ export function App() {
     try {
       const result = await submitToGoogleSheets('promo', promoData);
       if (result.success) {
+        scrollToTopInstant();
         setPromoSubmitted(true);
       } else {
         setPromoErrors([result.message]);
@@ -281,7 +295,7 @@ export function App() {
       setPromoErrors(['Ошибка при отправке формы. Попробуйте ещё раз.']);
     } finally {
       setPromoSubmitting(false);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToTopInstant();
     }
   };
   

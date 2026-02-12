@@ -91,6 +91,12 @@ export default async function handler(req, res) {
     ];
 
     const maxFieldLength = 45000; // Leave 5000 char margin for safety
+    const fieldsWithoutTruncation = [
+      'paymentProof',
+      'payment_proof',
+      'paymentProofBase64',
+      'payment_proof_base64'
+    ];
     const cleanPayload = {};
 
     for (const [key, value] of Object.entries(payload)) {
@@ -99,7 +105,13 @@ export default async function handler(req, res) {
         continue;
       }
 
-      // Truncate string fields that exceed limit
+      // Keep payment proof intact; truncation breaks base64 and Drive upload.
+      if (fieldsWithoutTruncation.includes(key)) {
+        cleanPayload[key] = value;
+        continue;
+      }
+
+      // Truncate other oversized string fields
       if (typeof value === 'string' && value.length > maxFieldLength) {
         cleanPayload[key] = value.substring(0, maxFieldLength) + '...[TRUNCATED]';
       } else {
