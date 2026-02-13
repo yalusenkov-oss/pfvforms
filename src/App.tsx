@@ -426,6 +426,65 @@ export function App() {
               <ChevronRight className="w-4 h-4" />
             </a>
           </div>
+
+          {/* Payment Compliance Info */}
+          <section className="mt-10 rounded-3xl border border-gray-200 bg-white p-6 md:p-8 shadow-sm">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              Информация для приёма платежей
+            </h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Раздел размещён для соответствия требованиям платёжного провайдера.
+            </p>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-2xl border border-purple-100 bg-purple-50/60 p-4">
+                <p className="text-sm font-semibold text-purple-900 mb-2">Услуги и цены</p>
+                <p className="text-xs text-purple-900/80 leading-relaxed">
+                  Дистрибуция музыки на цифровые площадки (Spotify, Apple Music, VK Музыка, Яндекс Музыка и другие).
+                  Тарифы с фиксированной стоимостью: «Базовый», «Продвинутый», «Премиум», «Платинум».
+                  Стоимость зависит от типа релиза (сингл / EP / альбом) и отображается в форме оформления.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-sky-100 bg-sky-50/60 p-4">
+                <p className="text-sm font-semibold text-sky-900 mb-2">Получение услуги</p>
+                <p className="text-xs text-sky-900/80 leading-relaxed">
+                  Услуги оказываются в цифровом формате, физическая доставка не требуется.
+                  После оплаты и отправки формы менеджер связывается с клиентом, подтверждает данные и запускает процесс публикации/промо.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-amber-100 bg-amber-50/70 p-4">
+                <p className="text-sm font-semibold text-amber-900 mb-2">Оферта и документы</p>
+                <p className="text-xs text-amber-900/80 leading-relaxed mb-2">
+                  Использование сервиса и оказание услуг регулируются публичной офертой.
+                </p>
+                <a
+                  href="https://disk.yandex.ru/i/PaBzY2OUMJ2ncQ"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-amber-800 underline"
+                >
+                  Открыть оферту
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+
+              <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                <p className="text-sm font-semibold text-gray-900 mb-2">Контакты и реквизиты</p>
+                <div className="space-y-1 text-xs text-gray-700">
+                  <p>Телефон: +7 (995) 488-50-53</p>
+                  <p>Email: booking@pfvmusic.ru</p>
+                  <p>Telegram: @pfvmusic_support</p>
+                  <p>ВКонтакте: vk.ru/pfvmusic</p>
+                  <p>ИП: Орехов Данила Александрович</p>
+                  <p>ИНН: 711613056345</p>
+                  <p>ОГРНИП: 324710000080681</p>
+                  <p>Почтовый адрес: укажите фактический почтовый адрес ИП</p>
+                </div>
+              </div>
+            </div>
+          </section>
           
           {/* Social Links */}
           <div className="mt-10 pt-10 border-t border-gray-100">
