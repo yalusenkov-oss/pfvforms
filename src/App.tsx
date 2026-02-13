@@ -414,16 +414,16 @@ export function App() {
             </button>
           </div>
           
-          {/* QR Code & Tariffs Link */}
-          <div className="mt-12 text-center">
+          {/* Tariffs link (secondary) */}
+          <div className="mt-8 text-center">
             <a
               href="https://clck.ru/3E6yBX"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl bg-purple-50 px-6 py-3 text-sm font-semibold text-purple-700 hover:bg-purple-100 border border-purple-100 transition-all hover:shadow-md"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 underline decoration-gray-300 underline-offset-4 hover:text-gray-700 transition-colors"
             >
-              Узнать о тарифах дистрибуции
-              <ChevronRight className="w-4 h-4" />
+              Полные тарифы и примеры
+              <ExternalLink className="w-3.5 h-3.5" />
             </a>
           </div>
 
@@ -482,6 +482,54 @@ export function App() {
                   <p>ОГРНИП: 324710000080681</p>
                   <p>Почтовый адрес: укажите фактический почтовый адрес ИП</p>
                 </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Tariffs Summary */}
+          <section className="mt-8 rounded-3xl border border-gray-200 bg-white p-6 md:p-8 shadow-sm">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Кратко о тарифах</h3>
+            <p className="text-sm text-gray-600 mb-5">
+              Сроки отгрузки: 7 / 4 / 2 / 1 рабочих дня. В Премиум и Платинум доступен максимум инструментов продвижения.
+            </p>
+
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 mb-5">
+              <p className="text-sm font-semibold text-gray-900 mb-2">Общие условия для всех тарифов</p>
+              <div className="space-y-1 text-xs text-gray-700">
+                <p>Перед оплатой прочтите: https://vk.com/@pfvmusic-kak-podgotovit-reliz-k-distr</p>
+                <p>Дистрибуция: Apple Music, VK Музыка, Spotify, TikTok, Яндекс Музыка, YouTube Music, Звук и другие.</p>
+                <p>Юридическая защита: соблюдение авторских прав.</p>
+                <p>Выплаты: ежеквартальные + еженедельные отчёты по стримингу и продажам.</p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-2xl border border-purple-100 bg-purple-50/60 p-4">
+                <p className="text-sm font-semibold text-purple-900 mb-1">Базовый</p>
+                <p className="text-xs text-purple-900/80 mb-2">Старт для начинающих. Без промо-поддержки.</p>
+                <p className="text-xs text-purple-900/80">Сингл 500 ₽ · EP 700 ₽ · Альбом 900 ₽ · Клип/сниппет 250 ₽</p>
+                <p className="text-xs text-purple-900/80 mt-1">Доля артиста: 55% · Мин. выплата: от 1500 ₽</p>
+              </div>
+
+              <div className="rounded-2xl border border-sky-100 bg-sky-50/60 p-4">
+                <p className="text-sm font-semibold text-sky-900 mb-1">Продвинутый</p>
+                <p className="text-xs text-sky-900/80 mb-2">Баланс цены и возможностей. Есть возможность подачи на промо.</p>
+                <p className="text-xs text-sky-900/80">Сингл 690 ₽ · EP 890 ₽ · Альбом 1200 ₽ · Клип/сниппет 350 ₽</p>
+                <p className="text-xs text-sky-900/80 mt-1">Доля артиста: 70% · Мин. выплата: от 1000 ₽</p>
+              </div>
+
+              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
+                <p className="text-sm font-semibold text-emerald-900 mb-1">Премиум (рекомендуем)</p>
+                <p className="text-xs text-emerald-900/80 mb-2">Оптимальный выбор: подача в редакции, Pre-Save, ранний выпуск, бесплатные изменения.</p>
+                <p className="text-xs text-emerald-900/80">Сингл 1200 ₽ · EP 1690 ₽ · Альбом 2290 ₽ · Клип/сниппет 380 ₽</p>
+                <p className="text-xs text-emerald-900/80 mt-1">Доля артиста: 90% · Мин. выплата: от 500 ₽</p>
+              </div>
+
+              <div className="rounded-2xl border border-amber-100 bg-amber-50/70 p-4">
+                <p className="text-sm font-semibold text-amber-900 mb-1">Платинум</p>
+                <p className="text-xs text-amber-900/80 mb-2">Максимум без компромиссов: премиальная промо-поддержка и личный менеджер.</p>
+                <p className="text-xs text-amber-900/80">Сингл 4990 ₽ · EP 6490 ₽ · Альбом 7990 ₽ · Клип/сниппет 1490 ₽</p>
+                <p className="text-xs text-amber-900/80 mt-1">Доля артиста: 100% · Выплаты с любой суммы</p>
               </div>
             </div>
           </section>
@@ -1224,10 +1272,10 @@ function Header({ onBack }: { onBack?: () => void }) {
           href="https://clck.ru/3E6yBX"
           target="_blank"
           rel="noopener noreferrer"
-          className="hidden sm:flex items-center gap-1.5 rounded-lg bg-purple-50 px-4 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-100 border border-purple-100 transition-all hover:shadow-sm"
+          className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-gray-500 underline decoration-gray-300 underline-offset-4 hover:text-gray-700 transition-colors"
         >
-          Тарифы
-          <ChevronRight className="w-3 h-3" />
+          Полные тарифы
+          <ExternalLink className="w-3 h-3" />
         </a>
       </div>
     </header>
