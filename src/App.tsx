@@ -522,21 +522,112 @@ export function App() {
             </button>
           </div>
           
-          {/* Tariffs link (secondary) */}
-          <div className="mt-8 text-center">
-            <a
-              href="https://clck.ru/3E6yBX"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 underline decoration-gray-300 underline-offset-4 hover:text-gray-700 transition-colors"
-            >
-              Полные тарифы и примеры
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
-          </div>
+          {/* Tariffs Section */}
+          <section className="mt-10 rounded-3xl border border-violet-200/70 bg-gradient-to-br from-violet-50 via-white to-sky-50 p-6 md:p-8 shadow-lg shadow-violet-100/50">
+            <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h3 className="text-2xl font-extrabold text-gray-900 mb-1">Раздел тарифов</h3>
+                <p className="text-sm text-gray-600">
+                  Подробные условия по каждому тарифу: сроки, стоимость, возможности продвижения и условия выплат.
+                </p>
+              </div>
+              <a
+                href="https://clck.ru/3E6yBX"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex w-fit items-center gap-1.5 rounded-full border border-gray-200 bg-white/90 px-4 py-2 text-xs font-semibold text-gray-600 hover:text-gray-800 hover:border-gray-300 transition-colors"
+              >
+                Полные тарифы и примеры
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+
+            <div className="mb-5 flex flex-wrap gap-2 text-xs">
+              <span className="rounded-full bg-white px-3 py-1 font-semibold text-violet-700 border border-violet-200">Отгрузка: 7 / 4 / 2 / 1 дня</span>
+              <span className="rounded-full bg-white px-3 py-1 font-semibold text-emerald-700 border border-emerald-200">Рекомендуем: Премиум</span>
+              <span className="rounded-full bg-white px-3 py-1 font-semibold text-sky-700 border border-sky-200">Площадки: Apple, Spotify, VK, TikTok</span>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200 bg-white/80 p-4 mb-5">
+              <p className="text-sm font-semibold text-gray-900 mb-2">Общие условия для всех тарифов</p>
+              <div className="space-y-1 text-xs text-gray-700">
+                <p>
+                  Перед оплатой прочтите:{' '}
+                  <a
+                    href="https://vk.com/@pfvmusic-kak-podgotovit-reliz-k-distr"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-2 font-medium"
+                  >
+                    https://vk.com/@pfvmusic-kak-podgotovit-reliz-k-distr
+                  </a>
+                </p>
+                <p>Дистрибуция: Apple Music, VK Музыка, Spotify, TikTok, Яндекс Музыка, YouTube Music, Звук и другие.</p>
+                <p>Юридическая защита: соблюдение авторских прав.</p>
+                <p>Выплаты: ежеквартальные + еженедельные отчёты по стримингу и продажам.</p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              {TARIFFS.map((tariff) => (
+                <div
+                  key={tariff.name}
+                  className={cn(
+                    'rounded-2xl border p-4 bg-white/90 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md',
+                    tariff.cardClass,
+                    tariff.recommended && 'ring-2 ring-emerald-300'
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <p className={cn('text-lg font-bold', tariff.titleClass)}>{tariff.name}</p>
+                    {tariff.recommended && (
+                      <span className="rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-semibold text-white">
+                        Рекомендуем
+                      </span>
+                    )}
+                  </div>
+                  <p className={cn('text-sm mb-3', tariff.titleClass)}>{tariff.subtitle}</p>
+
+                  <div className="space-y-3 text-xs text-gray-800">
+                    <div>
+                      <p className="font-semibold text-gray-900 mb-1">Срок отгрузки</p>
+                      <p>{tariff.turnaround}</p>
+                    </div>
+
+                    <div>
+                      <p className="font-semibold text-gray-900 mb-1">Стоимость дистрибуции</p>
+                      <ul className="space-y-1">
+                        {tariff.prices.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div>
+                      <p className="font-semibold text-gray-900 mb-1">Ключевые возможности</p>
+                      <ul className="space-y-1">
+                        {tariff.features.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div>
+                      <p className="font-semibold text-gray-900 mb-1">Условия монетизации</p>
+                      <ul className="space-y-1">
+                        {tariff.monetization.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
 
           {/* Payment Compliance Info */}
-          <section className="mt-10 rounded-3xl border border-gray-200 bg-white p-6 md:p-8 shadow-sm">
+          <section className="mt-8 rounded-3xl border border-gray-200 bg-white p-6 md:p-8 shadow-sm">
             <h3 className="text-xl font-bold text-gray-900 mb-2">
               Информация для приёма платежей
             </h3>
@@ -594,84 +685,6 @@ export function App() {
             </div>
           </section>
 
-          {/* Tariffs Section */}
-          <section className="mt-8 rounded-3xl border border-gray-200 bg-white p-6 md:p-8 shadow-sm">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Раздел тарифов</h3>
-            <p className="text-sm text-gray-600 mb-5">
-              Подробные условия по каждому тарифу: сроки, стоимость, возможности продвижения и условия выплат.
-            </p>
-
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 mb-5">
-              <p className="text-sm font-semibold text-gray-900 mb-2">Общие условия для всех тарифов</p>
-              <div className="space-y-1 text-xs text-gray-700">
-                <p>
-                  Перед оплатой прочтите:{' '}
-                  <a
-                    href="https://vk.com/@pfvmusic-kak-podgotovit-reliz-k-distr"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline underline-offset-2"
-                  >
-                    https://vk.com/@pfvmusic-kak-podgotovit-reliz-k-distr
-                  </a>
-                </p>
-                <p>Дистрибуция: Apple Music, VK Музыка, Spotify, TikTok, Яндекс Музыка, YouTube Music, Звук и другие.</p>
-                <p>Юридическая защита: соблюдение авторских прав.</p>
-                <p>Выплаты: ежеквартальные + еженедельные отчёты по стримингу и продажам.</p>
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              {TARIFFS.map((tariff) => (
-                <div key={tariff.name} className={cn('rounded-2xl border p-4', tariff.cardClass)}>
-                  <div className="flex items-center justify-between gap-3 mb-2">
-                    <p className={cn('text-lg font-bold', tariff.titleClass)}>{tariff.name}</p>
-                    {tariff.recommended && (
-                      <span className="rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-semibold text-white">
-                        Рекомендуем
-                      </span>
-                    )}
-                  </div>
-                  <p className={cn('text-sm mb-3', tariff.titleClass)}>{tariff.subtitle}</p>
-
-                  <div className="space-y-3 text-xs text-gray-800">
-                    <div>
-                      <p className="font-semibold text-gray-900 mb-1">Срок отгрузки</p>
-                      <p>{tariff.turnaround}</p>
-                    </div>
-
-                    <div>
-                      <p className="font-semibold text-gray-900 mb-1">Стоимость дистрибуции</p>
-                      <ul className="space-y-1">
-                        {tariff.prices.map((item) => (
-                          <li key={item}>{item}</li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <div>
-                      <p className="font-semibold text-gray-900 mb-1">Ключевые возможности</p>
-                      <ul className="space-y-1">
-                        {tariff.features.map((item) => (
-                          <li key={item}>{item}</li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <div>
-                      <p className="font-semibold text-gray-900 mb-1">Условия монетизации</p>
-                      <ul className="space-y-1">
-                        {tariff.monetization.map((item) => (
-                          <li key={item}>{item}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-          
           {/* Social Links */}
           <div className="mt-10 pt-10 border-t border-gray-100">
             <h3 className="text-center text-sm font-semibold text-gray-500 uppercase tracking-wider mb-6">
