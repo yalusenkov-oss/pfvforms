@@ -18,6 +18,114 @@ const DISTRIBUTION_STEPS = [
   { id: 4, label: 'Оплата', icon: CreditCard },
 ];
 
+type TariffInfo = {
+  name: string;
+  subtitle: string;
+  turnaround: string;
+  recommended?: boolean;
+  cardClass: string;
+  titleClass: string;
+  prices: string[];
+  features: string[];
+  monetization: string[];
+};
+
+const TARIFFS: TariffInfo[] = [
+  {
+    name: 'Базовый',
+    subtitle: 'Старт для начинающих',
+    turnaround: '7 рабочих дней',
+    cardClass: 'border-purple-100 bg-purple-50/60',
+    titleClass: 'text-purple-900',
+    prices: [
+      'Сингл: 500 ₽',
+      'EP (3-5 треков): 700 ₽',
+      'Альбом (6-20 треков): 900 ₽ (+50 ₽ за каждый доп. трек)',
+      'Клип/сниппет/концерт: 250 ₽',
+    ],
+    features: [
+      'Без промо-поддержки',
+      'Тексты и караоке в VK Музыке и Apple Music',
+      'Оперативная техподдержка',
+      'Платное изменение/удаление релиза: 250 ₽',
+      'Мульти-линк: 250 ₽',
+    ],
+    monetization: ['Доля артиста: 55%', 'Минимальная выплата: от 1500 ₽'],
+  },
+  {
+    name: 'Продвинутый',
+    subtitle: 'Баланс цены и возможностей',
+    turnaround: '4 рабочих дня',
+    cardClass: 'border-sky-100 bg-sky-50/60',
+    titleClass: 'text-sky-900',
+    prices: [
+      'Сингл: 690 ₽',
+      'EP (3-5 треков): 890 ₽',
+      'Альбом (6-20 треков): 1200 ₽ (+50 ₽ за каждый доп. трек)',
+      'Клип/сниппет/концерт: 350 ₽',
+    ],
+    features: [
+      'Возможность подачи на промо-поддержку',
+      'Тексты и караоке в VK Музыке и Яндекс Музыке (не караоке)',
+      'Быстрая техподдержка',
+      'Одно изменение релиза бесплатно',
+      'Скидка 30% на тексты для Genius (140 ₽)',
+      'Скидка 40% на караоке (195 ₽)',
+      'Бесплатный мульти-линк',
+      'Бесплатные консультации на всех этапах',
+    ],
+    monetization: ['Доля артиста: 70%', 'Минимальная выплата: от 1000 ₽'],
+  },
+  {
+    name: 'Премиум',
+    subtitle: 'Оптимальный выбор для развития',
+    turnaround: '2 рабочих дня',
+    recommended: true,
+    cardClass: 'border-emerald-100 bg-emerald-50/60',
+    titleClass: 'text-emerald-900',
+    prices: [
+      'Сингл: 1200 ₽',
+      'EP (3-5 треков): 1690 ₽',
+      'Альбом (6-20 треков): 2290 ₽ (+50 ₽ за каждый доп. трек)',
+      'Клип/сниппет/концерт: 380 ₽',
+    ],
+    features: [
+      'Возможность подачи в редакции площадок (промо-поддержка)',
+      'Pre-Save в Яндекс Музыке',
+      'Улучшенная доступность в TikTok',
+      'Бесплатный ранний выпуск треков до официального релиза',
+      'Тексты на Genius бесплатно',
+      'Караоке со скидкой 60% (140 ₽)',
+      'Бесплатное удаление и любые изменения релиза',
+      'Бесплатный мульти-линк',
+      'Оперативная техподдержка',
+    ],
+    monetization: ['Доля артиста: 90%', 'Минимальная выплата: от 500 ₽'],
+  },
+  {
+    name: 'Платинум',
+    subtitle: 'Максимум без компромиссов',
+    turnaround: '1 рабочий день (до 24 часов в рабочие дни)',
+    cardClass: 'border-amber-100 bg-amber-50/70',
+    titleClass: 'text-amber-900',
+    prices: [
+      'Сингл: 4990 ₽',
+      'EP (3-5 треков): 6490 ₽',
+      'Альбом (6-20 треков): 7990 ₽ (+50 ₽ за каждый доп. трек)',
+      'Клип/сниппет/концерт: 1490 ₽',
+    ],
+    features: [
+      'Премиальная промо-поддержка с максимальным охватом',
+      'Личный менеджер: персональное сопровождение на всех этапах',
+      'Возможность получения ноты YouTube (официальный артист)',
+      'Бесплатно: тексты на Genius, караоке, мульти-линк',
+      'Pre-Save в Яндекс Музыке + ранний выпуск треков',
+      'Премиальная техподдержка',
+    ],
+    monetization: ['Доля артиста: 100%', 'Выплаты: с любой суммы'],
+  },
+];
+
 /* ═══ Validation ═══ */
 interface ValidationResult {
   valid: boolean;
@@ -486,17 +594,27 @@ export function App() {
             </div>
           </section>
 
-          {/* Tariffs Summary */}
+          {/* Tariffs Section */}
           <section className="mt-8 rounded-3xl border border-gray-200 bg-white p-6 md:p-8 shadow-sm">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Кратко о тарифах</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Раздел тарифов</h3>
             <p className="text-sm text-gray-600 mb-5">
-              Сроки отгрузки: 7 / 4 / 2 / 1 рабочих дня. В Премиум и Платинум доступен максимум инструментов продвижения.
+              Подробные условия по каждому тарифу: сроки, стоимость, возможности продвижения и условия выплат.
             </p>
 
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 mb-5">
               <p className="text-sm font-semibold text-gray-900 mb-2">Общие условия для всех тарифов</p>
               <div className="space-y-1 text-xs text-gray-700">
-                <p>Перед оплатой прочтите: https://vk.com/@pfvmusic-kak-podgotovit-reliz-k-distr</p>
+                <p>
+                  Перед оплатой прочтите:{' '}
+                  <a
+                    href="https://vk.com/@pfvmusic-kak-podgotovit-reliz-k-distr"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-2"
+                  >
+                    https://vk.com/@pfvmusic-kak-podgotovit-reliz-k-distr
+                  </a>
+                </p>
                 <p>Дистрибуция: Apple Music, VK Музыка, Spotify, TikTok, Яндекс Музыка, YouTube Music, Звук и другие.</p>
                 <p>Юридическая защита: соблюдение авторских прав.</p>
                 <p>Выплаты: ежеквартальные + еженедельные отчёты по стримингу и продажам.</p>
@@ -504,33 +622,53 @@ export function App() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-2xl border border-purple-100 bg-purple-50/60 p-4">
-                <p className="text-sm font-semibold text-purple-900 mb-1">Базовый</p>
-                <p className="text-xs text-purple-900/80 mb-2">Старт для начинающих. Без промо-поддержки.</p>
-                <p className="text-xs text-purple-900/80">Сингл 500 ₽ · EP 700 ₽ · Альбом 900 ₽ · Клип/сниппет 250 ₽</p>
-                <p className="text-xs text-purple-900/80 mt-1">Доля артиста: 55% · Мин. выплата: от 1500 ₽</p>
-              </div>
+              {TARIFFS.map((tariff) => (
+                <div key={tariff.name} className={cn('rounded-2xl border p-4', tariff.cardClass)}>
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <p className={cn('text-lg font-bold', tariff.titleClass)}>{tariff.name}</p>
+                    {tariff.recommended && (
+                      <span className="rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-semibold text-white">
+                        Рекомендуем
+                      </span>
+                    )}
+                  </div>
+                  <p className={cn('text-sm mb-3', tariff.titleClass)}>{tariff.subtitle}</p>
 
-              <div className="rounded-2xl border border-sky-100 bg-sky-50/60 p-4">
-                <p className="text-sm font-semibold text-sky-900 mb-1">Продвинутый</p>
-                <p className="text-xs text-sky-900/80 mb-2">Баланс цены и возможностей. Есть возможность подачи на промо.</p>
-                <p className="text-xs text-sky-900/80">Сингл 690 ₽ · EP 890 ₽ · Альбом 1200 ₽ · Клип/сниппет 350 ₽</p>
-                <p className="text-xs text-sky-900/80 mt-1">Доля артиста: 70% · Мин. выплата: от 1000 ₽</p>
-              </div>
+                  <div className="space-y-3 text-xs text-gray-800">
+                    <div>
+                      <p className="font-semibold text-gray-900 mb-1">Срок отгрузки</p>
+                      <p>{tariff.turnaround}</p>
+                    </div>
 
-              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
-                <p className="text-sm font-semibold text-emerald-900 mb-1">Премиум (рекомендуем)</p>
-                <p className="text-xs text-emerald-900/80 mb-2">Оптимальный выбор: подача в редакции, Pre-Save, ранний выпуск, бесплатные изменения.</p>
-                <p className="text-xs text-emerald-900/80">Сингл 1200 ₽ · EP 1690 ₽ · Альбом 2290 ₽ · Клип/сниппет 380 ₽</p>
-                <p className="text-xs text-emerald-900/80 mt-1">Доля артиста: 90% · Мин. выплата: от 500 ₽</p>
-              </div>
+                    <div>
+                      <p className="font-semibold text-gray-900 mb-1">Стоимость дистрибуции</p>
+                      <ul className="space-y-1">
+                        {tariff.prices.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
 
-              <div className="rounded-2xl border border-amber-100 bg-amber-50/70 p-4">
-                <p className="text-sm font-semibold text-amber-900 mb-1">Платинум</p>
-                <p className="text-xs text-amber-900/80 mb-2">Максимум без компромиссов: премиальная промо-поддержка и личный менеджер.</p>
-                <p className="text-xs text-amber-900/80">Сингл 4990 ₽ · EP 6490 ₽ · Альбом 7990 ₽ · Клип/сниппет 1490 ₽</p>
-                <p className="text-xs text-amber-900/80 mt-1">Доля артиста: 100% · Выплаты с любой суммы</p>
-              </div>
+                    <div>
+                      <p className="font-semibold text-gray-900 mb-1">Ключевые возможности</p>
+                      <ul className="space-y-1">
+                        {tariff.features.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div>
+                      <p className="font-semibold text-gray-900 mb-1">Условия монетизации</p>
+                      <ul className="space-y-1">
+                        {tariff.monetization.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </section>
           
