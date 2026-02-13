@@ -18,114 +18,6 @@ const DISTRIBUTION_STEPS = [
   { id: 4, label: 'Оплата', icon: CreditCard },
 ];
 
-type TariffInfo = {
-  name: string;
-  subtitle: string;
-  turnaround: string;
-  recommended?: boolean;
-  cardClass: string;
-  titleClass: string;
-  prices: string[];
-  features: string[];
-  monetization: string[];
-};
-
-const TARIFFS: TariffInfo[] = [
-  {
-    name: 'Базовый',
-    subtitle: 'Старт для начинающих',
-    turnaround: '7 рабочих дней',
-    cardClass: 'border-purple-100 bg-purple-50/60',
-    titleClass: 'text-purple-900',
-    prices: [
-      'Сингл: 500 ₽',
-      'EP (3-5 треков): 700 ₽',
-      'Альбом (6-20 треков): 900 ₽ (+50 ₽ за каждый доп. трек)',
-      'Клип/сниппет/концерт: 250 ₽',
-    ],
-    features: [
-      'Без промо-поддержки',
-      'Тексты и караоке в VK Музыке и Apple Music',
-      'Оперативная техподдержка',
-      'Платное изменение/удаление релиза: 250 ₽',
-      'Мульти-линк: 250 ₽',
-    ],
-    monetization: ['Доля артиста: 55%', 'Минимальная выплата: от 1500 ₽'],
-  },
-  {
-    name: 'Продвинутый',
-    subtitle: 'Баланс цены и возможностей',
-    turnaround: '4 рабочих дня',
-    cardClass: 'border-sky-100 bg-sky-50/60',
-    titleClass: 'text-sky-900',
-    prices: [
-      'Сингл: 690 ₽',
-      'EP (3-5 треков): 890 ₽',
-      'Альбом (6-20 треков): 1200 ₽ (+50 ₽ за каждый доп. трек)',
-      'Клип/сниппет/концерт: 350 ₽',
-    ],
-    features: [
-      'Возможность подачи на промо-поддержку',
-      'Тексты и караоке в VK Музыке и Яндекс Музыке (не караоке)',
-      'Быстрая техподдержка',
-      'Одно изменение релиза бесплатно',
-      'Скидка 30% на тексты для Genius (140 ₽)',
-      'Скидка 40% на караоке (195 ₽)',
-      'Бесплатный мульти-линк',
-      'Бесплатные консультации на всех этапах',
-    ],
-    monetization: ['Доля артиста: 70%', 'Минимальная выплата: от 1000 ₽'],
-  },
-  {
-    name: 'Премиум',
-    subtitle: 'Оптимальный выбор для развития',
-    turnaround: '2 рабочих дня',
-    recommended: true,
-    cardClass: 'border-emerald-100 bg-emerald-50/60',
-    titleClass: 'text-emerald-900',
-    prices: [
-      'Сингл: 1200 ₽',
-      'EP (3-5 треков): 1690 ₽',
-      'Альбом (6-20 треков): 2290 ₽ (+50 ₽ за каждый доп. трек)',
-      'Клип/сниппет/концерт: 380 ₽',
-    ],
-    features: [
-      'Возможность подачи в редакции площадок (промо-поддержка)',
-      'Pre-Save в Яндекс Музыке',
-      'Улучшенная доступность в TikTok',
-      'Бесплатный ранний выпуск треков до официального релиза',
-      'Тексты на Genius бесплатно',
-      'Караоке со скидкой 60% (140 ₽)',
-      'Бесплатное удаление и любые изменения релиза',
-      'Бесплатный мульти-линк',
-      'Оперативная техподдержка',
-    ],
-    monetization: ['Доля артиста: 90%', 'Минимальная выплата: от 500 ₽'],
-  },
-  {
-    name: 'Платинум',
-    subtitle: 'Максимум без компромиссов',
-    turnaround: '1 рабочий день (до 24 часов в рабочие дни)',
-    cardClass: 'border-amber-100 bg-amber-50/70',
-    titleClass: 'text-amber-900',
-    prices: [
-      'Сингл: 4990 ₽',
-      'EP (3-5 треков): 6490 ₽',
-      'Альбом (6-20 треков): 7990 ₽ (+50 ₽ за каждый доп. трек)',
-      'Клип/сниппет/концерт: 1490 ₽',
-    ],
-    features: [
-      'Премиальная промо-поддержка с максимальным охватом',
-      'Личный менеджер: персональное сопровождение на всех этапах',
-      'Возможность получения ноты YouTube (официальный артист)',
-      'Бесплатно: тексты на Genius, караоке, мульти-линк',
-      'Pre-Save в Яндекс Музыке + ранний выпуск треков',
-      'Премиальная техподдержка',
-    ],
-    monetization: ['Доля артиста: 100%', 'Выплаты: с любой суммы'],
-  },
-];
-
 /* ═══ Validation ═══ */
 interface ValidationResult {
   valid: boolean;
@@ -206,7 +98,6 @@ function validateStep4(data: Record<string, string>): ValidationResult {
   const errors: string[] = [];
   
   if (!data.contactInfo?.trim()) errors.push('Укажите контакты для связи');
-  if (!data.paymentProof?.trim()) errors.push('Загрузите фото оплаты');
   
   return { valid: errors.length === 0, errors };
 }
@@ -257,9 +148,6 @@ function getRouteFromHash(): AppMode {
 
 export function App() {
   const [mode, setMode] = useState<AppMode>(getRouteFromHash());
-  const scrollToTopInstant = useCallback(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-  }, []);
   
   // Listen for hash changes
   useEffect(() => {
@@ -271,7 +159,7 @@ export function App() {
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
-
+  
   // Update hash when mode changes
   const navigateTo = useCallback((newMode: AppMode) => {
     if (newMode === 'home') {
@@ -296,15 +184,6 @@ export function App() {
   const [promoSubmitted, setPromoSubmitted] = useState(false);
   const [promoSubmitting, setPromoSubmitting] = useState(false);
   const [promoErrors, setPromoErrors] = useState<string[]>([]);
-
-  // Hard reset scroll after mode/form state switches to prevent blank viewport on mobile browsers.
-  useEffect(() => {
-    if (submitted || promoSubmitted || mode === 'success' || mode === 'fail' || mode === 'result') {
-      requestAnimationFrame(() => {
-        scrollToTopInstant();
-      });
-    }
-  }, [mode, submitted, promoSubmitted, scrollToTopInstant]);
 
   const handleChange = useCallback((key: string, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -364,7 +243,6 @@ export function App() {
     try {
       const result = await submitToGoogleSheets('distribution', normalized);
       if (result.success) {
-        scrollToTopInstant();
         setSubmitted(true);
       } else {
         setValidationErrors([result.message]);
@@ -374,7 +252,7 @@ export function App() {
       setValidationErrors(['Ошибка при отправке формы. Попробуйте ещё раз.']);
     } finally {
       setSubmitting(false);
-      scrollToTopInstant();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
   
@@ -393,7 +271,6 @@ export function App() {
     try {
       const result = await submitToGoogleSheets('promo', promoData);
       if (result.success) {
-        scrollToTopInstant();
         setPromoSubmitted(true);
       } else {
         setPromoErrors([result.message]);
@@ -403,7 +280,7 @@ export function App() {
       setPromoErrors(['Ошибка при отправке формы. Попробуйте ещё раз.']);
     } finally {
       setPromoSubmitting(false);
-      scrollToTopInstant();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
   
@@ -426,8 +303,6 @@ export function App() {
     setPromoData({});
     setPromoErrors([]);
   };
-
-  const canSubmitDistribution = !!formData.paymentProof;
 
   // ═══ HOME PAGE ═══
   if (mode === 'home') {
@@ -522,155 +397,18 @@ export function App() {
             </button>
           </div>
           
-          {/* Tariffs link (secondary) */}
-          <div className="mt-8 text-center">
+          {/* QR Code & Tariffs Link */}
+          <div className="mt-12 text-center">
             <a
               href="https://clck.ru/3E6yBX"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 underline decoration-gray-300 underline-offset-4 hover:text-gray-700 transition-colors"
+              className="inline-flex items-center gap-2 rounded-xl bg-purple-50 px-6 py-3 text-sm font-semibold text-purple-700 hover:bg-purple-100 border border-purple-100 transition-all hover:shadow-md"
             >
-              Полные тарифы и примеры
-              <ExternalLink className="w-3.5 h-3.5" />
+              Узнать о тарифах дистрибуции
+              <ChevronRight className="w-4 h-4" />
             </a>
           </div>
-
-          {/* Payment Compliance Info */}
-          <section className="mt-10 rounded-3xl border border-gray-200 bg-white p-6 md:p-8 shadow-sm">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
-              Информация для приёма платежей
-            </h3>
-            <p className="text-sm text-gray-600 mb-6">
-              Раздел размещён для соответствия требованиям платёжного провайдера.
-            </p>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-2xl border border-purple-100 bg-purple-50/60 p-4">
-                <p className="text-sm font-semibold text-purple-900 mb-2">Услуги и цены</p>
-                <p className="text-xs text-purple-900/80 leading-relaxed">
-                  Дистрибуция музыки на цифровые площадки (Spotify, Apple Music, VK Музыка, Яндекс Музыка и другие).
-                  Тарифы с фиксированной стоимостью: «Базовый», «Продвинутый», «Премиум», «Платинум».
-                  Стоимость зависит от типа релиза (сингл / EP / альбом) и отображается в форме оформления.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-sky-100 bg-sky-50/60 p-4">
-                <p className="text-sm font-semibold text-sky-900 mb-2">Получение услуги</p>
-                <p className="text-xs text-sky-900/80 leading-relaxed">
-                  Услуги оказываются в цифровом формате, физическая доставка не требуется.
-                  После оплаты и отправки формы менеджер связывается с клиентом, подтверждает данные и запускает процесс публикации/промо.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-amber-100 bg-amber-50/70 p-4">
-                <p className="text-sm font-semibold text-amber-900 mb-2">Оферта и документы</p>
-                <p className="text-xs text-amber-900/80 leading-relaxed mb-2">
-                  Использование сервиса и оказание услуг регулируются публичной офертой.
-                </p>
-                <a
-                  href="https://disk.yandex.ru/i/PaBzY2OUMJ2ncQ"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-amber-800 underline"
-                >
-                  Открыть оферту
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              </div>
-
-              <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-                <p className="text-sm font-semibold text-gray-900 mb-2">Контакты и реквизиты</p>
-                <div className="space-y-1 text-xs text-gray-700">
-                  <p>Телефон: +7 (995) 488-50-53</p>
-                  <p>Email: booking@pfvmusic.ru</p>
-                  <p>Telegram: @pfvmusic_support</p>
-                  <p>ВКонтакте: vk.ru/pfvmusic</p>
-                  <p>ИП: Орехов Данила Александрович</p>
-                  <p>ИНН: 711613056345</p>
-                  <p>ОГРНИП: 324710000080681</p>
-                  <p>Почтовый адрес: укажите фактический почтовый адрес ИП</p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Tariffs Section */}
-          <section className="mt-8 rounded-3xl border border-gray-200 bg-white p-6 md:p-8 shadow-sm">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Раздел тарифов</h3>
-            <p className="text-sm text-gray-600 mb-5">
-              Подробные условия по каждому тарифу: сроки, стоимость, возможности продвижения и условия выплат.
-            </p>
-
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 mb-5">
-              <p className="text-sm font-semibold text-gray-900 mb-2">Общие условия для всех тарифов</p>
-              <div className="space-y-1 text-xs text-gray-700">
-                <p>
-                  Перед оплатой прочтите:{' '}
-                  <a
-                    href="https://vk.com/@pfvmusic-kak-podgotovit-reliz-k-distr"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline underline-offset-2"
-                  >
-                    https://vk.com/@pfvmusic-kak-podgotovit-reliz-k-distr
-                  </a>
-                </p>
-                <p>Дистрибуция: Apple Music, VK Музыка, Spotify, TikTok, Яндекс Музыка, YouTube Music, Звук и другие.</p>
-                <p>Юридическая защита: соблюдение авторских прав.</p>
-                <p>Выплаты: ежеквартальные + еженедельные отчёты по стримингу и продажам.</p>
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              {TARIFFS.map((tariff) => (
-                <div key={tariff.name} className={cn('rounded-2xl border p-4', tariff.cardClass)}>
-                  <div className="flex items-center justify-between gap-3 mb-2">
-                    <p className={cn('text-lg font-bold', tariff.titleClass)}>{tariff.name}</p>
-                    {tariff.recommended && (
-                      <span className="rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-semibold text-white">
-                        Рекомендуем
-                      </span>
-                    )}
-                  </div>
-                  <p className={cn('text-sm mb-3', tariff.titleClass)}>{tariff.subtitle}</p>
-
-                  <div className="space-y-3 text-xs text-gray-800">
-                    <div>
-                      <p className="font-semibold text-gray-900 mb-1">Срок отгрузки</p>
-                      <p>{tariff.turnaround}</p>
-                    </div>
-
-                    <div>
-                      <p className="font-semibold text-gray-900 mb-1">Стоимость дистрибуции</p>
-                      <ul className="space-y-1">
-                        {tariff.prices.map((item) => (
-                          <li key={item}>{item}</li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <div>
-                      <p className="font-semibold text-gray-900 mb-1">Ключевые возможности</p>
-                      <ul className="space-y-1">
-                        {tariff.features.map((item) => (
-                          <li key={item}>{item}</li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <div>
-                      <p className="font-semibold text-gray-900 mb-1">Условия монетизации</p>
-                      <ul className="space-y-1">
-                        {tariff.monetization.map((item) => (
-                          <li key={item}>{item}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
           
           {/* Social Links */}
           <div className="mt-10 pt-10 border-t border-gray-100">
@@ -1343,7 +1081,7 @@ export function App() {
             <button
               type="button"
               onClick={handleDistributionSubmit}
-              disabled={submitting || !canSubmitDistribution}
+              disabled={submitting}
               className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-200/50 hover:shadow-purple-300/50 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               {submitting ? (
@@ -1410,10 +1148,10 @@ function Header({ onBack }: { onBack?: () => void }) {
           href="https://clck.ru/3E6yBX"
           target="_blank"
           rel="noopener noreferrer"
-          className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-gray-500 underline decoration-gray-300 underline-offset-4 hover:text-gray-700 transition-colors"
+          className="hidden sm:flex items-center gap-1.5 rounded-lg bg-purple-50 px-4 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-100 border border-purple-100 transition-all hover:shadow-sm"
         >
-          Полные тарифы
-          <ExternalLink className="w-3 h-3" />
+          Тарифы
+          <ChevronRight className="w-3 h-3" />
         </a>
       </div>
     </header>

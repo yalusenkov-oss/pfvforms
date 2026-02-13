@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { Input, StepCard, InfoBox, Divider } from './UI';
-import { CreditCard, MessageCircle, Send, ExternalLink, Building2, Smartphone, Heart, Calculator, ReceiptText, MessageSquare, UserCheck, Megaphone, TicketPercent, CheckCircle2, XCircle } from 'lucide-react';
+import { CreditCard, MessageCircle, Send, ExternalLink, Building2, Smartphone, Heart, Calculator, ReceiptText, MessageSquare, UserCheck, Megaphone, TicketPercent, CheckCircle2, XCircle, Banknote } from 'lucide-react';
 import { calcTotal, getTrackCount } from './StepOne';
 import { fetchPromoCodes, PromoCodeRecord } from '@/services/googleSheets';
 
@@ -119,11 +119,11 @@ export function StepFour({ data, onChange, onGoToPromo }: StepFourProps) {
     }
 
     onChange('promoApplied', 'yes');
-    onChange('promoCode', result.promo.code);
-    onChange('promoDiscountType', result.promo.discountType);
-    onChange('promoDiscountValue', String(result.promo.discountValue));
-    onChange('promoDiscountAmount', String(result.discountAmount));
-    setPromoMessage(`Промокод применён: -${result.discountAmount.toLocaleString('ru-RU')} ₽`);
+    onChange('promoCode', result.promo!.code);
+    onChange('promoDiscountType', result.promo!.discountType);
+    onChange('promoDiscountValue', String(result.promo!.discountValue));
+    onChange('promoDiscountAmount', String(result.discountAmount!));
+    setPromoMessage(`Промокод применён: -${result.discountAmount!.toLocaleString('ru-RU')} ₽`);
   };
 
   useEffect(() => {
@@ -181,6 +181,27 @@ export function StepFour({ data, onChange, onGoToPromo }: StepFourProps) {
 
   return (
     <div className="space-y-6">
+      {/* ═══ Tariff Section ═══ */}
+      <StepCard
+        title="Раздел тарифов"
+        subtitle="Выберите подходящий план для вашего релиза"
+        icon={<Banknote className="w-5 h-5" />}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <TariffCard name="Базовый" emoji="📦" description="Стандартная дистрибуция" single="500" ep="700" album="900" active={tariff === 'Базовый'} />
+          <TariffCard name="Продвинутый" emoji="🚀" description="Расширенный функционал" single="690" ep="890" album="1 200" active={tariff === 'Продвинутый'} />
+          <TariffCard name="Премиум" emoji="⭐" description="Премиум опции" single="1 200" ep="1 690" album="2 290" active={tariff === 'Премиум'} />
+          <TariffCard name="Платинум" emoji="👑" description="Максимум возможностей" single="4 990" ep="6 490" album="7 990" active={tariff === 'Платинум'} />
+        </div>
+
+        <InfoBox variant="purple">
+          <div>
+            <p className="font-semibold mb-1.5">💡 Какой тариф выбрать?</p>
+            <p className="text-xs text-purple-600">Каждый тариф включает доступ на основные платформы. Различия в цене и дополнительных опциях.</p>
+          </div>
+        </InfoBox>
+      </StepCard>
+
       {/* ═══ Promo Code ═══ */}
       <StepCard
         title="Промокод"
@@ -222,21 +243,10 @@ export function StepFour({ data, onChange, onGoToPromo }: StepFourProps) {
 
       {/* ═══ Payment Details ═══ */}
       <StepCard
-        title="Реквизиты для оплаты"
+        title="Информация для приёма платежей"
         subtitle="Произведите оплату удобным способом"
         icon={<CreditCard className="w-5 h-5" />}
       >
-        {/* Pricing info */}
-        <div className="rounded-xl bg-gray-50 border border-gray-200 p-4">
-          <p className="text-xs font-semibold text-gray-700 mb-3">💰 Стоимость тарифов:</p>
-          <div className="space-y-3 text-xs">
-            <TariffPriceRow name="Базовый" emoji="📦" single="500" ep="700" album="900" active={tariff === 'Базовый'} />
-            <TariffPriceRow name="Продвинутый" emoji="🚀" single="690" ep="890" album="1 200" active={tariff === 'Продвинутый'} />
-            <TariffPriceRow name="Премиум" emoji="⭐" single="1 200" ep="1 690" album="2 290" active={tariff === 'Премиум'} />
-            <TariffPriceRow name="Платинум" emoji="👑" single="4 990" ep="6 490" album="7 990" active={tariff === 'Платинум'} />
-          </div>
-        </div>
-
         {/* Physical Persons */}
         <div>
           <div className="flex items-center gap-2 mb-3">
@@ -475,22 +485,42 @@ export function StepFour({ data, onChange, onGoToPromo }: StepFourProps) {
   );
 }
 
-/* ─── Tariff Price Row ─── */
-function TariffPriceRow({ name, emoji, single, ep, album, active }: {
-  name: string; emoji: string; single: string; ep: string; album: string; active: boolean;
+/* ─── Tariff Card ─── */
+function TariffCard({ name, emoji, description, single, ep, album, active }: {
+  name: string;
+  emoji: string;
+  description: string;
+  single: string;
+  ep: string;
+  album: string;
+  active: boolean;
 }) {
   return (
-    <div className={`flex flex-wrap items-center gap-2 sm:gap-3 rounded-lg px-3 py-2 transition-all ${active ? 'bg-purple-100 border border-purple-300' : 'bg-white border border-gray-100'}`}>
-      <span className="text-sm">{emoji}</span>
-      <span className={`font-semibold flex-shrink-0 w-20 sm:w-24 ${active ? 'text-purple-800' : 'text-gray-700'}`}>{name}</span>
-      <div className="flex-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
-        <span className="text-gray-500">Сингл: <strong className="text-gray-800">{single} ₽</strong></span>
-        <span className="text-gray-300 hidden sm:inline">|</span>
-        <span className="text-gray-500">EP: <strong className="text-gray-800">{ep} ₽</strong></span>
-        <span className="text-gray-300 hidden sm:inline">|</span>
-        <span className="text-gray-500">Альбом: <strong className="text-gray-800">{album} ₽</strong></span>
+    <div className={`relative rounded-xl border-2 transition-all p-4 ${active ? `border-purple-400 bg-gradient-to-br from-purple-50 via-white to-purple-50/30 shadow-md` : 'border-gray-200 bg-white hover:shadow-sm hover:border-purple-200'}`}>
+      {active && (
+        <div className="absolute -top-3 -right-3">
+          <span className="text-xs font-bold text-white bg-purple-600 px-2 py-1 rounded-full">Выбран</span>
+        </div>
+      )}
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-2xl">{emoji}</span>
+        <h3 className={`font-bold text-sm ${active ? 'text-purple-900' : 'text-gray-900'}`}>{name}</h3>
       </div>
-      {active && <span className="text-[9px] font-bold text-purple-700 bg-purple-200 px-2 py-0.5 rounded-full flex-shrink-0">Выбран</span>}
+      <p className="text-xs text-gray-600 mb-3">{description}</p>
+      <div className="space-y-1.5 text-[11px]">
+        <div className="flex justify-between">
+          <span className="text-gray-600">Сингл:</span>
+          <span className="font-bold text-gray-900">{single} ₽</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-600">EP:</span>
+          <span className="font-bold text-gray-900">{ep} ₽</span>
+        </div>
+        <div className="flex justify-between border-t border-gray-100 pt-1.5 mt-1.5">
+          <span className="text-gray-600">Альбом:</span>
+          <span className="font-bold text-gray-900">{album} ₽</span>
+        </div>
+      </div>
     </div>
   );
 }

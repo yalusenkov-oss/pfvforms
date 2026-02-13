@@ -20,13 +20,8 @@ const CONTRACTS_HTML_FOLDER_ID = '';
 // ID папки для чеков оплаты (оставьте пустым для авто-создания)
 const PAYMENT_PROOFS_FOLDER_ID = '';
 
-// Настройки Telegram уведомлений
+// Общие флаги Telegram (без токенов/чатов — они заданы ниже отдельно)
 const TELEGRAM_CONFIG = {
-  ENABLED: false,              // ← Установите true для включения уведомлений
-  BOT_TOKEN: '',               // ← Вставьте токен бота (от @BotFather)
-  CHAT_ID: '',                 // ← Вставьте ID чата/канала
-  THREAD_ID: null,             // ← ID топика (опционально, для супергрупп)
-  DEBUG_MODE: false,           // ← true для отладки
   NOTIFY_DISTRIBUTION: true,   // Уведомлять о новых договорах
   NOTIFY_PROMO: true,          // Уведомлять о новых промо
   NOTIFY_PROMO_CODE: false,    // Уведомлять о промокодах
@@ -36,18 +31,18 @@ const TELEGRAM_CONFIG = {
 // Отдельные настройки для разных чатов/ботов (если нужны)
 const TELEGRAM_DISTRIBUTION = {
   ENABLED: true,
-  BOT_TOKEN: '',
-  CHAT_ID: '',
+  BOT_TOKEN: '7725833130:AAEr7if331GMDGHMudemMmXo4ezro9W5lio',
+  CHAT_ID: '2584625468',
   THREAD_ID: null,
-  DEBUG_MODE: false
+  DEBUG_MODE: true
 };
 
 const TELEGRAM_PROMO = {
   ENABLED: true,
-  BOT_TOKEN: '',
-  CHAT_ID: '',
-  THREAD_ID: null,
-  DEBUG_MODE: false
+  BOT_TOKEN: '7948957197:AAHJh2VBLTVEQpa0azmz9UZyioHutviUfio',
+  CHAT_ID: '-1002584625468',
+  THREAD_ID: 3,
+  DEBUG_MODE: true
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -404,7 +399,8 @@ function saveDistribution(data) {
     Logger.log('Distribution data saved successfully. Contract: ' + contractNumber);
 
     // Отправка уведомления в Telegram
-    if (TELEGRAM_CONFIG.ENABLED && TELEGRAM_CONFIG.NOTIFY_DISTRIBUTION) {
+    const distCfg = getTelegramConfig('distribution');
+    if (TELEGRAM_CONFIG.NOTIFY_DISTRIBUTION && distCfg.ENABLED && distCfg.BOT_TOKEN && distCfg.CHAT_ID) {
       sendDistributionNotification({
         contractNumber: contractNumber,
         licensorName: data.fullName || '',
@@ -461,7 +457,8 @@ function savePromo(data) {
     Logger.log('Promo data saved successfully. Type: ' + data.promoType);
 
     // Отправка уведомления в Telegram
-    if (TELEGRAM_CONFIG.ENABLED && TELEGRAM_CONFIG.NOTIFY_PROMO) {
+    const promoCfg = getTelegramConfig('promo');
+    if (TELEGRAM_CONFIG.NOTIFY_PROMO && promoCfg.ENABLED && promoCfg.BOT_TOKEN && promoCfg.CHAT_ID) {
       sendPromoNotification({
         promoType: getPromoTypeName(data.promoType),
         releaseLink: data.releaseLink || '',
@@ -515,7 +512,8 @@ function savePromoCode(data) {
       Logger.log('Promo code created: ' + id);
 
       // Отправка уведомления в Telegram при создании
-      if (TELEGRAM_CONFIG.ENABLED && TELEGRAM_CONFIG.NOTIFY_PROMO_CODE) {
+      const promoCodeCfg = getTelegramConfig('promo_code');
+      if (TELEGRAM_CONFIG.NOTIFY_PROMO_CODE && promoCodeCfg.ENABLED && promoCodeCfg.BOT_TOKEN && promoCodeCfg.CHAT_ID) {
         sendPromoCodeNotification({
           id: id,
           code: data.code || '',
@@ -830,12 +828,10 @@ function buildDocumentMessage(data) {
 
 function sendToTelegramAPI(message, cfg) {
   const url = `https://api.telegram.org/bot${cfg.BOT_TOKEN}/sendMessage`;
+  const baseChatId = String(cfg.CHAT_ID || '').trim();
+  if (!baseChatId) throw new Error('Telegram CHAT_ID is empty');
 
-  const chatIdsToTry = [
-    cfg.CHAT_ID,
-    `-100${cfg.CHAT_ID}`,
-    `@${cfg.CHAT_ID}`
-  ];
+  const chatIdsToTry = buildTelegramChatCandidates(baseChatId);
 
   let lastError;
 
@@ -848,9 +844,9 @@ function sendToTelegramAPI(message, cfg) {
         disable_web_page_preview: false
       };
 
-      // Добавляем thread_id если указан
-      if (cfg.THREAD_ID) {
-        payload.message_thread_id = cfg.THREAD_ID;
+      // thread работает только в супергруппах/форумах
+      if (shouldAttachThread(chatId, cfg.THREAD_ID)) {
+        payload.message_thread_id = Number(cfg.THREAD_ID);
       }
 
       const response = UrlFetchApp.fetch(url, {
@@ -863,13 +859,26 @@ function sendToTelegramAPI(message, cfg) {
       const responseData = JSON.parse(response.getContentText());
       if (responseData.ok) return responseData;
 
-      lastError = responseData.description;
+      lastError = `${chatId}: ${responseData.description || 'unknown error'}`;
     } catch (e) {
-      lastError = e.message;
+      lastError = `${chatId}: ${e.message}`;
     }
   }
 
   throw new Error(`Telegram API: ${lastError || "Не удалось отправить сообщение"}`);
+}
+
+function buildTelegramChatCandidates(chatId) {
+  const id = String(chatId || '').trim();
+  if (!id) return [];
+  if (id[0] === '@' || id.indexOf('-100') === 0) return [id];
+  return [id, `-100${id}`, `@${id}`];
+}
+
+function shouldAttachThread(chatId, threadId) {
+  const tid = Number(threadId);
+  if (!Number.isFinite(tid) || tid <= 0) return false;
+  return String(chatId || '').indexOf('-100') === 0;
 }
 
 function sendDebugInfo(text, cfg) {
@@ -885,8 +894,8 @@ function sendDebugInfo(text, cfg) {
       parse_mode: "MarkdownV2"
     };
 
-    if (cfg.THREAD_ID) {
-      payload.message_thread_id = cfg.THREAD_ID;
+    if (shouldAttachThread(cfg.CHAT_ID, cfg.THREAD_ID)) {
+      payload.message_thread_id = Number(cfg.THREAD_ID);
     }
 
     UrlFetchApp.fetch(debugUrl, {
@@ -904,19 +913,25 @@ function sendDebugInfo(text, cfg) {
 // АДМИН-ПАНЕЛЬ: Чтение данных
 // ═══════════════════════════════════════════════════════════════════════════
 function getTelegramConfig(kind) {
-  const base = TELEGRAM_CONFIG || {};
+  const defaults = {
+    ENABLED: false,
+    BOT_TOKEN: '',
+    CHAT_ID: '',
+    THREAD_ID: null,
+    DEBUG_MODE: false
+  };
   let override = null;
   if (kind === 'distribution' || kind === 'document') override = TELEGRAM_DISTRIBUTION;
   if (kind === 'promo' || kind === 'promo_code') override = TELEGRAM_PROMO;
 
-  if (!override) return base;
+  if (!override) return defaults;
 
   return {
-    ENABLED: typeof override.ENABLED === 'boolean' ? override.ENABLED : base.ENABLED,
-    BOT_TOKEN: override.BOT_TOKEN || base.BOT_TOKEN,
-    CHAT_ID: override.CHAT_ID || base.CHAT_ID,
-    THREAD_ID: override.THREAD_ID != null ? override.THREAD_ID : base.THREAD_ID,
-    DEBUG_MODE: typeof override.DEBUG_MODE === 'boolean' ? override.DEBUG_MODE : base.DEBUG_MODE
+    ENABLED: typeof override.ENABLED === 'boolean' ? override.ENABLED : defaults.ENABLED,
+    BOT_TOKEN: override.BOT_TOKEN || defaults.BOT_TOKEN,
+    CHAT_ID: override.CHAT_ID || defaults.CHAT_ID,
+    THREAD_ID: override.THREAD_ID != null ? override.THREAD_ID : defaults.THREAD_ID,
+    DEBUG_MODE: typeof override.DEBUG_MODE === 'boolean' ? override.DEBUG_MODE : defaults.DEBUG_MODE
   };
 }
 
@@ -2030,7 +2045,7 @@ function updateExistingSheets() {
 // ═══════════════════════════════════════════════════════════════════════════
 // Исправление сдвига колонок после добавления payment_proof_url
 // ═══════════════════════════════════════════════════════════════════════════
-function fixPaymentProofColumn() {
+function fixPaymentProofColumn(force) {
   const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = spreadsheet.getSheetByName(DISTRIBUTION_SHEET_NAME);
   if (!sheet) {
@@ -2058,12 +2073,14 @@ function fixPaymentProofColumn() {
 
   for (let r = 0; r < data.length; r++) {
     const row = data[r];
-    const proofVal = String(row[proofIdx] || '');
-    const contractVal = String(row[contractIdx] || '');
+    const proofVal = String(row[proofIdx] || '').trim();
+    const contractVal = String(row[contractIdx] || '').trim();
     const looksLikeContract = /^PFV-\d{6}-\d{4}/.test(proofVal);
-    const looksLikePercent = /%/.test(contractVal);
+    const looksLikeUrl = /^https?:\/\//i.test(proofVal);
+    const contractLooksValid = /^PFV-\d{6}-\d{4}/.test(contractVal);
+    const shouldShift = !!force || (looksLikeContract && !looksLikeUrl && !contractLooksValid);
 
-    if (looksLikeContract && looksLikePercent) {
+    if (shouldShift) {
       // Сдвигаем значения вправо на 1, начиная с payment_proof_url
       for (let c = lastCol - 1; c > proofIdx; c--) {
         row[c] = row[c - 1];
@@ -2085,6 +2102,122 @@ function fixPaymentProofColumn() {
   }
 }
 
+function fixPaymentProofColumnForce() {
+  fixPaymentProofColumn(true);
+}
+
+function backupDistributionSheet() {
+  const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = spreadsheet.getSheetByName(DISTRIBUTION_SHEET_NAME);
+  if (!sheet) throw new Error('Sheet "' + DISTRIBUTION_SHEET_NAME + '" not found');
+  const backupName = `${DISTRIBUTION_SHEET_NAME} Backup ${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}`;
+  sheet.copyTo(spreadsheet).setName(backupName);
+}
+
+function looksLikeUrl(value) {
+  return /^https?:\/\//i.test(String(value || '').trim());
+}
+
+function looksLikeIsoDate(value) {
+  return /^\d{4}-\d{2}-\d{2}T/.test(String(value || '').trim());
+}
+
+function looksLikeInternalSource(value) {
+  return String(value || '').trim() === 'internal';
+}
+
+function looksLikeDriveId(value) {
+  return /^[A-Za-z0-9_-]{20,}$/.test(String(value || '').trim());
+}
+
+function fixSignColumnsShift(force) {
+  const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = spreadsheet.getSheetByName(DISTRIBUTION_SHEET_NAME);
+  if (!sheet) {
+    SpreadsheetApp.getActiveSpreadsheet().toast('Лист "Дистрибуция" не найден', 'Ошибка', 5);
+    return;
+  }
+
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const signDocIdIdx = headers.indexOf('sign_doc_id');
+  const signedUrlIdx = headers.indexOf('signed_url');
+  const signedAtIdx = headers.indexOf('signed_at');
+  const contractHtmlIdx = headers.indexOf('contract_html');
+  const signSourceIdx = headers.indexOf('sign_source');
+  const signedPdfIdIdx = headers.indexOf('signed_pdf_id');
+
+  if ([signDocIdIdx, signedUrlIdx, signedAtIdx, contractHtmlIdx, signSourceIdx, signedPdfIdIdx].some(i => i < 0)) {
+    SpreadsheetApp.getActiveSpreadsheet().toast('Не найдены колонки блока подписи', 'Ошибка', 5);
+    return;
+  }
+
+  const lastRow = sheet.getLastRow();
+  const lastCol = sheet.getLastColumn();
+  if (lastRow < 2) {
+    SpreadsheetApp.getActiveSpreadsheet().toast('Нет данных для исправления', 'Ок', 4);
+    return;
+  }
+
+  const data = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+  let fixed = 0;
+
+  for (let r = 0; r < data.length; r++) {
+    const row = data[r];
+    const signDocId = row[signDocIdIdx];
+    const signedUrl = row[signedUrlIdx];
+    const signedAt = row[signedAtIdx];
+    const contractHtml = row[contractHtmlIdx];
+    const signSource = row[signSourceIdx];
+    const signedPdfId = row[signedPdfIdIdx];
+
+    const shiftedPattern =
+      looksLikeUrl(signDocId) &&
+      looksLikeIsoDate(signedUrl) &&
+      looksLikeUrl(signedAt) &&
+      looksLikeInternalSource(contractHtml);
+
+    const tailShiftPattern =
+      looksLikeIsoDate(contractHtml) &&
+      looksLikeUrl(signSource) &&
+      (looksLikeInternalSource(signedPdfId) || !String(signedPdfId || '').trim() || !!force);
+
+    if (shiftedPattern) {
+      // Кейc 1: sign_doc_id -> signed_url -> signed_at -> contract_html сдвинуты вправо.
+      row[signedPdfIdIdx] = looksLikeDriveId(signSource) ? String(signSource).trim() : extractDriveFileId(signDocId) || signedPdfId || '';
+      row[signSourceIdx] = 'internal';
+      row[contractHtmlIdx] = signedAt || '';
+      row[signedAtIdx] = signedUrl || '';
+      row[signedUrlIdx] = signDocId || '';
+      row[signDocIdIdx] = '';
+      fixed++;
+      continue;
+    }
+
+    if (tailShiftPattern) {
+      // Кейc 2: сдвинут только хвост contract_html/sign_source/signed_pdf_id.
+      const recoveredPdfId =
+        looksLikeDriveId(signedPdfId) ? String(signedPdfId).trim() :
+        extractDriveFileId(signedUrl) || extractDriveFileId(signSource) || '';
+      row[contractHtmlIdx] = signSource || '';
+      row[signSourceIdx] = 'internal';
+      row[signedPdfIdIdx] = recoveredPdfId;
+      fixed++;
+    }
+  }
+
+  if (fixed > 0) {
+    backupDistributionSheet();
+    sheet.getRange(2, 1, data.length, lastCol).setValues(data);
+    SpreadsheetApp.getActiveSpreadsheet().toast(`Исправлено подписи: ${fixed}`, 'Готово', 6);
+  } else {
+    SpreadsheetApp.getActiveSpreadsheet().toast('Сдвиг в блоке подписи не обнаружен', 'Ок', 4);
+  }
+}
+
+function fixSignColumnsShiftForce() {
+  fixSignColumnsShift(true);
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Создание пользовательского меню
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2093,6 +2226,9 @@ function onOpen() {
   ui.createMenu('📄 PFVMUSIC')
     .addItem('🔄 Обновить заголовки таблиц', 'updateExistingSheets')
     .addItem('🧩 Починить колонку оплаты', 'fixPaymentProofColumn')
+    .addItem('🧩 Починить колонку оплаты (принудительно)', 'fixPaymentProofColumnForce')
+    .addItem('🧩 Починить колонки подписи', 'fixSignColumnsShift')
+    .addItem('🧩 Починить колонки подписи (принудительно)', 'fixSignColumnsShiftForce')
     .addItem('🛠 Починить данные треков', 'repairTracksJson')
     .addSeparator()
     .addItem('📝 Генерировать договоры', 'generateLicenseDocuments')
