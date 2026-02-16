@@ -525,10 +525,10 @@ export function App() {
           {/* Tariffs Section */}
           <section className="mt-10 rounded-3xl border border-purple-200/50 bg-gradient-to-br from-purple-50/80 via-white to-blue-50/50 p-6 md:p-8 shadow-lg shadow-purple-100/40">
             {/* Header */}
-            <div className="mb-6 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-              <div className="max-w-2xl">
-                <h3 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-1">Раздел тарифов</h3>
-                <p className="text-base text-gray-600">
+            <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div className="flex-1">
+                <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Раздел тарифов</h3>
+                <p className="text-base text-gray-600 leading-relaxed">
                   Выберите оптимальный пакет для вашего релиза. Полная информация о сроках, ценах и выплатах.
                 </p>
               </div>
@@ -536,7 +536,7 @@ export function App() {
                 href="https://clck.ru/3E6yBX"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex w-fit items-center gap-2 rounded-full border border-purple-300 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 px-4 py-2.5 text-sm font-semibold text-white shadow-md hover:shadow-lg transition-all"
+                className="inline-flex items-center gap-2 rounded-full border-2 border-purple-500 bg-white px-4 py-2 text-sm font-semibold text-purple-600 hover:bg-purple-50 transition-colors whitespace-nowrap"
               >
                 Полные тарифы
                 <ExternalLink className="w-4 h-4" />
@@ -544,49 +544,50 @@ export function App() {
             </div>
 
             {/* Info Pills */}
-            <div className="mb-6 grid gap-2 md:grid-cols-3 text-sm">
-              <div className="rounded-2xl border border-purple-200 bg-gradient-to-br from-purple-50 to-purple-50/30 px-4 py-3 font-semibold text-purple-700">
+            <div className="mb-6 grid gap-3 md:grid-cols-3">
+              <div className="rounded-full border border-purple-200 bg-purple-50 px-4 py-3 text-sm font-semibold text-purple-700 text-center">
                 ⚡ Отгрузка: 7 / 4 / 2 / 1 дня
               </div>
-              <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-50/30 px-4 py-3 font-semibold text-emerald-700">
+              <div className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 text-center">
                 ⭐ Рекомендуем: Премиум
               </div>
-              <div className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-blue-50/30 px-4 py-3 font-semibold text-blue-700">
+              <div className="rounded-full border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 text-center">
                 🎵 Площадки: 40+ сервисов
               </div>
             </div>
 
             {/* General Conditions */}
-            <div className="rounded-2xl border border-purple-200 bg-gradient-to-r from-purple-50/60 to-pink-50/30 p-4 md:p-5 mb-6">
-              <p className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-                <span className="text-lg">✓</span> Общие условия для всех тарифов
+            <div className="rounded-2xl border border-purple-200 bg-gradient-to-r from-purple-50 to-white p-6 mb-8">
+              <p className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100">✓</span>
+                Общие условия для всех тарифов
               </p>
-              <div className="grid gap-2 text-sm text-gray-700 md:grid-cols-2">
+              <div className="grid gap-3 text-sm text-gray-700 md:grid-cols-2">
                 <div className="flex gap-3">
-                  <span className="flex-shrink-0 text-purple-500 font-bold">→</span>
+                  <span className="flex-shrink-0 text-purple-500 font-bold mt-0.5">→</span>
                   <p>
                     Гайд по подготовке:{' '}
                     <a
                       href="https://vk.com/@pfvmusic-kak-podgotovit-reliz-k-distr"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="underline underline-offset-2 font-semibold text-purple-600 hover:text-purple-700"
+                      className="font-semibold text-purple-600 hover:text-purple-700 underline underline-offset-2"
                     >
                       ссылка
                     </a>
                   </p>
                 </div>
                 <div className="flex gap-3">
-                  <span className="flex-shrink-0 text-purple-500 font-bold">→</span>
-                  <p>Площадки: Apple Music, VK, Spotify, TikTok, Яндекс, YouTube и др.</p>
+                  <span className="flex-shrink-0 text-purple-500 font-bold mt-0.5">→</span>
+                  <p>Площадки: Apple Music, VK, Spotify, TikTok, Яндекс и др.</p>
                 </div>
                 <div className="flex gap-3">
-                  <span className="flex-shrink-0 text-purple-500 font-bold">→</span>
-                  <p>Юридическая защита: соблюдение авторских прав</p>
+                  <span className="flex-shrink-0 text-purple-500 font-bold mt-0.5">→</span>
+                  <p>Юридическая защита авторских прав</p>
                 </div>
                 <div className="flex gap-3">
-                  <span className="flex-shrink-0 text-purple-500 font-bold">→</span>
-                  <p>Выплаты: еженедельные + ежеквартальные отчёты</p>
+                  <span className="flex-shrink-0 text-purple-500 font-bold mt-0.5">→</span>
+                  <p>Еженедельные + ежеквартальные отчёты</p>
                 </div>
               </div>
             </div>
@@ -597,72 +598,77 @@ export function App() {
                 <div
                   key={tariff.name}
                   className={cn(
-                    'group relative rounded-2xl border-2 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl overflow-hidden',
+                    'rounded-2xl border-2 p-5 bg-white transition-all duration-300 hover:shadow-xl hover:-translate-y-1',
                     tariff.cardClass,
-                    tariff.recommended && 'ring-2 ring-emerald-300 ring-offset-2'
+                    tariff.recommended && 'ring-2 ring-emerald-400 ring-offset-2 shadow-md'
                   )}
                 >
-                  {/* Gradient Background */}
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-300 pointer-events-none" />
-                  
                   {/* Badge */}
                   {tariff.recommended && (
-                    <div className="absolute top-3 right-3 z-10">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-3 py-1 text-xs font-bold text-white shadow-md">
-                        ⭐ Популярный
-                      </span>
+                    <div className="mb-3 inline-block rounded-full bg-emerald-500 px-3 py-1 text-xs font-bold text-white">
+                      ⭐ Популярный
                     </div>
                   )}
 
-                  {/* Title */}
-                  <div className="mb-3 pr-20">
-                    <p className={cn('text-xl font-bold leading-tight', tariff.titleClass)}>{tariff.name}</p>
+                  {/* Title & Subtitle */}
+                  <div className="mb-4">
+                    <p className={cn('text-lg font-bold', tariff.titleClass)}>{tariff.name}</p>
                     <p className={cn('text-xs mt-1', tariff.titleClass)}>
                       {tariff.subtitle}
                     </p>
                   </div>
 
-                  {/* Key Info */}
-                  <div className="mb-4 space-y-2 border-t border-gray-200/50 pt-4">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-gray-600">Срок:</span>
-                      <span className="font-bold text-gray-900">{tariff.turnaround}</span>
+                  {/* Key Info Box */}
+                  <div className="rounded-lg bg-gray-50 p-3 mb-4 border border-gray-200">
+                    <div className="space-y-2">
+                      <div>
+                        <p className="text-xs text-gray-600 font-medium">Срок обработки</p>
+                        <p className="text-sm font-bold text-gray-900">{tariff.turnaround}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 font-medium">Доля / выплаты</p>
+                        <p className="text-sm font-bold text-gray-900">{tariff.monetization[0]}</p>
+                      </div>
                     </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-gray-600">Доля / выплаты:</span>
-                      <span className="font-bold text-gray-900">{tariff.monetization[0]}</span>
-                    </div>
-                    <div className="pt-2 border-t border-gray-200/30">
-                      <p className="text-xs text-gray-700 font-semibold">{tariff.prices.slice(0, 1).join('')}</p>
-                      <p className="text-xs text-gray-600">{tariff.prices.slice(1, 2).join('')}</p>
+                  </div>
+
+                  {/* Pricing */}
+                  <div className="mb-4 pb-4 border-b-2 border-gray-100">
+                    <p className="text-xs text-gray-600 font-medium mb-1">Цены дистрибуции</p>
+                    <div className="space-y-1">
+                      {tariff.prices.slice(0, 2).map((price) => (
+                        <p key={price} className="text-xs font-semibold text-gray-900">
+                          {price}
+                        </p>
+                      ))}
                     </div>
                   </div>
 
                   {/* Expandable Details */}
-                  <details className="group/details">
-                    <summary className="cursor-pointer list-none text-xs font-bold text-purple-600 hover:text-purple-700 flex items-center justify-between py-2 transition-colors">
-                      Подробнее
-                      <span className="transition-transform duration-300 group-open/details:rotate-180">▼</span>
+                  <details className="group">
+                    <summary className="cursor-pointer text-xs font-bold text-purple-600 hover:text-purple-700 flex items-center justify-between py-1 transition-colors list-none">
+                      <span>Подробнее</span>
+                      <span className="transition-transform duration-300 group-open:rotate-180">▼</span>
                     </summary>
-                    <div className="mt-3 space-y-3 border-t border-gray-200/50 pt-3 text-xs">
+                    <div className="mt-3 space-y-3 text-xs border-t border-gray-100 pt-3">
                       <div>
-                        <p className="font-bold text-gray-900 mb-1.5">Цены дистрибуции</p>
-                        <div className="space-y-1 text-gray-700">
-                          {tariff.prices.map((item) => (
-                            <p key={item} className="flex gap-2">
+                        <p className="font-bold text-gray-900 mb-2">Все цены</p>
+                        <div className="space-y-1">
+                          {tariff.prices.map((price) => (
+                            <p key={price} className="text-gray-700 flex gap-2">
                               <span className="text-purple-400">•</span>
-                              <span>{item}</span>
+                              {price}
                             </p>
                           ))}
                         </div>
                       </div>
                       <div>
-                        <p className="font-bold text-gray-900 mb-1.5">Возможности</p>
-                        <div className="space-y-1 text-gray-700">
-                          {tariff.features.map((item) => (
-                            <p key={item} className="flex gap-2">
+                        <p className="font-bold text-gray-900 mb-2">Возможности</p>
+                        <div className="space-y-1">
+                          {tariff.features.map((feature) => (
+                            <p key={feature} className="text-gray-700 flex gap-2">
                               <span className="text-emerald-400">✓</span>
-                              <span>{item}</span>
+                              {feature}
                             </p>
                           ))}
                         </div>
