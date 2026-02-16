@@ -565,26 +565,29 @@ export function App() {
 
             {/* Info Pills */}
             <div className="mb-6 grid gap-3 md:grid-cols-3">
-              <div className="rounded-full border border-purple-200 bg-purple-50 px-4 py-3 text-sm font-semibold text-purple-700 text-center">
-                ⚡ Отгрузка: 7 / 4 / 2 / 1 дня
+              <div className="h-11 rounded-full border border-purple-200 bg-purple-100/40 px-5 py-3 text-sm font-semibold text-purple-700 text-center inline-flex items-center justify-center gap-2">
+                <span>⚡</span>
+                <span>Отгрузка: 7 / 4 / 2 / 1 дня</span>
               </div>
-              <div className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 text-center">
-                ⭐ Рекомендуем: Премиум
+              <div className="h-11 rounded-full border border-emerald-300 bg-emerald-500 px-5 py-3 text-sm font-semibold text-white text-center inline-flex items-center justify-center gap-2 shadow-md shadow-emerald-200">
+                <span>⭐</span>
+                <span>Рекомендуем: Премиум</span>
               </div>
-              <div className="rounded-full border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 text-center">
-                🎵 Площадки: 40+ сервисов
+              <div className="h-11 rounded-full border border-blue-200 bg-blue-100/40 px-5 py-3 text-sm font-semibold text-blue-700 text-center inline-flex items-center justify-center gap-2">
+                <span>🎵</span>
+                <span>Площадки: 40+ сервисов</span>
               </div>
             </div>
 
             {/* General Conditions */}
-            <div className="rounded-2xl border border-purple-200 bg-gradient-to-r from-purple-50 to-white p-6 mb-8">
-              <p className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100">✓</span>
+            <div className="rounded-2xl border border-purple-300 bg-purple-50/80 p-8 mb-8">
+              <p className="text-base font-bold text-gray-900 mb-6 flex items-center gap-3">
+                <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-emerald-400 text-white font-bold text-sm">✓</span>
                 Общие условия для всех тарифов
               </p>
-              <div className="grid gap-3 text-sm text-gray-700 md:grid-cols-2">
+              <div className="grid gap-4 text-sm text-gray-700 md:grid-cols-2">
                 <div className="flex gap-3">
-                  <span className="flex-shrink-0 text-purple-500 font-bold mt-0.5">→</span>
+                  <span className="flex-shrink-0 text-purple-600 font-bold mt-0.5 text-lg">→</span>
                   <p>
                     Гайд по подготовке:{' '}
                     <a
@@ -598,15 +601,15 @@ export function App() {
                   </p>
                 </div>
                 <div className="flex gap-3">
-                  <span className="flex-shrink-0 text-purple-500 font-bold mt-0.5">→</span>
+                  <span className="flex-shrink-0 text-purple-600 font-bold mt-0.5 text-lg">→</span>
                   <p>Площадки: Apple Music, VK, Spotify, TikTok, Яндекс и др.</p>
                 </div>
                 <div className="flex gap-3">
-                  <span className="flex-shrink-0 text-purple-500 font-bold mt-0.5">→</span>
+                  <span className="flex-shrink-0 text-purple-600 font-bold mt-0.5 text-lg">→</span>
                   <p>Юридическая защита авторских прав</p>
                 </div>
                 <div className="flex gap-3">
-                  <span className="flex-shrink-0 text-purple-500 font-bold mt-0.5">→</span>
+                  <span className="flex-shrink-0 text-purple-600 font-bold mt-0.5 text-lg">→</span>
                   <p>Еженедельные + ежеквартальные отчёты</p>
                 </div>
               </div>
@@ -618,16 +621,14 @@ export function App() {
                 <div
                   key={tariff.name}
                   className={cn(
-                    'rounded-3xl border-2 p-6 md:p-7 bg-white transition-all duration-300 hover:shadow-2xl hover:-translate-y-2',
-                    tariff.cardClass,
-                    tariff.recommended && 'md:col-span-1'
+                    'rounded-2xl border-2 p-8 bg-white transition-all duration-300 hover:shadow-2xl hover:-translate-y-2',
+                    tariff.cardClass
                   )}
                 >
-                  {/* Icon */}
+                  {/* Icon - 80x80 */}
                   <div className={cn(
-                    'w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-opacity-20 text-2xl font-bold',
-                    `bg-gradient-to-br ${tariff.accentColor}`,
-                    tariff.emoji && 'text-white'
+                    'w-20 h-20 rounded-2xl flex items-center justify-center mb-6 shadow-lg text-4xl font-bold',
+                    `bg-gradient-to-br ${tariff.accentColor}`
                   )}>
                     {tariff.emoji}
                   </div>
@@ -676,14 +677,22 @@ export function App() {
 
                   {/* Main Pricing - Only Single & EP */}
                   <div className="mb-6 pb-6 border-b-2 border-gray-100">
-                    <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-3">Основные цены</p>
-                    <div className="space-y-2.5">
-                      {tariff.prices.slice(0, 2).map((price) => (
+                    <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-4">Основные цены</p>
+                    <div className="space-y-3">
+                      {tariff.prices.slice(0, 2).map((price, idx) => (
                         <div key={price} className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-gray-700">
+                          <span className={cn(
+                            'font-medium',
+                            idx === 0 ? 'text-base text-gray-800' : 'text-sm text-gray-700'
+                          )}>
                             {price.split(':')[0].trim()}
                           </span>
-                          <span className="text-sm font-bold text-gray-900">
+                          <span className={cn(
+                            'font-bold',
+                            idx === 0 
+                              ? cn('text-xl', tariff.titleClass)
+                              : 'text-base text-gray-900'
+                          )}>
                             {price.split(':')[1].trim()}
                           </span>
                         </div>
@@ -691,59 +700,63 @@ export function App() {
                     </div>
                   </div>
 
-                  {/* CTA */}
+                  {/* CTA Button */}
                   <div className="mb-5">
                     <button className={cn(
-                      'w-full py-3 px-4 rounded-xl font-bold text-sm transition-all duration-300 text-white flex items-center justify-center gap-2',
-                      tariff.recommended
-                        ? 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:shadow-lg hover:shadow-emerald-200'
-                        : tariff.name === 'Платинум'
-                        ? 'bg-gradient-to-r from-amber-500 to-orange-600 hover:shadow-lg hover:shadow-amber-200'
-                        : 'bg-gradient-to-r from-gray-700 to-gray-800 hover:shadow-lg hover:shadow-gray-300'
+                      'w-full h-13 px-4 rounded-2xl font-bold text-base transition-all duration-300 flex items-center justify-center gap-2',
+                      tariff.name === 'Базовый'
+                        ? 'border-2 border-purple-500 text-purple-600 bg-white hover:bg-purple-50'
+                        : tariff.name === 'Продвинутый'
+                        ? 'border-2 border-sky-400 text-sky-600 bg-white hover:bg-sky-50'
+                        : tariff.name === 'Премиум'
+                        ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-300'
+                        : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:shadow-lg hover:shadow-amber-300'
                     )}>
                       Начать
-                      <ChevronRight className="w-4 h-4" />
+                      <ChevronRight className="w-5 h-5" />
                     </button>
                   </div>
 
                   {/* Expandable Details */}
                   <details className="group">
                     <summary className={cn(
-                      'cursor-pointer text-xs font-bold flex items-center justify-between py-2 transition-colors list-none',
-                      tariff.recommended 
+                      'cursor-pointer text-xs font-bold flex items-center justify-between py-2 transition-colors list-none uppercase tracking-wide',
+                      tariff.name === 'Базовый'
+                        ? 'text-purple-600 hover:text-purple-700'
+                        : tariff.name === 'Продвинутый'
+                        ? 'text-sky-600 hover:text-sky-700'
+                        : tariff.name === 'Премиум'
                         ? 'text-emerald-600 hover:text-emerald-700'
-                        : tariff.name === 'Платинум'
-                        ? 'text-amber-600 hover:text-amber-700'
-                        : 'text-sky-600 hover:text-sky-700'
+                        : 'text-amber-600 hover:text-amber-700'
                     )}>
-                      <span className="uppercase tracking-wide">Все цены и возможности →</span>
+                      <span>Все цены и возможности →</span>
                       <span className="transition-transform duration-300 group-open:rotate-180 text-lg">▼</span>
                     </summary>
-                    <div className="mt-4 space-y-4 text-xs border-t border-gray-100 pt-4">
+                    <div className="mt-5 space-y-5 text-sm border-t border-gray-200 pt-5">
                       <div>
-                        <p className="font-bold text-gray-900 mb-2.5 uppercase tracking-wide">Все цены</p>
+                        <p className="font-bold text-gray-900 mb-3 uppercase tracking-wide text-xs">Все цены</p>
                         <div className="space-y-2">
                           {tariff.prices.map((price) => (
                             <p key={price} className="text-gray-700 flex gap-2 items-start">
-                              <span className="text-purple-400 mt-1 flex-shrink-0">•</span>
+                              <span className="text-purple-400 mt-1 flex-shrink-0 font-bold">•</span>
                               <span>{price}</span>
                             </p>
                           ))}
                         </div>
                       </div>
                       <div>
-                        <p className="font-bold text-gray-900 mb-2.5 uppercase tracking-wide">Возможности</p>
-                        <div className="space-y-2">
+                        <p className="font-bold text-gray-900 mb-3 uppercase tracking-wide text-xs">Возможности</p>
+                        <div className="grid grid-cols-1 gap-2">
                           {tariff.features.map((feature) => (
                             <p key={feature} className="text-gray-700 flex gap-2 items-start">
-                              <span className="text-emerald-400 mt-0.5 flex-shrink-0">✓</span>
+                              <span className="text-emerald-500 mt-0.5 flex-shrink-0 font-bold">✓</span>
                               <span>{feature}</span>
                             </p>
                           ))}
                         </div>
                       </div>
-                      <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                        <p className="text-xs text-gray-600 font-semibold mb-2">Минимальная выплата</p>
+                      <div className="bg-gray-100 p-4 rounded-lg border border-gray-200">
+                        <p className="text-xs text-gray-700 font-semibold mb-2 uppercase tracking-wide">Минимальная выплата</p>
                         <p className="font-bold text-gray-900">{tariff.monetization[1]}</p>
                       </div>
                     </div>
@@ -762,51 +775,50 @@ export function App() {
               Раздел размещён для соответствия требованиям платёжного провайдера.
             </p>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-2xl border border-purple-100 bg-purple-50/60 p-4">
-                <p className="text-sm font-semibold text-purple-900 mb-2">Услуги и цены</p>
-                <p className="text-xs text-purple-900/80 leading-relaxed">
+            <div className="grid gap-6 md:grid-cols-2 auto-rows-max">
+              <div className="rounded-2xl border border-purple-200 bg-purple-50/60 p-8 min-h-72">
+                <p className="text-base font-semibold text-purple-900 mb-4">💰 Услуги и цены</p>
+                <p className="text-sm text-purple-900/80 leading-relaxed">
                   Дистрибуция музыки на цифровые площадки (Spotify, Apple Music, VK Музыка, Яндекс Музыка и другие).
                   Тарифы с фиксированной стоимостью: «Базовый», «Продвинутый», «Премиум», «Платинум».
                   Стоимость зависит от типа релиза (сингл / EP / альбом) и отображается в форме оформления.
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-sky-100 bg-sky-50/60 p-4">
-                <p className="text-sm font-semibold text-sky-900 mb-2">Получение услуги</p>
-                <p className="text-xs text-sky-900/80 leading-relaxed">
+              <div className="rounded-2xl border border-sky-200 bg-sky-50/60 p-8 min-h-72">
+                <p className="text-base font-semibold text-sky-900 mb-4">📋 Получение услуги</p>
+                <p className="text-sm text-sky-900/80 leading-relaxed">
                   Услуги оказываются в цифровом формате, физическая доставка не требуется.
                   После оплаты и отправки формы менеджер связывается с клиентом, подтверждает данные и запускает процесс публикации/промо.
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-amber-100 bg-amber-50/70 p-4">
-                <p className="text-sm font-semibold text-amber-900 mb-2">Оферта и документы</p>
-                <p className="text-xs text-amber-900/80 leading-relaxed mb-2">
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-8 min-h-72">
+                <p className="text-base font-semibold text-amber-900 mb-4">📄 Оферта и документы</p>
+                <p className="text-sm text-amber-900/80 leading-relaxed mb-4">
                   Использование сервиса и оказание услуг регулируются публичной офертой.
                 </p>
                 <a
                   href="https://disk.yandex.ru/i/PaBzY2OUMJ2ncQ"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-amber-800 underline"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 border-2 border-amber-600 text-amber-600 font-semibold text-sm rounded-xl hover:bg-amber-600 hover:text-white transition-all"
                 >
                   Открыть оферту
-                  <ExternalLink className="w-3 h-3" />
+                  <ExternalLink className="w-4 h-4" />
                 </a>
               </div>
 
-              <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-                <p className="text-sm font-semibold text-gray-900 mb-2">Контакты и реквизиты</p>
-                <div className="space-y-1 text-xs text-gray-700">
-                  <p>Телефон: +7 (995) 488-50-53</p>
-                  <p>Email: booking@pfvmusic.ru</p>
-                  <p>Telegram: @pfvmusic_support</p>
-                  <p>ВКонтакте: vk.ru/pfvmusic</p>
-                  <p>ИП: Орехов Данила Александрович</p>
-                  <p>ИНН: 711613056345</p>
-                  <p>ОГРНИП: 324710000080681</p>
-                  <p>Почтовый адрес: укажите фактический почтовый адрес ИП</p>
+              <div className="rounded-2xl border border-gray-300 bg-gray-50/80 p-8 min-h-72">
+                <p className="text-base font-semibold text-gray-900 mb-4">📞 Контакты и реквизиты</p>
+                <div className="space-y-2.5 text-sm text-gray-700">
+                  <p><span className="font-semibold">Телефон:</span> +7 (995) 488-50-53</p>
+                  <p><span className="font-semibold">Email:</span> booking@pfvmusic.ru</p>
+                  <p><span className="font-semibold">Telegram:</span> @pfvmusic_support</p>
+                  <p><span className="font-semibold">ВКонтакте:</span> vk.ru/pfvmusic</p>
+                  <p className="pt-2 border-t border-gray-200 mt-2">
+                    <span className="font-semibold">ИП:</span> Орехов Данила Александрович
+                  </p>
                 </div>
               </div>
             </div>
