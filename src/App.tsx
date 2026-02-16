@@ -28,6 +28,10 @@ type TariffInfo = {
   prices: string[];
   features: string[];
   monetization: string[];
+  icon: 'music' | 'trending' | 'star' | 'crown';
+  emoji: string;
+  badge?: string;
+  accentColor: string;
 };
 
 const TARIFFS: TariffInfo[] = [
@@ -35,8 +39,12 @@ const TARIFFS: TariffInfo[] = [
     name: 'Базовый',
     subtitle: 'Старт для начинающих',
     turnaround: '7 рабочих дней',
-    cardClass: 'border-purple-100 bg-purple-50/60',
+    cardClass: 'border-purple-200 bg-white hover:border-purple-300',
     titleClass: 'text-purple-900',
+    icon: 'music',
+    emoji: '🎵',
+    badge: 'Для начинающих',
+    accentColor: 'from-purple-500 to-blue-500',
     prices: [
       'Сингл: 500 ₽',
       'EP (3-5 треков): 700 ₽',
@@ -56,8 +64,12 @@ const TARIFFS: TariffInfo[] = [
     name: 'Продвинутый',
     subtitle: 'Баланс цены и возможностей',
     turnaround: '4 рабочих дня',
-    cardClass: 'border-sky-100 bg-sky-50/60',
+    cardClass: 'border-sky-200 bg-white hover:border-sky-300',
     titleClass: 'text-sky-900',
+    icon: 'trending',
+    emoji: '📈',
+    badge: 'Популярный выбор',
+    accentColor: 'from-sky-500 to-cyan-500',
     prices: [
       'Сингл: 690 ₽',
       'EP (3-5 треков): 890 ₽',
@@ -81,8 +93,12 @@ const TARIFFS: TariffInfo[] = [
     subtitle: 'Оптимальный выбор для развития',
     turnaround: '2 рабочих дня',
     recommended: true,
-    cardClass: 'border-emerald-100 bg-emerald-50/60',
+    cardClass: 'border-emerald-300 bg-white hover:border-emerald-400 ring-2 ring-emerald-200 ring-offset-2',
     titleClass: 'text-emerald-900',
+    icon: 'star',
+    emoji: '⭐',
+    badge: 'Рекомендуемый',
+    accentColor: 'from-emerald-500 to-teal-500',
     prices: [
       'Сингл: 1200 ₽',
       'EP (3-5 треков): 1690 ₽',
@@ -106,8 +122,12 @@ const TARIFFS: TariffInfo[] = [
     name: 'Платинум',
     subtitle: 'Максимум без компромиссов',
     turnaround: '1 рабочий день (до 24 часов в рабочие дни)',
-    cardClass: 'border-amber-100 bg-amber-50/70',
+    cardClass: 'border-amber-300 bg-white hover:border-amber-400',
     titleClass: 'text-amber-900',
+    icon: 'crown',
+    emoji: '👑',
+    badge: 'Премиум',
+    accentColor: 'from-amber-500 to-orange-600',
     prices: [
       'Сингл: 4990 ₽',
       'EP (3-5 треков): 6490 ₽',
@@ -592,86 +612,139 @@ export function App() {
               </div>
             </div>
 
-            {/* Tariff Cards Grid */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {/* Tariff Cards Grid - 2 основных сверху, 2 дополнительных снизу */}
+            <div className="grid gap-6 md:grid-cols-2">
               {TARIFFS.map((tariff) => (
                 <div
                   key={tariff.name}
                   className={cn(
-                    'rounded-2xl border-2 p-5 bg-white transition-all duration-300 hover:shadow-xl hover:-translate-y-1',
+                    'rounded-3xl border-2 p-6 md:p-7 bg-white transition-all duration-300 hover:shadow-2xl hover:-translate-y-2',
                     tariff.cardClass,
-                    tariff.recommended && 'ring-2 ring-emerald-400 ring-offset-2 shadow-md'
+                    tariff.recommended && 'md:col-span-1'
                   )}
                 >
+                  {/* Icon */}
+                  <div className={cn(
+                    'w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-opacity-20 text-2xl font-bold',
+                    `bg-gradient-to-br ${tariff.accentColor}`,
+                    tariff.emoji && 'text-white'
+                  )}>
+                    {tariff.emoji}
+                  </div>
+
                   {/* Badge */}
-                  {tariff.recommended && (
-                    <div className="mb-3 inline-block rounded-full bg-emerald-500 px-3 py-1 text-xs font-bold text-white">
-                      ⭐ Популярный
+                  {tariff.badge && (
+                    <div className={cn(
+                      'mb-4 inline-block rounded-full px-3 py-1.5 text-xs font-bold capitalize',
+                      tariff.recommended 
+                        ? 'bg-emerald-100 text-emerald-700' 
+                        : tariff.name === 'Платинум'
+                        ? 'bg-amber-100 text-amber-700'
+                        : tariff.name === 'Продвинутый'
+                        ? 'bg-sky-100 text-sky-700'
+                        : 'bg-gray-100 text-gray-700'
+                    )}>
+                      {tariff.badge}
                     </div>
                   )}
 
                   {/* Title & Subtitle */}
-                  <div className="mb-4">
-                    <p className={cn('text-lg font-bold', tariff.titleClass)}>{tariff.name}</p>
-                    <p className={cn('text-xs mt-1', tariff.titleClass)}>
+                  <div className="mb-6">
+                    <h4 className={cn('text-xl md:text-2xl font-bold', tariff.titleClass)}>
+                      {tariff.name}
+                    </h4>
+                    <p className={cn('text-sm mt-2', tariff.titleClass, 'opacity-80')}>
                       {tariff.subtitle}
                     </p>
                   </div>
 
-                  {/* Key Info Box */}
-                  <div className="rounded-lg bg-gray-50 p-3 mb-4 border border-gray-200">
-                    <div className="space-y-2">
+                  {/* Key Metrics - Highlighted */}
+                  <div className="rounded-2xl bg-gradient-to-r from-gray-50 to-white p-4 mb-6 border border-gray-100 shadow-sm">
+                    <div className="space-y-3">
                       <div>
-                        <p className="text-xs text-gray-600 font-medium">Срок обработки</p>
-                        <p className="text-sm font-bold text-gray-900">{tariff.turnaround}</p>
+                        <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-1">Доля артиста</p>
+                        <p className={cn('text-2xl font-bold', tariff.titleClass)}>
+                          {tariff.monetization[0].match(/\d+%/)}
+                        </p>
                       </div>
-                      <div>
-                        <p className="text-xs text-gray-600 font-medium">Доля / выплаты</p>
-                        <p className="text-sm font-bold text-gray-900">{tariff.monetization[0]}</p>
+                      <div className="pt-2 border-t border-gray-200">
+                        <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-1">Срок обработки</p>
+                        <p className="text-sm font-bold text-gray-900">{tariff.turnaround}</p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Pricing */}
-                  <div className="mb-4 pb-4 border-b-2 border-gray-100">
-                    <p className="text-xs text-gray-600 font-medium mb-1">Цены дистрибуции</p>
-                    <div className="space-y-1">
+                  {/* Main Pricing - Only Single & EP */}
+                  <div className="mb-6 pb-6 border-b-2 border-gray-100">
+                    <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-3">Основные цены</p>
+                    <div className="space-y-2.5">
                       {tariff.prices.slice(0, 2).map((price) => (
-                        <p key={price} className="text-xs font-semibold text-gray-900">
-                          {price}
-                        </p>
+                        <div key={price} className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-gray-700">
+                            {price.split(':')[0].trim()}
+                          </span>
+                          <span className="text-sm font-bold text-gray-900">
+                            {price.split(':')[1].trim()}
+                          </span>
+                        </div>
                       ))}
                     </div>
                   </div>
 
+                  {/* CTA */}
+                  <div className="mb-5">
+                    <button className={cn(
+                      'w-full py-3 px-4 rounded-xl font-bold text-sm transition-all duration-300 text-white flex items-center justify-center gap-2',
+                      tariff.recommended
+                        ? 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:shadow-lg hover:shadow-emerald-200'
+                        : tariff.name === 'Платинум'
+                        ? 'bg-gradient-to-r from-amber-500 to-orange-600 hover:shadow-lg hover:shadow-amber-200'
+                        : 'bg-gradient-to-r from-gray-700 to-gray-800 hover:shadow-lg hover:shadow-gray-300'
+                    )}>
+                      Начать
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+
                   {/* Expandable Details */}
                   <details className="group">
-                    <summary className="cursor-pointer text-xs font-bold text-purple-600 hover:text-purple-700 flex items-center justify-between py-1 transition-colors list-none">
-                      <span>Подробнее</span>
-                      <span className="transition-transform duration-300 group-open:rotate-180">▼</span>
+                    <summary className={cn(
+                      'cursor-pointer text-xs font-bold flex items-center justify-between py-2 transition-colors list-none',
+                      tariff.recommended 
+                        ? 'text-emerald-600 hover:text-emerald-700'
+                        : tariff.name === 'Платинум'
+                        ? 'text-amber-600 hover:text-amber-700'
+                        : 'text-sky-600 hover:text-sky-700'
+                    )}>
+                      <span className="uppercase tracking-wide">Все цены и возможности →</span>
+                      <span className="transition-transform duration-300 group-open:rotate-180 text-lg">▼</span>
                     </summary>
-                    <div className="mt-3 space-y-3 text-xs border-t border-gray-100 pt-3">
+                    <div className="mt-4 space-y-4 text-xs border-t border-gray-100 pt-4">
                       <div>
-                        <p className="font-bold text-gray-900 mb-2">Все цены</p>
-                        <div className="space-y-1">
+                        <p className="font-bold text-gray-900 mb-2.5 uppercase tracking-wide">Все цены</p>
+                        <div className="space-y-2">
                           {tariff.prices.map((price) => (
-                            <p key={price} className="text-gray-700 flex gap-2">
-                              <span className="text-purple-400">•</span>
-                              {price}
+                            <p key={price} className="text-gray-700 flex gap-2 items-start">
+                              <span className="text-purple-400 mt-1 flex-shrink-0">•</span>
+                              <span>{price}</span>
                             </p>
                           ))}
                         </div>
                       </div>
                       <div>
-                        <p className="font-bold text-gray-900 mb-2">Возможности</p>
-                        <div className="space-y-1">
+                        <p className="font-bold text-gray-900 mb-2.5 uppercase tracking-wide">Возможности</p>
+                        <div className="space-y-2">
                           {tariff.features.map((feature) => (
-                            <p key={feature} className="text-gray-700 flex gap-2">
-                              <span className="text-emerald-400">✓</span>
-                              {feature}
+                            <p key={feature} className="text-gray-700 flex gap-2 items-start">
+                              <span className="text-emerald-400 mt-0.5 flex-shrink-0">✓</span>
+                              <span>{feature}</span>
                             </p>
                           ))}
                         </div>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                        <p className="text-xs text-gray-600 font-semibold mb-2">Минимальная выплата</p>
+                        <p className="font-bold text-gray-900">{tariff.monetization[1]}</p>
                       </div>
                     </div>
                   </details>
