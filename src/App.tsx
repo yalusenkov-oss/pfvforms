@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { ChevronRight, ChevronLeft, Send, CheckCircle2, FileText, Shield, CreditCard, Disc3, Sparkles, AlertCircle, Megaphone, ArrowLeft, XCircle, Clock, ExternalLink, Home, Loader2 } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Send, CheckCircle2, FileText, Shield, CreditCard, Disc3, Sparkles, AlertCircle, Megaphone, ArrowLeft, XCircle, Clock, ExternalLink, Home, Loader2, Wallet, Clipboard, FileCheck, Phone } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { StepOne, getTrackCount } from './components/StepOne';
 import { StepTwo } from './components/StepTwo';
@@ -777,7 +777,10 @@ export function App() {
 
             <div className="grid gap-6 md:grid-cols-2 auto-rows-max">
               <div className="rounded-2xl border border-purple-200 bg-purple-50/60 p-8 min-h-72">
-                <p className="text-base font-semibold text-purple-900 mb-4">💰 Услуги и цены</p>
+                <div className="flex items-center gap-3 mb-4">
+                  <Wallet className="w-6 h-6 text-purple-600" />
+                  <p className="text-base font-semibold text-purple-900">Услуги и цены</p>
+                </div>
                 <p className="text-sm text-purple-900/80 leading-relaxed">
                   Дистрибуция музыки на цифровые площадки (Spotify, Apple Music, VK Музыка, Яндекс Музыка и другие).
                   Тарифы с фиксированной стоимостью: «Базовый», «Продвинутый», «Премиум», «Платинум».
@@ -786,7 +789,10 @@ export function App() {
               </div>
 
               <div className="rounded-2xl border border-sky-200 bg-sky-50/60 p-8 min-h-72">
-                <p className="text-base font-semibold text-sky-900 mb-4">📋 Получение услуги</p>
+                <div className="flex items-center gap-3 mb-4">
+                  <Clipboard className="w-6 h-6 text-sky-600" />
+                  <p className="text-base font-semibold text-sky-900">Получение услуги</p>
+                </div>
                 <p className="text-sm text-sky-900/80 leading-relaxed">
                   Услуги оказываются в цифровом формате, физическая доставка не требуется.
                   После оплаты и отправки формы менеджер связывается с клиентом, подтверждает данные и запускает процесс публикации/промо.
@@ -794,7 +800,10 @@ export function App() {
               </div>
 
               <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-8 min-h-72">
-                <p className="text-base font-semibold text-amber-900 mb-4">📄 Оферта и документы</p>
+                <div className="flex items-center gap-3 mb-4">
+                  <FileCheck className="w-6 h-6 text-amber-600" />
+                  <p className="text-base font-semibold text-amber-900">Оферта и документы</p>
+                </div>
                 <p className="text-sm text-amber-900/80 leading-relaxed mb-4">
                   Использование сервиса и оказание услуг регулируются публичной офертой.
                 </p>
@@ -810,7 +819,10 @@ export function App() {
               </div>
 
               <div className="rounded-2xl border border-gray-300 bg-gray-50/80 p-8 min-h-72">
-                <p className="text-base font-semibold text-gray-900 mb-4">📞 Контакты и реквизиты</p>
+                <div className="flex items-center gap-3 mb-4">
+                  <Phone className="w-6 h-6 text-gray-700" />
+                  <p className="text-base font-semibold text-gray-900">Контакты и реквизиты</p>
+                </div>
                 <div className="space-y-2.5 text-sm text-gray-700">
                   <p><span className="font-semibold">Телефон:</span> +7 (995) 488-50-53</p>
                   <p><span className="font-semibold">Email:</span> booking@pfvmusic.ru</p>
