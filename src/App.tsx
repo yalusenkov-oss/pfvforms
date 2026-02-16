@@ -751,7 +751,7 @@ export function App() {
             </div>
 
             {/* Tariff Cards Grid - 2 основных сверху, 2 дополнительных снизу */}
-            <div className="grid gap-5 md:grid-cols-2">
+            <div className="grid items-start gap-5 md:grid-cols-2">
               {TARIFFS.map((tariff) => (
                 <div
                   key={tariff.name}
@@ -810,11 +810,11 @@ export function App() {
                     </div>
                   </div>
 
-                  {/* Main Pricing - Only Single & EP */}
+                  {/* Main Pricing - Single, EP, Album */}
                   <div className="mb-5 pb-5 border-b-2 border-gray-100">
                     <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-3">Основные цены</p>
                     <div className="space-y-2">
-                      {tariff.prices.slice(0, 2).map((price, idx) => (
+                      {tariff.prices.slice(0, 3).map((price, idx) => (
                         <div key={price} className="flex items-center justify-between">
                           <span className={cn(
                             'font-medium',
@@ -968,7 +968,6 @@ export function App() {
                   <p className="text-sm font-semibold text-gray-900">Контакты и реквизиты</p>
                 </div>
                 <div className="space-y-1.5 text-xs text-gray-700">
-                  <p><span className="font-semibold">Телефон:</span> +7 (995) 488-50-53</p>
                   <p><span className="font-semibold">Email:</span> booking@pfvmusic.ru</p>
                   <p><span className="font-semibold">Telegram:</span> @pfvmusic_support</p>
                   <p><span className="font-semibold">ВКонтакте:</span> vk.ru/pfvmusic</p>
