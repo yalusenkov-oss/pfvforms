@@ -22,8 +22,7 @@ import {
   isAuthenticated,
   logout,
 } from './store';
-import { fetchSheetRows, updateSheetRow, deleteSheetRow, createSignLink } from './services/googleSheetsAdmin';
-import { extractContractData, generateContractHTML } from './services/contractGenerator';
+import { fetchSheetRows } from './services/googleSheetsAdmin';
 
 type View =
   | { type: 'dashboard' }
@@ -61,80 +60,14 @@ export function App() {
     return 0;
   };
 
-  const normalizeTrackArtists = (raw: any): { name: string; separator: ',' | 'feat.' }[] => {
-    if (!raw) return [];
-    if (Array.isArray(raw)) {
-      return raw.map((a: any) => ({
-        name: String(a?.name ?? a ?? '').trim(),
-        separator: a?.separator === 'feat.' || a?.type === 'feat' ? 'feat.' : ',',
-      })).filter((a: any) => a.name);
-    }
-    const text = String(raw).trim();
-    if (!text) return [];
-    // Keep as a single artist if parsing fails
-    const parts = text.split(/( feat\. |, )/);
-    if (parts.length <= 1) return [{ name: text, separator: ',' }];
-    const result: { name: string; separator: ',' | 'feat.' }[] = [];
-    let pendingSep: ',' | 'feat.' = ',';
-    for (const part of parts) {
-      if (part === ' feat. ') {
-        pendingSep = 'feat.';
-        continue;
-      }
-      if (part === ', ') {
-        pendingSep = ',';
-        continue;
-      }
-      const name = String(part).trim();
-      if (!name) continue;
-      result.push({ name, separator: pendingSep });
-      pendingSep = ',';
-    }
-    return result.length ? result : [{ name: text, separator: ',' }];
-  };
-
-  const toStringArray = (raw: any): string[] => {
-    if (!raw) return [];
-    if (Array.isArray(raw)) return raw.map(v => String(v).trim()).filter(Boolean);
-    return String(raw)
-      .split(',')
-      .map(s => s.trim())
-      .filter(Boolean);
-  };
-
-  const normalizeTracks = (v: any): any[] => {
+  const parseTracks = (v: any): any[] => {
     if (!v) return [];
-    let parsed: any[] = [];
-    if (Array.isArray(v)) parsed = v;
-    else {
-      try {
-        const maybe = JSON.parse(String(v));
-        if (Array.isArray(maybe)) {
-          parsed = maybe;
-        } else if (maybe && Array.isArray(maybe.tracks)) {
-          parsed = maybe.tracks;
-        } else {
-          parsed = [];
-          if (maybe) {
-            console.warn('[admin] tracks_json is not an array:', maybe);
-          }
-        }
-      } catch {
-        parsed = [];
-      }
+    if (Array.isArray(v)) return v;
+    try {
+      return JSON.parse(String(v));
+    } catch {
+      return [];
     }
-    if (!Array.isArray(parsed)) return [];
-    return parsed.map((t: any, idx: number) => ({
-      id: String(t?.id ?? t?.number ?? idx + 1),
-      name: String(t?.name ?? ''),
-      version: String(t?.version ?? ''),
-      artists: normalizeTrackArtists(t?.artists),
-      lyricists: toStringArray(t?.lyricists),
-      composers: toStringArray(t?.composers),
-      explicit: normalizeBool(t?.explicit ?? t?.explicitContent),
-      substances: normalizeBool(t?.substances ?? t?.substanceMention),
-      lyrics: String(t?.lyrics ?? ''),
-    }));
   };
 
   const refresh = useCallback(() => {
@@ -155,7 +88,6 @@ export function App() {
       const distCount = Array.isArray(rows) ? rows.length : 0;
       const mapped = (Array.isArray(rows) ? rows : []).map((r: any, idx: number) => ({
         id: r.id || r.ID || `remote-${idx}`,
-        rowIndex: r._row || r.rowIndex || r.row || undefined,
         tariff: (r.tariff as any) || (r.Tariff as any) || r.tariff_name || 'basic',
         releaseType: (r.releaseType as any) || (r.ReleaseType as any) || r.release_type || 'single',
         releaseName: r.releaseName || r.ReleaseName || r.title || r.work_title || '',
@@ -166,8 +98,8 @@ export function App() {
         language: r.language || '',
         releaseDate: r.releaseDate || r.release_date || '',
         coverLink: r.coverLink || r.cover_link || '',
-        tracks: normalizeTracks(r.tracks || r.tracks_json),
-        tiktokStart: String(r.tiktokExcerpt ?? r.tiktok_excerpt ?? r.tiktokStart ?? ''),
+        tracks: parseTracks(r.tracks || r.tracks_json),
+        tiktokStart: r.tiktokStart || r.tiktok_excerpt || '',
         tiktokFull: normalizeBool(r.tiktokFull ?? r.tiktok_full),
         preSaveYandex: normalizeBool(r.yandexPreSave ?? r.yandex_presave),
         karaoke: normalizeBool(r.addKaraoke ?? r.karaoke),
@@ -181,15 +113,9 @@ export function App() {
         contacts: r.contactInfo || r.contacts || r.contact || '',
         artistProfileLinks: r.artistProfileLinks || r.artist_profile_links || '',
         submittedAt: r.timestamp || r.submittedAt || new Date().toISOString(),
-        status: (r.status as any) || r.contractStatus || r.contract_status || 'new',
+        status: (r.status as any) || r.contract_status || 'new',
         totalPrice: normalizeNumber(r.totalPrice ?? r.total ?? r.total_price),
         contractNumber: r.contractNumber || r.contract_number || '',
-        paymentProofUrl: r.paymentProofUrl || r.payment_proof_url || '',
-        signStatus: r.signStatus || r.sign_status || '',
-        signLink: r.signLink || r.sign_link || '',
-        signExpiresAt: r.signExpiresAt || r.sign_expires_at || '',
-        signedUrl: r.signedUrl || r.signed_url || '',
-        signedAt: r.signedAt || r.signed_at || '',
       }));
       setDistributions(mapped as DistributionData[]);
 
@@ -197,7 +123,6 @@ export function App() {
       const promoCount = Array.isArray(promoRows) ? promoRows.length : 0;
       const mappedPromos = (Array.isArray(promoRows) ? promoRows : []).map((p: any, idx: number) => ({
         id: p.id || p.ID || `remote-promo-${idx}`,
-        rowIndex: p._row || p.rowIndex || p.row || undefined,
         type: p.promoType || p.type || p.Type || 'detailed',
         trackLink: p.releaseLink || p.release_link || p.trackLink || '',
         upc: p.upcOrName || p.upc_or_name || p.upc || '',
@@ -258,50 +183,17 @@ export function App() {
     }
   };
 
-  const handleDistStatusChange = async (id: string, status: DistributionData['status']) => {
-    const row = distributions.find(d => d.id === id)?.rowIndex;
-    if (row) {
-      try {
-        await updateSheetRow('distributions', row, { contract_status: status });
-        loadRemote();
-        return;
-      } catch {
-        // fall back to local
-      }
-    }
+  const handleDistStatusChange = (id: string, status: DistributionData['status']) => {
     updateDistributionStatus(id, status);
     setRefreshKey(k => k + 1);
   };
 
-  const handlePromoStatusChange = async (id: string, status: PromoData['status']) => {
-    const row = promos.find(p => p.id === id)?.rowIndex;
-    if (row) {
-      try {
-        await updateSheetRow('promos', row, { status });
-        loadRemote();
-        return;
-      } catch {
-        // fall back to local
-      }
-    }
+  const handlePromoStatusChange = (id: string, status: PromoData['status']) => {
     updatePromoStatus(id, status);
     setRefreshKey(k => k + 1);
   };
 
-  const handleDistDelete = async (id: string) => {
-    const row = distributions.find(d => d.id === id)?.rowIndex;
-    if (row) {
-      try {
-        await deleteSheetRow('distributions', row);
-        if ((view.type === 'distribution-detail' || view.type === 'distribution-contract') && view.id === id) {
-          setView({ type: 'distributions' });
-        }
-        loadRemote();
-        return;
-      } catch {
-        // fall back to local
-      }
-    }
+  const handleDistDelete = (id: string) => {
     deleteDistribution(id);
     if ((view.type === 'distribution-detail' || view.type === 'distribution-contract') && view.id === id) {
       setView({ type: 'distributions' });
@@ -309,54 +201,12 @@ export function App() {
     setRefreshKey(k => k + 1);
   };
 
-  const handleContractNumberUpdate = async (id: string, contractNumber: string) => {
-    const row = distributions.find(d => d.id === id)?.rowIndex;
-    if (row) {
-      try {
-        await updateSheetRow('distributions', row, { contract_number: contractNumber });
-        loadRemote();
-        return;
-      } catch {
-        // fall back to local
-      }
-    }
+  const handleContractNumberUpdate = (id: string, contractNumber: string) => {
     updateDistributionContractNumber(id, contractNumber);
     setRefreshKey(k => k + 1);
   };
 
-  const handleCreateSignLink = async (id: string) => {
-    const data = distributions.find(d => d.id === id);
-    if (!data) return;
-    try {
-      if (!data.contractNumber) throw new Error('Нет номера договора');
-      const contractHtml = generateContractHTML(
-        { ...extractContractData(data), contractNumber: data.contractNumber },
-        { useSignatureMarkers: true }
-      );
-      await createSignLink(data.contractNumber, data.rowIndex, {
-        contractHtml,
-        signSource: 'internal'
-      });
-      loadRemote();
-    } catch (e: any) {
-      alert(e?.message || String(e));
-    }
-  };
-
-  const handlePromoDelete = async (id: string) => {
-    const row = promos.find(p => p.id === id)?.rowIndex;
-    if (row) {
-      try {
-        await deleteSheetRow('promos', row);
-        if (view.type === 'promo-detail' && view.id === id) {
-          setView({ type: 'promos' });
-        }
-        loadRemote();
-        return;
-      } catch {
-        // fall back to local
-      }
-    }
+  const handlePromoDelete = (id: string) => {
     deletePromo(id);
     if (view.type === 'promo-detail' && view.id === id) {
       setView({ type: 'promos' });
@@ -407,7 +257,6 @@ export function App() {
             onBack={() => setView({ type: 'distributions' })}
             onStatusChange={handleDistStatusChange}
             onGenerateContract={(id) => setView({ type: 'distribution-contract', id })}
-            onCreateSignLink={handleCreateSignLink}
           />
         );
       }

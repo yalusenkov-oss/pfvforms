@@ -3,7 +3,7 @@ import { Input, TextArea, RadioGroup, InfoBox, StepCard, Divider, NumberStepper,
 import {
   Music2, User, Link2, Disc3, Calendar, Image, Globe, Clock,
   Mic2, PenTool, Hash, Bookmark, TicketPercent, Pill, Type, Banknote,
-  AlertCircle, ChevronDown, ChevronUp, Plus, X, Users
+  AlertCircle, ChevronDown, ChevronUp, Plus, X, Users, ChevronRight
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
@@ -161,41 +161,41 @@ export function StepOne({ data, onChange }: StepOneProps) {
     <div className="space-y-6">
       {/* ═══ CARD 1: Pricing Overview ═══ */}
       <StepCard
-        title="Тарифы дистрибуции"
-        subtitle="Ознакомьтесь с тарифами и выберите подходящий"
+        title="Раздел тарифов"
+        subtitle="Выберите подходящий план для вашего релиза"
         icon={<Banknote className="w-5 h-5" />}
       >
-        <div className="grid gap-4 sm:grid-cols-2">
-          <PricingCard name="Базовый" emoji="📦" desc="Стандартная дистрибуция"
-            prices={{ single: '500 ₽', ep: '700 ₽', album: '900 ₽' }}
-            color="gray" selected={tariff === 'Базовый'} />
-          <PricingCard name="Продвинутый" emoji="🚀" desc="Расширенные возможности"
-            prices={{ single: '690 ₽', ep: '890 ₽', album: '1 200 ₽' }}
-            color="purple" selected={tariff === 'Продвинутый'} />
-          <PricingCard name="Премиум" emoji="⭐" desc="Полный пакет услуг"
-            prices={{ single: '1 200 ₽', ep: '1 690 ₽', album: '2 290 ₽' }}
-            color="purple" badge="Популярный" selected={tariff === 'Премиум'} />
-          <PricingCard name="Платинум" emoji="👑" desc="Максимальные возможности"
-            prices={{ single: '4 990 ₽', ep: '6 490 ₽', album: '7 990 ₽' }}
-            color="amber" badge="VIP" selected={tariff === 'Платинум'} />
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-4">
+          <CompactTariffCard name="Базовый" emoji="📦" desc="Начните здесь"
+            single="500" ep="700" album="900"
+            selected={tariff === 'Базовый'} color="blue" />
+          <CompactTariffCard name="Продвинутый" emoji="🚀" desc="Больше опций"
+            single="690" ep="890" album="1 200"
+            selected={tariff === 'Продвинутый'} color="purple" />
+          <CompactTariffCard name="Премиум" emoji="⭐" desc="Полный пакет"
+            single="1 200" ep="1 690" album="2 290"
+            selected={tariff === 'Премиум'} color="yellow" badge="⭐ Популярный" />
+          <CompactTariffCard name="Платинум" emoji="👑" desc="Максимум"
+            single="4 990" ep="6 490" album="7 990"
+            selected={tariff === 'Платинум'} color="amber" badge="👑 VIP" />
         </div>
 
-        <InfoBox variant="purple">
-          <div>
-            <p className="font-semibold mb-1.5">🎵 Подробнее о тарифах</p>
-            <a href="https://clck.ru/3E6yBX" target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-purple-700 underline decoration-purple-300 hover:text-purple-900 font-medium transition-colors">
-              <Link2 className="w-3.5 h-3.5" />
-              Перейти к полному описанию тарифов
-            </a>
-            <div className="mt-3 flex items-center gap-4 pt-3 border-t border-purple-200/50">
-              <img
-                src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://clck.ru/3E6yBX&color=7C3AED"
-                alt="QR Code" className="w-20 h-20 rounded-lg border border-purple-200 shadow-sm" />
-              <p className="text-xs text-purple-600/80">Или отсканируйте QR-код камерой смартфона</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+          <a href="https://clck.ru/3E6yBX" target="_blank" rel="noopener noreferrer"
+            className="flex items-center justify-between rounded-lg bg-gradient-to-r from-purple-50 to-purple-50/30 border border-purple-200 px-3 py-2.5 hover:shadow-md transition-all group">
+            <div className="flex items-center gap-2">
+              <Link2 className="w-4 h-4 text-purple-600" />
+              <span className="text-xs font-semibold text-purple-900">Полные тарифы</span>
             </div>
+            <ChevronRight className="w-3.5 h-3.5 text-purple-600 group-hover:translate-x-0.5 transition-transform" />
+          </a>
+          <div className="flex items-center justify-center rounded-lg bg-gradient-to-r from-purple-50 to-purple-50/30 border border-purple-200 px-3 py-2.5">
+            <img
+              src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=https://clck.ru/3E6yBX&color=7C3AED"
+              alt="QR Code" className="h-10 w-10 rounded" />
+            <span className="text-[10px] text-purple-700 ml-2">QR-код</span>
           </div>
-        </InfoBox>
+        </div>
       </StepCard>
 
       {/* ═══ CARD 2: Tariff & Release Type ═══ */}
@@ -802,63 +802,67 @@ export function StepOne({ data, onChange }: StepOneProps) {
   );
 }
 
-/* ─── Pricing Card ─── */
-function PricingCard({
-  name, emoji, desc, prices, color, badge, selected
+/* ─── Compact Tariff Card ─── */
+function CompactTariffCard({
+  name, emoji, desc, single, ep, album, selected, color, badge
 }: {
-  name: string; emoji: string; desc: string;
-  prices: { single: string; ep: string; album: string };
-  color: 'gray' | 'purple' | 'amber';
-  badge?: string; selected?: boolean;
+  name: string;
+  emoji: string;
+  desc: string;
+  single: string;
+  ep: string;
+  album: string;
+  selected?: boolean;
+  color: 'blue' | 'purple' | 'yellow' | 'amber';
+  badge?: string;
 }) {
-  const borderColor = selected
-    ? 'border-purple-500 ring-2 ring-purple-200'
-    : color === 'amber' ? 'border-amber-300' : color === 'purple' ? 'border-purple-200' : 'border-gray-200';
-  const bgColor = color === 'amber'
-    ? 'bg-gradient-to-br from-amber-50 to-yellow-50/50'
-    : color === 'purple' ? 'bg-gradient-to-br from-purple-50/50 to-white' : 'bg-white';
+  const colorMap: Record<string, { border: string; bg: string; badge: string; text: string; icon: string }> = {
+    blue: { border: 'border-blue-200', bg: 'bg-blue-50', badge: 'bg-blue-600', text: 'text-blue-900', icon: 'bg-blue-100' },
+    purple: { border: 'border-purple-200', bg: 'bg-purple-50', badge: 'bg-purple-600', text: 'text-purple-900', icon: 'bg-purple-100' },
+    yellow: { border: 'border-yellow-300', bg: 'bg-yellow-50', badge: 'bg-yellow-600', text: 'text-yellow-900', icon: 'bg-yellow-100' },
+    amber: { border: 'border-amber-300', bg: 'bg-amber-50', badge: 'bg-amber-600', text: 'text-amber-900', icon: 'bg-amber-100' },
+  };
+
+  const c = colorMap[color];
+  const selectStyle = selected ? `border-2 border-green-500 ring-2 ring-green-100 shadow-md` : `border border-gray-200 hover:shadow-sm`;
 
   return (
-    <div className={`rounded-xl border ${borderColor} ${bgColor} p-5 space-y-3 transition-all hover:shadow-md relative overflow-hidden`}>
+    <div className={`rounded-xl ${selectStyle} ${!selected ? c.bg : 'bg-green-50'} p-3 transition-all relative overflow-hidden group cursor-pointer`}>
       {badge && (
-        <div className="absolute top-2 right-2">
-          <span className={`text-[9px] font-bold text-white px-2 py-0.5 rounded-full ${color === 'amber' ? 'bg-amber-500' : 'bg-purple-600'}`}>{badge}</span>
+        <div className="absolute top-1 right-1">
+          <span className={`text-[8px] font-bold text-white px-1.5 py-0.5 rounded-full ${c.badge}`}>{badge}</span>
         </div>
       )}
       {selected && (
-        <div className="absolute top-2 left-2">
-          <span className="text-[9px] font-bold text-white px-2 py-0.5 rounded-full bg-green-500">✓ Выбран</span>
+        <div className="absolute top-1 left-1">
+          <span className="text-[8px] font-bold text-white px-1.5 py-0.5 rounded-full bg-green-500">✓</span>
         </div>
       )}
-      <div className="flex items-center gap-3">
-        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${color === 'amber' ? 'bg-amber-100' : color === 'purple' ? 'bg-purple-100' : 'bg-gray-100'}`}>
-          <span className="text-base">{emoji}</span>
-        </div>
-        <div>
-          <h4 className={`font-bold text-sm ${color === 'amber' ? 'text-amber-900' : color === 'purple' ? 'text-purple-900' : 'text-gray-900'}`}>{name}</h4>
-          <p className={`text-[10px] ${color === 'amber' ? 'text-amber-700' : color === 'purple' ? 'text-purple-600' : 'text-gray-500'}`}>{desc}</p>
-        </div>
-      </div>
-      <div className="space-y-1.5">
-        <PriceRow2 label="Сингл" price={prices.single} color={color} />
-        <PriceRow2 label="EP" price={prices.ep} hint="3–5 треков" color={color} />
-        <PriceRow2 label="Альбом" price={prices.album} color={color} />
-      </div>
-    </div>
-  );
-}
 
-function PriceRow2({ label, price, hint, color }: { label: string; price: string; hint?: string; color: string }) {
-  const dotColor = color === 'amber' ? 'bg-amber-400' : color === 'purple' ? 'bg-purple-400' : 'bg-gray-400';
-  const priceColor = color === 'amber' ? 'text-amber-900' : color === 'purple' ? 'text-purple-900' : 'text-gray-900';
-  return (
-    <div className="flex items-center justify-between text-xs py-1 border-b border-gray-100/60 last:border-0">
-      <div className="flex items-center gap-2">
-        <span className={`w-1.5 h-1.5 rounded-full ${dotColor} flex-shrink-0`} />
-        <span className="text-gray-600">{label}</span>
-        {hint && <span className="text-gray-400 text-[10px]">({hint})</span>}
+      <div className="flex items-center gap-2 mb-2">
+        <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${c.icon}`}>
+          <span className="text-sm">{emoji}</span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <h4 className={`font-bold text-xs ${c.text}`}>{name}</h4>
+          <p className="text-[9px] text-gray-600 truncate">{desc}</p>
+        </div>
       </div>
-      <span className={`font-bold ${priceColor}`}>{price}</span>
+
+      <div className="space-y-0.5 text-[10px] border-t border-gray-200/50 pt-2">
+        <div className="flex justify-between items-center">
+          <span className="text-gray-600">Сингл</span>
+          <span className={`font-bold ${c.text}`}>{single} ₽</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-gray-600">EP</span>
+          <span className={`font-bold ${c.text}`}>{ep} ₽</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-gray-600">Альбом</span>
+          <span className={`font-bold ${c.text}`}>{album} ₽</span>
+        </div>
+      </div>
     </div>
   );
 }

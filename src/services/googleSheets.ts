@@ -237,7 +237,6 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
     promoDiscountType: formData.promoDiscountType || '',
     promoDiscountValue: formData.promoDiscountValue || '',
     promoDiscountAmount: formData.promoDiscountAmount || '',
-    paymentProof: formData.paymentProof || '',
   };
 }
 

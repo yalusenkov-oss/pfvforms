@@ -110,6 +110,39 @@ function setupDistributionSheet(sheet) {
   Logger.log('Distribution sheet configured');
 }
 
+// Исправляет смещение колонок после добавления payment_proof_url
+function fixPaymentProofColumn() {
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(DISTRIBUTION_SHEET_NAME);
+  if (!sheet) throw new Error('Sheet "' + DISTRIBUTION_SHEET_NAME + '" not found');
+
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0] || [];
+  const totalIdx = headers.indexOf('total_price');
+  const paymentIdx = headers.indexOf('payment_proof_url');
+  const contractIdx = headers.indexOf('contract_number');
+  if (totalIdx < 0 || paymentIdx < 0 || contractIdx < 0) {
+    throw new Error('Missing required headers to fix: total_price/payment_proof_url/contract_number');
+  }
+
+  if (sheet.getLastRow() < 2) {
+    setupDistributionSheet(sheet);
+    return;
+  }
+
+  const sample = sheet.getRange(2, 1, 1, headers.length).getValues()[0] || [];
+  const paymentVal = String(sample[paymentIdx] || '').trim();
+  const contractVal = String(sample[contractIdx] || '').trim();
+
+  const looksLikeContract = /^PFV-\d{6}-\d{4}/.test(paymentVal);
+  const looksLikePercent = /%/.test(contractVal);
+
+  // Если payment_proof_url содержит номер договора, а contract_number содержит процент — значит смещение
+  if (looksLikeContract && looksLikePercent) {
+    // Вставляем пустую колонку на место payment_proof_url, чтобы сдвинуть данные вправо
+    sheet.insertColumnBefore(paymentIdx + 1);
+    setupDistributionSheet(sheet);
+  }
+}
+
 function setupPromoSheet(sheet) {
   const headers = [
     'timestamp', 'Type', 'release_link', 'upc_or_name', 'release_date',

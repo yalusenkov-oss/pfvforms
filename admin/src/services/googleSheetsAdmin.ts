@@ -1,213 +1,33 @@
 // Admin Google Sheets helper — fetch rows from the Apps Script web app
-// Attempts (in order): import.meta.env -> window global -> config.json (base-relative, then root)
-let _cachedGoogleScriptUrl: string | null = null;
-let _cachedSignBaseUrl: string | null = null;
-let _cachedSignExpiresDays: number | null = null;
 async function getGoogleScriptUrl(): Promise<string> {
-  if (_cachedGoogleScriptUrl) return _cachedGoogleScriptUrl;
-
-  // 1) Vite-provided env at build time
+  // @ts-ignore
+  if ((window as any)?.VITE_GOOGLE_SCRIPT_URL) return (window as any).VITE_GOOGLE_SCRIPT_URL;
   try {
-    const envUrl = ((import.meta as any)?.env?.VITE_GOOGLE_SCRIPT_URL as string) || '';
-    if (envUrl) {
-      _cachedGoogleScriptUrl = envUrl;
-      return envUrl;
+    const res = await fetch('/config.json', { cache: 'no-store' });
+    if (res.ok) {
+      const obj = await res.json();
+      if (obj?.VITE_GOOGLE_SCRIPT_URL) return obj.VITE_GOOGLE_SCRIPT_URL;
     }
-  } catch {
+  } catch (e) {
     // ignore
   }
-
-  // 2) global window variable (injected via public/config.js or similar)
-  try {
-    // @ts-ignore
-    const w = (window as any);
-    if (w && w.VITE_GOOGLE_SCRIPT_URL) {
-      _cachedGoogleScriptUrl = String(w.VITE_GOOGLE_SCRIPT_URL);
-      return _cachedGoogleScriptUrl;
-    }
-  } catch {
-    // ignore
-  }
-
-  // 3) try to fetch config.json from base path and root
-  const base = ((import.meta as any)?.env?.BASE_URL as string) || '/';
-  const baseWithSlash = base.replace(/\/?$/, '/');
-  const candidates = [baseWithSlash + 'config.json', '/config.json', 'config.json'];
-  for (const path of candidates) {
-    try {
-      const res = await fetch(path, { cache: 'no-store' });
-      if (res.ok) {
-        const obj = await res.json();
-        if (obj?.VITE_GOOGLE_SCRIPT_URL) {
-          _cachedGoogleScriptUrl = String(obj.VITE_GOOGLE_SCRIPT_URL);
-          return _cachedGoogleScriptUrl;
-        }
-      }
-    } catch {
-      // ignore
-    }
-  }
-
   return '';
-}
-
-async function getSignBaseUrl(): Promise<string> {
-  if (_cachedSignBaseUrl) return _cachedSignBaseUrl;
-
-  try {
-    const envUrl = ((import.meta as any)?.env?.VITE_SIGN_BASE_URL as string) || '';
-    if (envUrl) {
-      _cachedSignBaseUrl = envUrl.replace(/\/$/, '');
-      return _cachedSignBaseUrl;
-    }
-  } catch {
-    // ignore
-  }
-
-  try {
-    // @ts-ignore
-    const w = (window as any);
-    if (w && w.VITE_SIGN_BASE_URL) {
-      _cachedSignBaseUrl = String(w.VITE_SIGN_BASE_URL).replace(/\/$/, '');
-      return _cachedSignBaseUrl;
-    }
-  } catch {
-    // ignore
-  }
-
-  const base = ((import.meta as any)?.env?.BASE_URL as string) || '/';
-  const baseWithSlash = base.replace(/\/?$/, '/');
-  const candidates = [baseWithSlash + 'config.json', '/config.json', 'config.json'];
-  for (const path of candidates) {
-    try {
-      const res = await fetch(path, { cache: 'no-store' });
-      if (res.ok) {
-        const obj = await res.json();
-        if (obj?.VITE_SIGN_BASE_URL) {
-          _cachedSignBaseUrl = String(obj.VITE_SIGN_BASE_URL).replace(/\/$/, '');
-          return _cachedSignBaseUrl;
-        }
-      }
-    } catch {
-      // ignore
-    }
-  }
-
-  return '';
-}
-
-async function getSignExpiresDays(): Promise<number> {
-  if (_cachedSignExpiresDays != null) return _cachedSignExpiresDays;
-  try {
-    const envVal = (import.meta as any)?.env?.VITE_SIGN_EXPIRES_DAYS;
-    const parsed = Number(envVal);
-    if (Number.isFinite(parsed) && parsed > 0) {
-      _cachedSignExpiresDays = parsed;
-      return parsed;
-    }
-  } catch {
-    // ignore
-  }
-
-  try {
-    // @ts-ignore
-    const w = (window as any);
-    const parsed = Number(w?.VITE_SIGN_EXPIRES_DAYS);
-    if (Number.isFinite(parsed) && parsed > 0) {
-      _cachedSignExpiresDays = parsed;
-      return parsed;
-    }
-  } catch {
-    // ignore
-  }
-
-  const base = ((import.meta as any)?.env?.BASE_URL as string) || '/';
-  const baseWithSlash = base.replace(/\/?$/, '/');
-  const candidates = [baseWithSlash + 'config.json', '/config.json', 'config.json'];
-  for (const path of candidates) {
-    try {
-      const res = await fetch(path, { cache: 'no-store' });
-      if (res.ok) {
-        const obj = await res.json();
-        const parsed = Number(obj?.VITE_SIGN_EXPIRES_DAYS);
-        if (Number.isFinite(parsed) && parsed > 0) {
-          _cachedSignExpiresDays = parsed;
-          return parsed;
-        }
-      }
-    } catch {
-      // ignore
-    }
-  }
-
-  _cachedSignExpiresDays = 7;
-  return 7;
-}
-
-function isProdHost(): boolean {
-  return typeof window !== 'undefined' && !/localhost|127\\.0\\.0\\.1/.test(window.location.hostname);
 }
 
 interface SheetRow {
   [key: string]: string | number | null;
 }
 
-async function postToScript(payload: Record<string, any>): Promise<any> {
-  if (isProdHost()) {
-    const res = await fetch('/api/submit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    const text = await res.text();
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status} when posting to proxy: ${text.slice(0, 300)}`);
-    }
-    try {
-      return text ? JSON.parse(text) : null;
-    } catch {
-      throw new Error(`Response was not valid JSON: ${text.slice(0, 300)}`);
-    }
-  }
-
-  const url = await getGoogleScriptUrl();
-  if (!url) throw new Error('Google Script URL is not configured');
-  // Dev: POST with text/plain to avoid CORS preflight
-  const res = await fetch(url, {
-    method: 'POST',
-    body: JSON.stringify(payload),
-    redirect: 'follow',
-  });
-  const text = await res.text();
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status} when posting to script: ${text.slice(0, 300)}`);
-  }
-  try {
-    return text ? JSON.parse(text) : null;
-  } catch {
-    throw new Error(`Response was not valid JSON: ${text.slice(0, 300)}`);
-  }
-}
-
 export async function fetchSheetRows(sheetName: string, options: { limit?: number } = {}): Promise<SheetRow[] | null> {
-  const useProxy = isProdHost();
-  const url = useProxy ? '/api/list' : await getGoogleScriptUrl();
+  const url = await getGoogleScriptUrl();
   if (!url) return null;
 
-  let final = url;
-  try {
-    const u = new URL(url);
-    u.searchParams.set('action', 'list');
-    u.searchParams.set('sheet', sheetName);
-    if (options.limit) u.searchParams.set('limit', String(options.limit));
-    final = u.toString();
-  } catch {
-    const params = new URLSearchParams();
-    params.set('action', 'list');
-    params.set('sheet', sheetName);
-    if (options.limit) params.set('limit', String(options.limit));
-    final = `${url}${url.includes('?') ? '&' : '?'}${params.toString()}`;
-  }
+  const params = new URLSearchParams();
+  params.set('action', 'list');
+  params.set('sheet', sheetName);
+  if (options.limit) params.set('limit', String(options.limit));
+
+  const final = `${url}?${params.toString()}`;
 
   try {
     const res = await fetch(final, { method: 'GET', redirect: 'follow' });
@@ -236,46 +56,47 @@ export async function fetchSheetRows(sheetName: string, options: { limit?: numbe
   }
 }
 
-export async function updateSheetRow(sheetName: string, rowIndex: number, updates: Record<string, any>) {
-  return postToScript({ action: 'update', sheet: sheetName, row: rowIndex, updates });
-}
+export async function updateSheetRow(sheet: string, rowIndex: number, updates: Record<string, any>): Promise<boolean> {
+  const url = await getGoogleScriptUrl();
+  if (!url) return false;
 
-export async function deleteSheetRow(sheetName: string, rowIndex: number) {
-  return postToScript({ action: 'delete', sheet: sheetName, row: rowIndex });
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      redirect: 'follow',
+      body: JSON.stringify({
+        action: 'update',
+        sheet,
+        rowIndex,
+        data: updates,
+      }),
+    });
+
+    const text = await res.text();
+    const json = JSON.parse(text);
+    return json?.success || !!json?.status;
+  } catch (err) {
+    console.error('updateSheetRow error:', err);
+    return false;
+  }
 }
 
 export async function createSignLink(
   contractNumber: string,
-  rowIndex?: number,
-  options?: { contractHtml?: string; signSource?: 'internal' | 'google' }
-) {
-  const signBaseUrl = await getSignBaseUrl();
-  const signExpiresDays = await getSignExpiresDays();
-  const res = await postToScript({
-    action: 'sign_create',
-    contractNumber,
-    row: rowIndex,
-    signBaseUrl,
-    signExpiresDays,
-    contractHtml: options?.contractHtml,
-    signSource: options?.signSource
-  });
-  if (res && res.success === false) {
-    throw new Error(res.error || 'Не удалось создать ссылку на подпись');
-  }
-  return res;
+  rowIndex?: number
+): Promise<{ signUrl?: string; token?: string; success?: boolean } | null> {
+  // This creates a sign link for e-signature service.
+  // For now, return a mock/placeholder response.
+  // In production, this would integrate with an e-signature service (e.g., docusign, pandadoc, etc.)
+  const token = btoa(JSON.stringify({ contractNumber, rowIndex, timestamp: Date.now() }));
+  const signUrl = `${window.location.origin}/sign?token=${encodeURIComponent(token)}`;
+
+  return {
+    signUrl,
+    token,
+    success: true,
+  };
 }
 
-export async function fetchPromoCodes(): Promise<SheetRow[] | null> {
-  return fetchSheetRows('promocodes');
-}
-
-export async function upsertPromoCode(payload: Record<string, any>) {
-  return postToScript({ formType: 'promo_code', ...payload });
-}
-
-export async function deletePromoCodeRemote(id: string) {
-  return postToScript({ action: 'promo_code_delete', id });
-}
-
-export default { fetchSheetRows };
+export default { fetchSheetRows, updateSheetRow, createSignLink };

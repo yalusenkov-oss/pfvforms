@@ -49,17 +49,12 @@
       background: #ffffff;
       backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--border);
-      box-shadow: 0 2px 12px rgba(124, 58, 237, 0.06);
-    }
-
-    .header-inner {
-      max-width: 1200px;
-      margin: 0 auto;
       padding: 16px 20px;
+      margin: -20px -20px 40px -20px;
+      box-shadow: 0 2px 12px rgba(124, 58, 237, 0.06);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
     }
 
     .header-left {
@@ -69,23 +64,25 @@
     }
 
     .header-logo {
-      width: 44px;
-      height: 44px;
+      width: 40px;
+      height: 40px;
       border-radius: 12px;
-      background: white;
+      background: linear-gradient(135deg, #7c3aed, #6d28d9);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 2px 8px rgba(124, 58, 237, 0.15);
+      color: white;
+      font-weight: 700;
+      font-size: 18px;
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
       flex-shrink: 0;
-      overflow: hidden;
     }
 
-    .header-logo img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      padding: 4px;
+    .header-logo svg {
+      width: 24px;
+      height: 24px;
+      stroke: white;
+      stroke-width: 1.5;
     }
 
     .header-title {
@@ -113,14 +110,13 @@
     .header-actions {
       display: flex;
       gap: 12px;
-      margin-left: auto;
     }
 
     .btn-home {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 10px 16px;
+      padding: 8px 16px;
       border-radius: 10px;
       background: rgba(124, 58, 237, 0.08);
       color: var(--accent);
@@ -132,15 +128,17 @@
       cursor: pointer;
     }
 
+    .btn-home svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      stroke-width: 2;
+    }
+
     .btn-home:hover {
       background: rgba(124, 58, 237, 0.12);
       border-color: rgba(124, 58, 237, 0.25);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.15);
-    }
-
-    .btn-home:active {
-      transform: translateY(0);
+      transform: translateY(-1px);
     }
 
     .hero {
@@ -168,7 +166,7 @@
     .grid {
       display: grid;
       gap: 24px;
-      grid-template-columns: 1.25fr 0.75fr;
+      grid-template-columns: 1fr 1fr;
       margin-bottom: 40px;
     }
 
@@ -185,10 +183,6 @@
       transition: all 0.3s ease;
       display: flex;
       flex-direction: column;
-    }
-
-    .card.document-card {
-      padding: 20px;
     }
 
     .card:hover {
@@ -217,14 +211,14 @@
 
     .card > .status:first-of-type {
       margin-top: 4px;
-      margin-bottom: 12px;
+      margin-bottom: 20px;
     }
 
     .doc-actions {
       display: flex;
       gap: 12px;
       flex-wrap: wrap;
-      margin-bottom: 12px;
+      margin-bottom: 20px;
     }
 
     .btn {
@@ -303,12 +297,12 @@
 
     .preview {
       width: 100%;
-      aspect-ratio: 1/1.15;
+      aspect-ratio: 1/1.4;
       border-radius: 14px;
       border: 1px solid var(--border);
       background: #ffffff;
       flex: 1;
-      min-height: 460px;
+      min-height: 400px;
     }
 
     .signature-wrap {
@@ -386,19 +380,26 @@
 </head>
 <body>
   <header>
-    <div class="header-inner">
-      <div class="header-left">
-        <div class="header-logo">
-          <img src="/Frame%203.png" alt="PFVMUSIC" />
-        </div>
-        <div class="header-title">
-          <h2>PFVMUSIC</h2>
-          <p>Издательство</p>
-        </div>
+    <div class="header-left">
+      <div class="header-logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="13" r="11"></circle>
+          <path d="M12 2v22M2 12h20"></path>
+          <circle cx="12" cy="13" r="5"></circle>
+        </svg>
       </div>
-      <div class="header-actions">
-        <a href="/" class="btn-home">На главную</a>
+      <div class="header-title">
+        <h2>PFVMUSIC</h2>
+        <p>Издательство</p>
       </div>
+    </div>
+    <div class="header-actions">
+      <a href="/" class="btn-home">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8M21 3v6h-6M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16M3 21v-6h6"></path>
+        </svg>
+        На главную
+      </a>
     </div>
   </header>
 
@@ -415,7 +416,7 @@
     </section>
 
     <div class="grid">
-      <section class="card document-card">
+      <section class="card">
         <h3>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline; margin-right: 6px; vertical-align: middle;">
             <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
@@ -479,11 +480,9 @@
       const rect = canvas.getBoundingClientRect();
       canvas.width = rect.width * ratio;
       canvas.height = rect.height * ratio;
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(ratio, ratio);
-      ctx.lineWidth = 2.8;
+      ctx.lineWidth = 1.6;
       ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
       ctx.strokeStyle = '#000000';
     }
 
@@ -523,14 +522,8 @@
     canvas.addEventListener('touchend', (e) => { e.preventDefault(); endDraw(e); });
 
     clearBtn.addEventListener('click', () => {
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const ratio = window.devicePixelRatio || 1;
-      ctx.scale(ratio, ratio);
-      ctx.lineWidth = 2.8;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.strokeStyle = '#000000';
+      const rect = canvas.getBoundingClientRect();
+      ctx.clearRect(0, 0, rect.width, rect.height);
       hasStroke = false;
     });
 
