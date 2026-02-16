@@ -152,3 +152,42 @@ input[type="date"]:hover::-moz-calendar-picker-indicator {
   padding: 8px 12px;
   font-size: 0.75rem;
 }
+
+/* Responsive Adaptations */
+@media (max-width: 1024px) {
+  /* Tariff cards: 2 columns instead of 2 */
+  .tariff-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  /* Information blocks: 1 column */
+  .info-blocks {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Tariff cards: single column */
+  .tariff-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  /* Features list: single column */
+  .features-list {
+    grid-template-columns: 1fr;
+  }
+  
+  /* Reduce padding on cards */
+  .tariff-card {
+    padding: 24px 20px;
+  }
+  
+  /* Info pills: scroll horizontally if needed */
+  .tags-container {
+    overflow-x: auto;
+    display: flex;
+    gap: 12px;
+    padding-bottom: 8px;
+  }
+

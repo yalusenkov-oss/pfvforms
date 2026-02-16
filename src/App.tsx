@@ -636,7 +636,7 @@ export function App() {
                   {/* Badge */}
                   {tariff.badge && (
                     <div className={cn(
-                      'mb-4 inline-block rounded-full px-3 py-1.5 text-xs font-bold capitalize',
+                      'mb-3 inline-block rounded-full px-4 py-2 text-xs font-bold capitalize',
                       tariff.recommended 
                         ? 'bg-emerald-100 text-emerald-700' 
                         : tariff.name === 'Платинум'
@@ -650,27 +650,27 @@ export function App() {
                   )}
 
                   {/* Title & Subtitle */}
-                  <div className="mb-6">
-                    <h4 className={cn('text-xl md:text-2xl font-bold', tariff.titleClass)}>
+                  <div className="mb-5">
+                    <h4 className={cn('text-2xl font-bold', tariff.titleClass)}>
                       {tariff.name}
                     </h4>
-                    <p className={cn('text-sm mt-2', tariff.titleClass, 'opacity-80')}>
+                    <p className={cn('text-sm mt-2', tariff.titleClass, 'opacity-75')}>
                       {tariff.subtitle}
                     </p>
                   </div>
 
                   {/* Key Metrics - Highlighted */}
-                  <div className="rounded-2xl bg-gradient-to-r from-gray-50 to-white p-4 mb-6 border border-gray-100 shadow-sm">
+                  <div className="rounded-2xl bg-gradient-to-r from-gray-50 to-white p-5 mb-6 border border-gray-100 shadow-sm">
                     <div className="space-y-3">
                       <div>
-                        <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-1">Доля артиста</p>
+                        <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-1.5">Доля артиста</p>
                         <p className={cn('text-2xl font-bold', tariff.titleClass)}>
                           {tariff.monetization[0].match(/\d+%/)}
                         </p>
                       </div>
-                      <div className="pt-2 border-t border-gray-200">
-                        <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-1">Срок обработки</p>
-                        <p className="text-sm font-bold text-gray-900">{tariff.turnaround}</p>
+                      <div className="pt-3 border-t border-gray-200">
+                        <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-1.5">Срок обработки</p>
+                        <p className="text-base font-semibold text-gray-900">{tariff.turnaround}</p>
                       </div>
                     </div>
                   </div>
@@ -746,9 +746,9 @@ export function App() {
                       </div>
                       <div>
                         <p className="font-bold text-gray-900 mb-3 uppercase tracking-wide text-xs">Возможности</p>
-                        <div className="grid grid-cols-1 gap-2">
+                        <div className="grid grid-cols-2 gap-3">
                           {tariff.features.map((feature) => (
-                            <p key={feature} className="text-gray-700 flex gap-2 items-start">
+                            <p key={feature} className="text-gray-700 flex gap-2 items-start text-sm">
                               <span className="text-emerald-500 mt-0.5 flex-shrink-0 font-bold">✓</span>
                               <span>{feature}</span>
                             </p>
