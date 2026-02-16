@@ -316,6 +316,12 @@ export function App() {
   const [promoSubmitted, setPromoSubmitted] = useState(false);
   const [promoSubmitting, setPromoSubmitting] = useState(false);
   const [promoErrors, setPromoErrors] = useState<string[]>([]);
+  
+  // Tariff expandable state (to prevent opening multiple at once)
+  const [expandedTariff, setExpandedTariff] = useState<string | null>(null);
+  
+  // Offer modal state
+  const [showOfferModal, setShowOfferModal] = useState(false);
 
   // Hard reset scroll after mode/form state switches to prevent blank viewport on mobile browsers.
   useEffect(() => {
@@ -616,18 +622,18 @@ export function App() {
             </div>
 
             {/* Tariff Cards Grid - 2 основных сверху, 2 дополнительных снизу */}
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-5 md:grid-cols-2">
               {TARIFFS.map((tariff) => (
                 <div
                   key={tariff.name}
                   className={cn(
-                    'rounded-2xl border-2 p-8 bg-white transition-all duration-300 hover:shadow-2xl hover:-translate-y-2',
+                    'rounded-2xl border-2 p-6 bg-white transition-all duration-300 hover:shadow-lg hover:-translate-y-1',
                     tariff.cardClass
                   )}
                 >
-                  {/* Icon - 80x80 */}
+                  {/* Icon - smaller */}
                   <div className={cn(
-                    'w-20 h-20 rounded-2xl flex items-center justify-center mb-6 shadow-lg text-4xl font-bold',
+                    'w-16 h-16 rounded-2xl flex items-center justify-center mb-5 shadow-lg text-3xl font-bold',
                     `bg-gradient-to-br ${tariff.accentColor}`
                   )}>
                     {tariff.emoji}
@@ -636,7 +642,7 @@ export function App() {
                   {/* Badge */}
                   {tariff.badge && (
                     <div className={cn(
-                      'mb-3 inline-block rounded-full px-4 py-2 text-xs font-bold capitalize',
+                      'mb-3 inline-block rounded-full px-3 py-1 text-xs font-bold capitalize',
                       tariff.recommended 
                         ? 'bg-emerald-100 text-emerald-700' 
                         : tariff.name === 'Платинум'
@@ -650,48 +656,48 @@ export function App() {
                   )}
 
                   {/* Title & Subtitle */}
-                  <div className="mb-5">
-                    <h4 className={cn('text-2xl font-bold', tariff.titleClass)}>
+                  <div className="mb-4">
+                    <h4 className={cn('text-xl font-bold', tariff.titleClass)}>
                       {tariff.name}
                     </h4>
-                    <p className={cn('text-sm mt-2', tariff.titleClass, 'opacity-75')}>
+                    <p className={cn('text-xs mt-1.5', tariff.titleClass, 'opacity-75')}>
                       {tariff.subtitle}
                     </p>
                   </div>
 
                   {/* Key Metrics - Highlighted */}
-                  <div className="rounded-2xl bg-gradient-to-r from-gray-50 to-white p-5 mb-6 border border-gray-100 shadow-sm">
-                    <div className="space-y-3">
+                  <div className="rounded-xl bg-gradient-to-r from-gray-50 to-white p-4 mb-5 border border-gray-100 shadow-sm">
+                    <div className="space-y-2.5">
                       <div>
-                        <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-1.5">Доля артиста</p>
-                        <p className={cn('text-2xl font-bold', tariff.titleClass)}>
+                        <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-1">Доля артиста</p>
+                        <p className={cn('text-xl font-bold', tariff.titleClass)}>
                           {tariff.monetization[0].match(/\d+%/)}
                         </p>
                       </div>
-                      <div className="pt-3 border-t border-gray-200">
-                        <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-1.5">Срок обработки</p>
-                        <p className="text-base font-semibold text-gray-900">{tariff.turnaround}</p>
+                      <div className="pt-2.5 border-t border-gray-200">
+                        <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-1">Срок обработки</p>
+                        <p className="text-sm font-semibold text-gray-900">{tariff.turnaround}</p>
                       </div>
                     </div>
                   </div>
 
                   {/* Main Pricing - Only Single & EP */}
-                  <div className="mb-6 pb-6 border-b-2 border-gray-100">
-                    <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-4">Основные цены</p>
-                    <div className="space-y-3">
+                  <div className="mb-5 pb-5 border-b-2 border-gray-100">
+                    <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-3">Основные цены</p>
+                    <div className="space-y-2">
                       {tariff.prices.slice(0, 2).map((price, idx) => (
                         <div key={price} className="flex items-center justify-between">
                           <span className={cn(
                             'font-medium',
-                            idx === 0 ? 'text-base text-gray-800' : 'text-sm text-gray-700'
+                            idx === 0 ? 'text-sm text-gray-800' : 'text-xs text-gray-700'
                           )}>
                             {price.split(':')[0].trim()}
                           </span>
                           <span className={cn(
                             'font-bold',
                             idx === 0 
-                              ? cn('text-xl', tariff.titleClass)
-                              : 'text-base text-gray-900'
+                              ? cn('text-lg', tariff.titleClass)
+                              : 'text-sm text-gray-900'
                           )}>
                             {price.split(':')[1].trim()}
                           </span>
@@ -701,66 +707,76 @@ export function App() {
                   </div>
 
                   {/* CTA Button */}
-                  <div className="mb-5">
-                    <button className={cn(
-                      'w-full h-13 px-4 rounded-2xl font-bold text-base transition-all duration-300 flex items-center justify-center gap-2',
-                      tariff.name === 'Базовый'
-                        ? 'border-2 border-purple-500 text-purple-600 bg-white hover:bg-purple-50'
-                        : tariff.name === 'Продвинутый'
-                        ? 'border-2 border-sky-400 text-sky-600 bg-white hover:bg-sky-50'
-                        : tariff.name === 'Премиум'
-                        ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-300'
-                        : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:shadow-lg hover:shadow-amber-300'
-                    )}>
+                  <div className="mb-4">
+                    <button 
+                      onClick={() => navigateTo('distribution')}
+                      className={cn(
+                        'w-full h-12 px-4 rounded-xl font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2',
+                        tariff.name === 'Базовый'
+                          ? 'border-2 border-purple-500 text-purple-600 bg-white hover:bg-purple-50'
+                          : tariff.name === 'Продвинутый'
+                          ? 'border-2 border-sky-400 text-sky-600 bg-white hover:bg-sky-50'
+                          : tariff.name === 'Премиум'
+                          ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-300'
+                          : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:shadow-lg hover:shadow-amber-300'
+                      )}>
                       Начать
-                      <ChevronRight className="w-5 h-5" />
+                      <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
 
-                  {/* Expandable Details */}
-                  <details className="group">
-                    <summary className={cn(
-                      'cursor-pointer text-xs font-bold flex items-center justify-between py-2 transition-colors list-none uppercase tracking-wide',
+                  {/* Expandable Details - Custom implementation */}
+                  <button
+                    onClick={() => setExpandedTariff(expandedTariff === tariff.name ? null : tariff.name)}
+                    className={cn(
+                      'w-full cursor-pointer text-xs font-bold flex items-center justify-between py-2 transition-colors list-none uppercase tracking-wide',
                       tariff.name === 'Базовый'
                         ? 'text-purple-600 hover:text-purple-700'
                         : tariff.name === 'Продвинутый'
                         ? 'text-sky-600 hover:text-sky-700'
                         : tariff.name === 'Премиум'
                         ? 'text-emerald-600 hover:text-emerald-700'
-                        : 'text-amber-600 hover:text-amber-700'
+                        : 'text-amber-600 hover:text-amber-700',
+                      'background-none border-none p-0 h-auto'
                     )}>
-                      <span>Все цены и возможности →</span>
-                      <span className="transition-transform duration-300 group-open:rotate-180 text-lg">▼</span>
-                    </summary>
-                    <div className="mt-5 space-y-5 text-sm border-t border-gray-200 pt-5">
+                    <span>Все цены и возможности →</span>
+                    <span className={cn(
+                      'transition-transform duration-300 text-lg',
+                      expandedTariff === tariff.name && 'rotate-180'
+                    )}>▼</span>
+                  </button>
+                  
+                  {/* Expandable Content */}
+                  {expandedTariff === tariff.name && (
+                    <div className="mt-4 space-y-4 text-sm border-t border-gray-200 pt-4 overflow-hidden">
                       <div>
-                        <p className="font-bold text-gray-900 mb-3 uppercase tracking-wide text-xs">Все цены</p>
-                        <div className="space-y-2">
+                        <p className="font-bold text-gray-900 mb-2.5 uppercase tracking-wide text-xs">Все цены</p>
+                        <div className="space-y-1.5">
                           {tariff.prices.map((price) => (
-                            <p key={price} className="text-gray-700 flex gap-2 items-start">
-                              <span className="text-purple-400 mt-1 flex-shrink-0 font-bold">•</span>
+                            <p key={price} className="text-gray-700 flex gap-2 items-start text-xs break-words">
+                              <span className="text-purple-400 mt-0.5 flex-shrink-0 font-bold">•</span>
                               <span>{price}</span>
                             </p>
                           ))}
                         </div>
                       </div>
                       <div>
-                        <p className="font-bold text-gray-900 mb-3 uppercase tracking-wide text-xs">Возможности</p>
-                        <div className="grid grid-cols-2 gap-3">
+                        <p className="font-bold text-gray-900 mb-2.5 uppercase tracking-wide text-xs">Возможности</p>
+                        <div className="grid grid-cols-1 gap-2">
                           {tariff.features.map((feature) => (
-                            <p key={feature} className="text-gray-700 flex gap-2 items-start text-sm">
+                            <p key={feature} className="text-gray-700 flex gap-2 items-start text-xs break-words">
                               <span className="text-emerald-500 mt-0.5 flex-shrink-0 font-bold">✓</span>
                               <span>{feature}</span>
                             </p>
                           ))}
                         </div>
                       </div>
-                      <div className="bg-gray-100 p-4 rounded-lg border border-gray-200">
-                        <p className="text-xs text-gray-700 font-semibold mb-2 uppercase tracking-wide">Минимальная выплата</p>
-                        <p className="font-bold text-gray-900">{tariff.monetization[1]}</p>
+                      <div className="bg-gray-100 p-3 rounded-lg border border-gray-200">
+                        <p className="text-xs text-gray-700 font-semibold mb-1.5 uppercase tracking-wide">Минимальная выплата</p>
+                        <p className="font-bold text-gray-900 text-xs">{tariff.monetization[1]}</p>
                       </div>
                     </div>
-                  </details>
+                  )}
                 </div>
               ))}
             </div>
@@ -807,15 +823,13 @@ export function App() {
                 <p className="text-sm text-amber-900/80 leading-relaxed mb-4">
                   Использование сервиса и оказание услуг регулируются публичной офертой.
                 </p>
-                <a
-                  href="https://disk.yandex.ru/i/PaBzY2OUMJ2ncQ"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2.5 border-2 border-amber-600 text-amber-600 font-semibold text-sm rounded-xl hover:bg-amber-600 hover:text-white transition-all"
+                <button
+                  onClick={() => setShowOfferModal(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 border-2 border-amber-600 text-amber-600 font-semibold text-sm rounded-xl hover:bg-amber-600 hover:text-white transition-all bg-white"
                 >
                   Открыть оферту
-                  <ExternalLink className="w-4 h-4" />
-                </a>
+                  <FileCheck className="w-4 h-4" />
+                </button>
               </div>
 
               <div className="rounded-2xl border border-gray-300 bg-gray-50/80 p-8 min-h-72">
@@ -1540,6 +1554,72 @@ export function App() {
           </div>
         </div>
       </div>
+
+      {/* Offer Modal */}
+      {showOfferModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-96 flex flex-col shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-bold text-gray-900">Публичная оферта</h2>
+              <button
+                onClick={() => setShowOfferModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <XCircle className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            
+            {/* Content - Scrollable */}
+            <div className="overflow-y-auto flex-1 px-6 py-4 text-sm text-gray-700 leading-relaxed space-y-3">
+              <p><strong>ПУБЛИЧНАЯ ОФЕРТА</strong></p>
+              <p><strong>о заключении договора об оказании услуг</strong></p>
+              
+              <p><strong>1. Общие положения</strong></p>
+              <p>В настоящей Публичной оферте содержатся условия заключения Договора об оказании услуг. Настоящей офертой признается предложение, адресованное одному или нескольким конкретным лицам, которое достаточно определенно и выражает намерение лица, сделавшего предложение, считать себя заключившим Договор с адресатом, которым будет принято предложение.</p>
+              <p>Совершение указанных в настоящей Оферте действий является подтверждением согласия обеих Сторон заключить Договор об оказании услуг на условиях, в порядке и объеме, изложенных в настоящей Оферте.</p>
+              
+              <p><strong>2. Предмет Договора</strong></p>
+              <p>Исполнитель обязуется оказать Заказчику Услуги, а Заказчик обязуется оплатить их в размере, порядке и сроки, установленные настоящим Договором.</p>
+              
+              <p><strong>3. Права и обязанности Сторон</strong></p>
+              <p><strong>3.1 Права и обязанности Исполнителя:</strong></p>
+              <p>- Исполнитель обязуется оказать Услуги в соответствии с положениями настоящего Договора в указанные сроки и объеме</p>
+              <p>- Исполнитель несет ответственность за хранение и обработку персональных данных Заказчика</p>
+              <p>- Исполнитель оставляет за собой право изменять условия Оферты в одностороннем порядке</p>
+              
+              <p><strong>3.2 Права и обязанности Заказчика:</strong></p>
+              <p>- Заказчик обязан предоставлять достоверную информацию о себе</p>
+              <p>- Заказчик обязуется не воспроизводить и не использовать информацию, ставшую ему доступной в связи с оказанием Услуг</p>
+              <p>- Заказчик гарантирует, что все условия Договора ему понятны</p>
+              
+              <p><strong>4. Цена и порядок расчетов</strong></p>
+              <p>Стоимость услуг определяется на основании сведений при оформлении заявки либо на сайте Исполнителя. Все расчеты производятся в безналичном порядке.</p>
+              
+              <p><strong>5. Конфиденциальность и безопасность</strong></p>
+              <p>Стороны обеспечивают конфиденциальность и безопасность персональных данных в соответствии с ФЗ от 27.07.2006 г. № 152-ФЗ «О персональных данных».</p>
+              
+              <p><strong>9. Реквизиты Исполнителя</strong></p>
+              <p>Полное наименование: Орехов Данила Александрович<br />
+              ИНН: 711613056345<br />
+              ОГРНИП: 324710000080681<br />
+              Email: booking@pfvmusic.ru</p>
+              
+              <p className="text-xs text-gray-500 italic">Для полного текста офerty посетите наш сайт или свяжитесь с менеджером</p>
+            </div>
+            
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+              <button
+                onClick={() => setShowOfferModal(false)}
+                className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition-colors"
+              >
+                Закрыть
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>
