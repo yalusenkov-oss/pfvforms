@@ -165,37 +165,166 @@ export function StepOne({ data, onChange }: StepOneProps) {
         subtitle="Выберите подходящий план для вашего релиза"
         icon={<Banknote className="w-5 h-5" />}
       >
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-4">
-          <CompactTariffCard name="Базовый" emoji="📦" desc="Начните здесь"
-            single="500" ep="700" album="900"
-            selected={tariff === 'Базовый'} color="blue" />
-          <CompactTariffCard name="Продвинутый" emoji="🚀" desc="Больше опций"
-            single="690" ep="890" album="1 200"
-            selected={tariff === 'Продвинутый'} color="purple" />
-          <CompactTariffCard name="Премиум" emoji="⭐" desc="Полный пакет"
-            single="1 200" ep="1 690" album="2 290"
-            selected={tariff === 'Премиум'} color="yellow" badge="⭐ Популярный" />
-          <CompactTariffCard name="Платинум" emoji="👑" desc="Максимум"
-            single="4 990" ep="6 490" album="7 990"
-            selected={tariff === 'Платинум'} color="amber" badge="👑 VIP" />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-          <a href="https://clck.ru/3E6yBX" target="_blank" rel="noopener noreferrer"
-            className="flex items-center justify-between rounded-lg bg-gradient-to-r from-purple-50 to-purple-50/30 border border-purple-200 px-3 py-2.5 hover:shadow-md transition-all group">
-            <div className="flex items-center gap-2">
-              <Link2 className="w-4 h-4 text-purple-600" />
-              <span className="text-xs font-semibold text-purple-900">Полные тарифы</span>
+        <div className="grid gap-4 sm:grid-cols-2 mb-6">
+          {/* Базовый */}
+          <div className={cn(
+            'rounded-lg border-2 p-4 transition-all',
+            tariff === 'Базовый'
+              ? 'border-green-500 bg-green-50 ring-2 ring-green-100 shadow-md'
+              : 'border-gray-200 bg-white hover:shadow-sm'
+          )}>
+            {tariff === 'Базовый' && (
+              <div className="absolute top-2 left-2">
+                <span className="text-[10px] font-bold text-white px-2 py-0.5 rounded-full bg-green-500">✓</span>
+              </div>
+            )}
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0 text-xl">📦</div>
+              <div className="flex-1">
+                <h4 className="font-bold text-sm text-gray-900">Базовый</h4>
+                <p className="text-xs text-gray-600 mt-1">Стандартная дистрибуция</p>
+              </div>
             </div>
-            <ChevronRight className="w-3.5 h-3.5 text-purple-600 group-hover:translate-x-0.5 transition-transform" />
-          </a>
-          <div className="flex items-center justify-center rounded-lg bg-gradient-to-r from-purple-50 to-purple-50/30 border border-purple-200 px-3 py-2.5">
-            <img
-              src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=https://clck.ru/3E6yBX&color=7C3AED"
-              alt="QR Code" className="h-10 w-10 rounded" />
-            <span className="text-[10px] text-purple-700 ml-2">QR-код</span>
+            <div className="space-y-2 text-xs border-t border-gray-200/50 pt-3">
+              <div className="flex justify-between">
+                <span className="text-gray-600">• Сингл</span>
+                <span className="font-bold text-blue-900">500 ₽</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">• EP (3-5 треков)</span>
+                <span className="font-bold text-blue-900">700 ₽</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">• Альбом</span>
+                <span className="font-bold text-blue-900">900 ₽</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Продвинутый */}
+          <div className={cn(
+            'rounded-lg border-2 p-4 transition-all',
+            tariff === 'Продвинутый'
+              ? 'border-green-500 bg-green-50 ring-2 ring-green-100 shadow-md'
+              : 'border-gray-200 bg-white hover:shadow-sm'
+          )}>
+            {tariff === 'Продвинутый' && (
+              <div className="absolute top-2 left-2">
+                <span className="text-[10px] font-bold text-white px-2 py-0.5 rounded-full bg-green-500">✓</span>
+              </div>
+            )}
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0 text-xl">🚀</div>
+              <div className="flex-1">
+                <h4 className="font-bold text-sm text-gray-900">Продвинутый</h4>
+                <p className="text-xs text-gray-600 mt-1">Расширенные возможности</p>
+              </div>
+            </div>
+            <div className="space-y-2 text-xs border-t border-gray-200/50 pt-3">
+              <div className="flex justify-between">
+                <span className="text-gray-600">• Сингл</span>
+                <span className="font-bold text-purple-900">690 ₽</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">• EP (3-5 треков)</span>
+                <span className="font-bold text-purple-900">890 ₽</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">• Альбом</span>
+                <span className="font-bold text-purple-900">1 200 ₽</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Премиум */}
+          <div className={cn(
+            'rounded-lg border-2 p-4 transition-all',
+            tariff === 'Премиум'
+              ? 'border-green-500 bg-green-50 ring-2 ring-green-100 shadow-md'
+              : 'border-yellow-300 bg-yellow-50 hover:shadow-sm'
+          )}>
+            {tariff === 'Премиум' && (
+              <div className="absolute top-2 left-2">
+                <span className="text-[10px] font-bold text-white px-2 py-0.5 rounded-full bg-green-500">✓</span>
+              </div>
+            )}
+            {tariff !== 'Премиум' && (
+              <div className="absolute top-2 right-2">
+                <span className="text-[10px] font-bold text-white px-2 py-0.5 rounded-full bg-purple-600">⭐ Популярный</span>
+              </div>
+            )}
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-12 h-12 rounded-lg bg-yellow-100 flex items-center justify-center flex-shrink-0 text-xl">⭐</div>
+              <div className="flex-1">
+                <h4 className="font-bold text-sm text-gray-900">Премиум</h4>
+                <p className="text-xs text-gray-600 mt-1">Полный пакет услуг</p>
+              </div>
+            </div>
+            <div className="space-y-2 text-xs border-t border-yellow-200/50 pt-3">
+              <div className="flex justify-between">
+                <span className="text-gray-600">• Сингл</span>
+                <span className="font-bold text-purple-900">1 200 ₽</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">• EP (3-5 треков)</span>
+                <span className="font-bold text-purple-900">1 690 ₽</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">• Альбом</span>
+                <span className="font-bold text-purple-900">2 290 ₽</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Платинум */}
+          <div className={cn(
+            'rounded-lg border-2 p-4 transition-all',
+            tariff === 'Платинум'
+              ? 'border-green-500 bg-green-50 ring-2 ring-green-100 shadow-md'
+              : 'border-amber-300 bg-amber-50 hover:shadow-sm'
+          )}>
+            {tariff === 'Платинум' && (
+              <div className="absolute top-2 left-2">
+                <span className="text-[10px] font-bold text-white px-2 py-0.5 rounded-full bg-green-500">✓</span>
+              </div>
+            )}
+            {tariff !== 'Платинум' && (
+              <div className="absolute top-2 right-2">
+                <span className="text-[10px] font-bold text-white px-2 py-0.5 rounded-full bg-amber-600">👑 VIP</span>
+              </div>
+            )}
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-12 h-12 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0 text-xl">👑</div>
+              <div className="flex-1">
+                <h4 className="font-bold text-sm text-gray-900">Платинум</h4>
+                <p className="text-xs text-gray-600 mt-1">Максимальные возможности</p>
+              </div>
+            </div>
+            <div className="space-y-2 text-xs border-t border-amber-200/50 pt-3">
+              <div className="flex justify-between">
+                <span className="text-gray-600">• Сингл</span>
+                <span className="font-bold text-amber-900">4 990 ₽</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">• EP (3-5 треков)</span>
+                <span className="font-bold text-amber-900">6 490 ₽</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">• Альбом</span>
+                <span className="font-bold text-amber-900">7 990 ₽</span>
+              </div>
+            </div>
           </div>
         </div>
+
+        <a href="https://clck.ru/3E6yBX" target="_blank" rel="noopener noreferrer"
+          className="flex items-center justify-between rounded-lg bg-gradient-to-r from-purple-50 to-purple-50/30 border border-purple-200 px-4 py-3 hover:shadow-md transition-all group">
+          <div className="flex items-center gap-2">
+            <Link2 className="w-4 h-4 text-purple-600" />
+            <span className="text-sm font-semibold text-purple-900">🎵 Подробнее о тарифах</span>
+          </div>
+          <ChevronRight className="w-4 h-4 text-purple-600 group-hover:translate-x-0.5 transition-transform" />
+        </a>
       </StepCard>
 
       {/* ═══ CARD 2: Tariff & Release Type ═══ */}
@@ -798,71 +927,6 @@ export function StepOne({ data, onChange }: StepOneProps) {
         </div>
 
       </StepCard>
-    </div>
-  );
-}
-
-/* ─── Compact Tariff Card ─── */
-function CompactTariffCard({
-  name, emoji, desc, single, ep, album, selected, color, badge
-}: {
-  name: string;
-  emoji: string;
-  desc: string;
-  single: string;
-  ep: string;
-  album: string;
-  selected?: boolean;
-  color: 'blue' | 'purple' | 'yellow' | 'amber';
-  badge?: string;
-}) {
-  const colorMap: Record<string, { border: string; bg: string; badge: string; text: string; icon: string }> = {
-    blue: { border: 'border-blue-200', bg: 'bg-blue-50', badge: 'bg-blue-600', text: 'text-blue-900', icon: 'bg-blue-100' },
-    purple: { border: 'border-purple-200', bg: 'bg-purple-50', badge: 'bg-purple-600', text: 'text-purple-900', icon: 'bg-purple-100' },
-    yellow: { border: 'border-yellow-300', bg: 'bg-yellow-50', badge: 'bg-yellow-600', text: 'text-yellow-900', icon: 'bg-yellow-100' },
-    amber: { border: 'border-amber-300', bg: 'bg-amber-50', badge: 'bg-amber-600', text: 'text-amber-900', icon: 'bg-amber-100' },
-  };
-
-  const c = colorMap[color];
-  const selectStyle = selected ? `border-2 border-green-500 ring-2 ring-green-100 shadow-md` : `border border-gray-200 hover:shadow-sm`;
-
-  return (
-    <div className={`rounded-xl ${selectStyle} ${!selected ? c.bg : 'bg-green-50'} p-3 transition-all relative overflow-hidden group cursor-pointer`}>
-      {badge && (
-        <div className="absolute top-1 right-1">
-          <span className={`text-[8px] font-bold text-white px-1.5 py-0.5 rounded-full ${c.badge}`}>{badge}</span>
-        </div>
-      )}
-      {selected && (
-        <div className="absolute top-1 left-1">
-          <span className="text-[8px] font-bold text-white px-1.5 py-0.5 rounded-full bg-green-500">✓</span>
-        </div>
-      )}
-
-      <div className="flex items-center gap-2 mb-2">
-        <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${c.icon}`}>
-          <span className="text-sm">{emoji}</span>
-        </div>
-        <div className="flex-1 min-w-0">
-          <h4 className={`font-bold text-xs ${c.text}`}>{name}</h4>
-          <p className="text-[9px] text-gray-600 truncate">{desc}</p>
-        </div>
-      </div>
-
-      <div className="space-y-0.5 text-[10px] border-t border-gray-200/50 pt-2">
-        <div className="flex justify-between items-center">
-          <span className="text-gray-600">Сингл</span>
-          <span className={`font-bold ${c.text}`}>{single} ₽</span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-gray-600">EP</span>
-          <span className={`font-bold ${c.text}`}>{ep} ₽</span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-gray-600">Альбом</span>
-          <span className={`font-bold ${c.text}`}>{album} ₽</span>
-        </div>
-      </div>
     </div>
   );
 }
