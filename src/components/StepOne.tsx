@@ -39,8 +39,9 @@ export function calcTotal(data: Record<string, string>): { base: number; karaoke
   const tariff = data.tariff;
   const type = data.releaseType;
   if (!tariff || !type || !PRICES[tariff] || !PRICES[tariff][type]) return { base: 0, karaoke: 0, total: 0 };
-  const base = PRICES[tariff][type];
   const trackCount = getTrackCount(data);
+  const albumExtraTracks = type === 'Album' ? Math.max(0, trackCount - 20) : 0;
+  const base = PRICES[tariff][type] + (albumExtraTracks * 50);
   const karaokePerTrack = KARAOKE_PRICES[tariff] ?? 0;
   const karaoke = data.karaokeAddition === 'Да' ? karaokePerTrack * trackCount : 0;
   return { base, karaoke, total: base + karaoke };
