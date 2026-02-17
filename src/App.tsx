@@ -317,8 +317,8 @@ export function App() {
   const [promoSubmitting, setPromoSubmitting] = useState(false);
   const [promoErrors, setPromoErrors] = useState<string[]>([]);
   
-  // Tariff expandable state (to prevent opening multiple at once)
-  const [expandedTariff, setExpandedTariff] = useState<string | null>(null);
+  // Tariff expandable state: only one tariff can be expanded at a time
+  const [expandedTariffIndex, setExpandedTariffIndex] = useState<number | null>(null);
   
   // Offer modal state
   const [showOfferModal, setShowOfferModal] = useState(false);
@@ -751,7 +751,7 @@ export function App() {
 
             {/* Tariff Cards Grid - 2 основных сверху, 2 дополнительных снизу */}
             <div className="grid gap-5 md:grid-cols-2 auto-rows-fr">
-              {TARIFFS.map((tariff) => (
+              {TARIFFS.map((tariff, tariffIndex) => (
                 <div
                   key={tariff.name}
                   className={cn(
@@ -860,7 +860,11 @@ export function App() {
 
                   {/* Expandable Details - Custom implementation */}
                   <button
-                    onClick={() => setExpandedTariff(expandedTariff === tariff.name ? null : tariff.name)}
+                    type="button"
+                    onClick={() => {
+                      setExpandedTariffIndex((prev) => (prev === tariffIndex ? null : tariffIndex));
+                    }}
+                    aria-expanded={expandedTariffIndex === tariffIndex}
                     className={cn(
                       'w-full cursor-pointer text-xs font-bold flex items-center justify-between py-2 transition-colors list-none uppercase tracking-wide',
                       tariff.name === 'Базовый'
@@ -875,12 +879,12 @@ export function App() {
                     <span>Все цены и возможности →</span>
                     <span className={cn(
                       'transition-transform duration-300 text-lg',
-                      expandedTariff === tariff.name && 'rotate-180'
+                      expandedTariffIndex === tariffIndex && 'rotate-180'
                     )}>▼</span>
                   </button>
                   
                   {/* Expandable Content */}
-                  {expandedTariff === tariff.name && (
+                  {expandedTariffIndex === tariffIndex && (
                     <div className="mt-4 space-y-4 text-sm border-t border-gray-200 pt-4 overflow-hidden">
                       <div>
                         <p className="font-bold text-gray-900 mb-2.5 uppercase tracking-wide text-xs">Все цены</p>
