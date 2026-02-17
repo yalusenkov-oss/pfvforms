@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { Input, StepCard, InfoBox, Divider } from './UI';
-import { CreditCard, MessageCircle, Send, ExternalLink, Building2, Smartphone, Heart, Calculator, ReceiptText, MessageSquare, UserCheck, Megaphone, TicketPercent, CheckCircle2, XCircle, Banknote } from 'lucide-react';
+import { CreditCard, MessageCircle, Send, ExternalLink, Building2, Smartphone, Heart, Calculator, ReceiptText, MessageSquare, UserCheck, Megaphone, TicketPercent, CheckCircle2, XCircle } from 'lucide-react';
 import { calcTotal, getTrackCount } from './StepOne';
 import { fetchPromoCodes, PromoCodeRecord } from '@/services/googleSheets';
 
@@ -181,27 +181,6 @@ export function StepFour({ data, onChange, onGoToPromo }: StepFourProps) {
 
   return (
     <div className="space-y-6">
-      {/* ═══ Tariff Section ═══ */}
-      <StepCard
-        title="Раздел тарифов"
-        subtitle="Выберите подходящий план для вашего релиза"
-        icon={<Banknote className="w-5 h-5" />}
-      >
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <TariffCard name="Базовый" emoji="📦" description="Стандартная дистрибуция" single="500" ep="700" album="900" active={tariff === 'Базовый'} />
-          <TariffCard name="Продвинутый" emoji="🚀" description="Расширенный функционал" single="690" ep="890" album="1 200" active={tariff === 'Продвинутый'} />
-          <TariffCard name="Премиум" emoji="⭐" description="Премиум опции" single="1 200" ep="1 690" album="2 290" active={tariff === 'Премиум'} />
-          <TariffCard name="Платинум" emoji="👑" description="Максимум возможностей" single="4 990" ep="6 490" album="7 990" active={tariff === 'Платинум'} />
-        </div>
-
-        <InfoBox variant="purple">
-          <div>
-            <p className="font-semibold mb-1.5">💡 Какой тариф выбрать?</p>
-            <p className="text-xs text-purple-600">Каждый тариф включает доступ на основные платформы. Различия в цене и дополнительных опциях.</p>
-          </div>
-        </InfoBox>
-      </StepCard>
-
       {/* ═══ Promo Code ═══ */}
       <StepCard
         title="Промокод"
@@ -389,16 +368,6 @@ export function StepFour({ data, onChange, onGoToPromo }: StepFourProps) {
           </div>
 
           <div className="space-y-3 relative">
-            <div className="flex items-center justify-between text-sm bg-white/60 rounded-xl px-4 py-3 border border-purple-100">
-              <div>
-                <p className="text-gray-700 font-semibold">Тариф «{tariff}»</p>
-                <p className="text-xs text-gray-400">
-                  {releaseType} · {trackCount} {trackCount === 1 ? 'трек' : trackCount < 5 ? 'трека' : 'треков'}
-                </p>
-              </div>
-              <p className="font-bold text-gray-900 text-base">{base.toLocaleString('ru-RU')} ₽</p>
-            </div>
-
             {data.karaokeAddition === 'Да' && (
               <div className="flex items-center justify-between text-sm bg-white/60 rounded-xl px-4 py-3 border border-purple-100">
                 <div>
@@ -481,46 +450,6 @@ export function StepFour({ data, onChange, onGoToPromo }: StepFourProps) {
           </p>
         </InfoBox>
       )}
-    </div>
-  );
-}
-
-/* ─── Tariff Card ─── */
-function TariffCard({ name, emoji, description, single, ep, album, active }: {
-  name: string;
-  emoji: string;
-  description: string;
-  single: string;
-  ep: string;
-  album: string;
-  active: boolean;
-}) {
-  return (
-    <div className={`relative rounded-xl border-2 transition-all p-4 ${active ? `border-purple-400 bg-gradient-to-br from-purple-50 via-white to-purple-50/30 shadow-md` : 'border-gray-200 bg-white hover:shadow-sm hover:border-purple-200'}`}>
-      {active && (
-        <div className="absolute -top-3 -right-3">
-          <span className="text-xs font-bold text-white bg-purple-600 px-2 py-1 rounded-full">Выбран</span>
-        </div>
-      )}
-      <div className="flex items-center gap-2 mb-3">
-        <span className="text-2xl">{emoji}</span>
-        <h3 className={`font-bold text-sm ${active ? 'text-purple-900' : 'text-gray-900'}`}>{name}</h3>
-      </div>
-      <p className="text-xs text-gray-600 mb-3">{description}</p>
-      <div className="space-y-1.5 text-[11px]">
-        <div className="flex justify-between">
-          <span className="text-gray-600">Сингл:</span>
-          <span className="font-bold text-gray-900">{single} ₽</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-gray-600">EP:</span>
-          <span className="font-bold text-gray-900">{ep} ₽</span>
-        </div>
-        <div className="flex justify-between border-t border-gray-100 pt-1.5 mt-1.5">
-          <span className="text-gray-600">Альбом:</span>
-          <span className="font-bold text-gray-900">{album} ₽</span>
-        </div>
-      </div>
     </div>
   );
 }

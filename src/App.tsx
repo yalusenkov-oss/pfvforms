@@ -814,24 +814,29 @@ export function App() {
                   <div className="mb-5 pb-5 border-b-2 border-gray-100">
                     <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-3">Основные цены</p>
                     <div className="space-y-2">
-                      {tariff.prices.slice(0, 3).map((price, idx) => (
-                        <div key={price} className="flex items-center justify-between">
+                      {tariff.prices.slice(0, 3).map((price, idx) => {
+                        const [rawLabel, ...rawValueParts] = price.split(':');
+                        const label = (rawLabel || '').trim();
+                        const fullValue = rawValueParts.join(':').trim();
+                        const shortValue = idx === 2 ? fullValue.split('(')[0].trim() : fullValue;
+                        return (
+                        <div key={price} className="grid grid-cols-[1fr_auto] items-center gap-3">
                           <span className={cn(
                             'font-medium',
                             idx === 0 ? 'text-sm text-gray-800' : 'text-xs text-gray-700'
                           )}>
-                            {price.split(':')[0].trim()}
+                            {label}
                           </span>
                           <span className={cn(
-                            'font-bold',
+                            'font-bold text-right',
                             idx === 0 
                               ? cn('text-lg', tariff.titleClass)
                               : 'text-sm text-gray-900'
                           )}>
-                            {price.split(':')[1].trim()}
+                            {shortValue}
                           </span>
                         </div>
-                      ))}
+                      )})}
                     </div>
                   </div>
 
@@ -1714,15 +1719,7 @@ function Header({ onBack }: { onBack?: () => void }) {
             <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest">Издательство</p>
           </div>
         </div>
-        <a
-          href="https://clck.ru/3E6yBX"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-gray-500 underline decoration-gray-300 underline-offset-4 hover:text-gray-700 transition-colors"
-        >
-          Полные тарифы
-          <ExternalLink className="w-3 h-3" />
-        </a>
+        <div />
       </div>
     </header>
   );
