@@ -8,7 +8,6 @@ describe('Form Validation', () => {
       if (!data.passportNumber?.trim()) errors.push('Укажите серию и номер паспорта');
       if (!data.issuedBy?.trim()) errors.push('Укажите кем выдан паспорт');
       if (!data.issueDate) errors.push('Укажите дату выдачи паспорта');
-      if (!data.bankDetails?.trim()) errors.push('Укажите банковские реквизиты');
       if (!data.email?.trim()) errors.push('Укажите электронную почту');
       return { valid: errors.length === 0, errors };
     };
@@ -19,7 +18,6 @@ describe('Form Validation', () => {
         passportNumber: '1234 567890',
         issuedBy: 'Test City',
         issueDate: '2020-01-15',
-        bankDetails: 'Test Bank',
         email: 'test@example.com',
       };
 
@@ -64,7 +62,6 @@ describe('Form Validation', () => {
         passportNumber: '1234 567890',
         issuedBy: 'Test City',
         issueDate: '2020-01-15',
-        bankDetails: 'Test Bank',
         email: '',
       };
 
@@ -79,13 +76,12 @@ describe('Form Validation', () => {
         passportNumber: '',
         issuedBy: '',
         issueDate: '',
-        bankDetails: '',
         email: '',
       };
 
       const result = validateStep2(data);
       expect(result.valid).toBe(false);
-      expect(result.errors.length).toBe(6);
+      expect(result.errors.length).toBe(5);
     });
   });
 

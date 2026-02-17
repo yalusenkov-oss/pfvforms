@@ -1,5 +1,5 @@
 import { Input, InfoBox, StepCard, Divider, DatePicker } from './UI';
-import { FileText, User, CreditCard, Mail, Calendar, Shield, MapPin } from 'lucide-react';
+import { FileText, User, Mail, Calendar, Shield, MapPin } from 'lucide-react';
 
 interface StepTwoProps {
   data: Record<string, string>;
@@ -66,17 +66,6 @@ export function StepTwo({ data, onChange }: StepTwoProps) {
         value={data.issuedBy || ''}
         onChange={(e) => onChange('issuedBy', e.target.value)}
         placeholder="Отделением УФМС России по..."
-      />
-
-      <Divider label="Реквизиты" />
-
-      <Input
-        label="Банковские реквизиты / номер карты"
-        required
-        icon={<CreditCard className="w-4 h-4" />}
-        value={data.bankDetails || ''}
-        onChange={(e) => onChange('bankDetails', e.target.value)}
-        placeholder="Номер карты или реквизиты"
       />
 
       <Input

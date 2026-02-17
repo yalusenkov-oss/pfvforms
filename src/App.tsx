@@ -209,7 +209,6 @@ function validateStep2(data: Record<string, string>): ValidationResult {
   if (!data.passportNumber?.trim()) errors.push('Укажите серию и номер паспорта');
   if (!data.issuedBy?.trim()) errors.push('Укажите кем выдан паспорт');
   if (!data.issueDate) errors.push('Укажите дату выдачи паспорта');
-  if (!data.bankDetails?.trim()) errors.push('Укажите банковские реквизиты');
   if (!data.email?.trim()) errors.push('Укажите электронную почту');
   
   return { valid: errors.length === 0, errors };
