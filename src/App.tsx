@@ -750,12 +750,12 @@ export function App() {
             </div>
 
             {/* Tariff Cards Grid - 2 основных сверху, 2 дополнительных снизу */}
-            <div className="grid items-start gap-5 md:grid-cols-2">
+            <div className="grid gap-5 md:grid-cols-2 auto-rows-fr">
               {TARIFFS.map((tariff) => (
                 <div
                   key={tariff.name}
                   className={cn(
-                    'rounded-2xl border-2 p-6 bg-white transition-all duration-300 hover:shadow-lg hover:-translate-y-1',
+                    'rounded-2xl border-2 p-6 bg-white transition-all duration-300 hover:shadow-lg hover:-translate-y-1 flex flex-col h-full',
                     tariff.cardClass
                   )}
                 >
@@ -810,7 +810,7 @@ export function App() {
                   </div>
 
                   {/* Main Pricing - Single, EP, Album */}
-                  <div className="mb-5 pb-5 border-b-2 border-gray-100">
+                  <div className="mb-5 pb-5 border-b-2 border-gray-100 flex-grow">
                     <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-3">Основные цены</p>
                     <div className="space-y-2">
                       {tariff.prices.slice(0, 3).map((price, idx) => {
