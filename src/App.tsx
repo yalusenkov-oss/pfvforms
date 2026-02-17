@@ -678,7 +678,7 @@ export function App() {
           </div>
           
           {/* Tariffs Section */}
-          <section className="mt-10 rounded-3xl border border-purple-200/50 bg-gradient-to-br from-purple-50/80 via-white to-blue-50/50 p-6 md:p-8 shadow-lg shadow-purple-100/40">
+          <section id="tariffs-section" className="mt-10 rounded-3xl border border-purple-200/50 bg-gradient-to-br from-purple-50/80 via-white to-blue-50/50 p-6 md:p-8 shadow-lg shadow-purple-100/40">
             {/* Header */}
             <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div className="flex-1">

@@ -134,6 +134,16 @@ export function StepOne({ data, onChange }: StepOneProps) {
 
   const { base } = calcTotal(data);
 
+  const goToHomeTariffs = () => {
+    window.location.hash = '';
+    window.setTimeout(() => {
+      const el = document.getElementById('tariffs-section');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 50);
+  };
+
   // Build display string for track artists
   const getArtistsDisplay = (track: TrackData): string => {
     if (!track.artists || track.artists.length === 0) return '';
@@ -168,7 +178,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
         <div className="grid gap-4 sm:grid-cols-2 mb-6">
           {/* Базовый */}
           <div className={cn(
-            'rounded-lg border-2 p-4 transition-all',
+            'relative rounded-lg border-2 p-4 transition-all',
             tariff === 'Базовый'
               ? 'border-green-500 bg-green-50 ring-2 ring-green-100 shadow-md'
               : 'border-gray-200 bg-white hover:shadow-sm'
@@ -203,7 +213,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
 
           {/* Продвинутый */}
           <div className={cn(
-            'rounded-lg border-2 p-4 transition-all',
+            'relative rounded-lg border-2 p-4 transition-all',
             tariff === 'Продвинутый'
               ? 'border-green-500 bg-green-50 ring-2 ring-green-100 shadow-md'
               : 'border-gray-200 bg-white hover:shadow-sm'
@@ -238,7 +248,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
 
           {/* Премиум */}
           <div className={cn(
-            'rounded-lg border-2 p-4 transition-all',
+            'relative rounded-lg border-2 p-4 transition-all',
             tariff === 'Премиум'
               ? 'border-green-500 bg-green-50 ring-2 ring-green-100 shadow-md'
               : 'border-yellow-300 bg-yellow-50 hover:shadow-sm'
@@ -278,7 +288,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
 
           {/* Платинум */}
           <div className={cn(
-            'rounded-lg border-2 p-4 transition-all',
+            'relative rounded-lg border-2 p-4 transition-all',
             tariff === 'Платинум'
               ? 'border-green-500 bg-green-50 ring-2 ring-green-100 shadow-md'
               : 'border-amber-300 bg-amber-50 hover:shadow-sm'
@@ -317,14 +327,21 @@ export function StepOne({ data, onChange }: StepOneProps) {
           </div>
         </div>
 
-        <a href="https://clck.ru/3E6yBX" target="_blank" rel="noopener noreferrer"
-          className="flex items-center justify-between rounded-lg bg-gradient-to-r from-purple-50 to-purple-50/30 border border-purple-200 px-4 py-3 hover:shadow-md transition-all group">
+        <button
+          type="button"
+          onClick={goToHomeTariffs}
+          className="w-full flex items-center justify-between rounded-lg bg-gradient-to-r from-purple-50 to-purple-50/30 border border-purple-200 px-4 py-3 hover:shadow-md transition-all group"
+        >
           <div className="flex items-center gap-2">
             <Link2 className="w-4 h-4 text-purple-600" />
             <span className="text-sm font-semibold text-purple-900">🎵 Подробнее о тарифах</span>
           </div>
           <ChevronRight className="w-4 h-4 text-purple-600 group-hover:translate-x-0.5 transition-transform" />
-        </a>
+        </button>
+
+        <p className="mt-2 text-[11px] text-gray-500">
+          Для альбомов сверх лимита действует доплата: +50 ₽ за каждый дополнительный трек.
+        </p>
       </StepCard>
 
       {/* ═══ CARD 2: Tariff & Release Type ═══ */}

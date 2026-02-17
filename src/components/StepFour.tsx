@@ -368,6 +368,16 @@ export function StepFour({ data, onChange, onGoToPromo }: StepFourProps) {
           </div>
 
           <div className="space-y-3 relative">
+            <div className="flex items-center justify-between text-sm bg-white/60 rounded-xl px-4 py-3 border border-purple-100">
+              <div>
+                <p className="text-gray-700 font-semibold">Тариф «{tariff}»</p>
+                <p className="text-xs text-gray-400">
+                  {releaseType} · {trackCount} {trackCount === 1 ? 'трек' : trackCount < 5 ? 'трека' : 'треков'}
+                </p>
+              </div>
+              <p className="font-bold text-gray-900 text-base">{base.toLocaleString('ru-RU')} ₽</p>
+            </div>
+
             {data.karaokeAddition === 'Да' && (
               <div className="flex items-center justify-between text-sm bg-white/60 rounded-xl px-4 py-3 border border-purple-100">
                 <div>
