@@ -135,7 +135,7 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
     'Премиум': 'premium',
     'Платинум': 'platinum',
   };
-  
+
   // Маппинг русских названий типов релизов на английские ключи
   const releaseTypeMap: Record<string, string> = {
     'Single': 'single',
@@ -187,12 +187,12 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
   return {
     formType: 'distribution',
     timestamp: new Date().toISOString(),
-    
+
     // Тариф и тип (используем английские ключи для Apps Script)
     tariff: tariff,
     releaseType: releaseType,
     trackCount: trackCount,
-    
+
     // Информация о релизе
     releaseName: formData.releaseName,
     mainArtist: formData.mainArtist,
@@ -203,20 +203,20 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
     language: formData.languageOther?.trim() || formData.language || '',
     releaseDate: formData.releaseDate,
     coverLink: formData.coverLink,
-    
+
     // TikTok
     tiktokExcerpt: formData.tiktokExcerpt,
     tiktokFull: tiktokFull,
-    
+
     // Яндекс
     yandexPreSave: yandexPreSave,
-    
+
     // Караоке (конвертируем "Да"/"Нет" в "yes"/"no" для Apps Script)
     addKaraoke: formData.karaokeAddition === 'Да' ? 'yes' : 'no',
-    
+
     // Треки (JSON для сложных данных)
     tracks: JSON.stringify(tracksFormatted, null, 2),
-    
+
     // Договор
     fullName: formData.fullName,
     passportNumber: formData.passportNumber,
@@ -224,11 +224,11 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
     issueDate: formData.issueDate,
     bankDetails: formData.bankDetails,
     email: formData.email,
-    
+
     // Контакты
     contactInfo: formData.contactInfo,
     artistProfileLinks: formData.artistProfileLinks,
-    
+
     // Цены
     basePrice: basePrice,
     karaokePrice: karaokePrice,
@@ -237,6 +237,10 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
     promoDiscountType: formData.promoDiscountType || '',
     promoDiscountValue: formData.promoDiscountValue || '',
     promoDiscountAmount: formData.promoDiscountAmount || '',
+
+    // Автогенерируемые данные договора
+    contractNumber: formData.contractNumber || '',
+    signLink: formData.signLink || '',
   };
 }
 
@@ -297,17 +301,17 @@ export async function fetchPromoCodes(): Promise<PromoCodeRecord[] | null> {
 // Подготовка данных промо для отправки
 export function preparePromoData(promoData: Record<string, string>): Record<string, unknown> {
   const promoType = promoData.promoType;
-  
+
   // Для детального промо используем поля с префиксом "promo"
   // Для еженедельного промо используем поля с префиксом "promoWeekly"
   if (promoType === 'detailed') {
     return {
       formType: 'promo',
       timestamp: new Date().toISOString(),
-      
+
       // Тип промо
       promoType: promoData.promoType,
-      
+
       // Общие поля для детального промо
       releaseLink: promoData.promoReleaseLink || '',
       upcOrName: promoData.promoUPC || '',
@@ -315,14 +319,14 @@ export function preparePromoData(promoData: Record<string, string>): Record<stri
       genre: promoData.promoGenre || '',
       focusTrack: promoData.promoFocusTrack || '',
       additionalInfo: promoData.promoExtra || '',
-      
+
       // Только для детального промо
       artistAndTitle: promoData.promoArtistTitle || '',
       releaseDescription: promoData.promoDescription || '',
       artistInfo: promoData.promoArtistInfo || '',
       artistPhotos: promoData.promoPhotos || '',
       socialLinks: promoData.promoSocials || '',
-      
+
       // Контакты
       contactInfo: promoData.promoContact || '',
     };
@@ -330,10 +334,10 @@ export function preparePromoData(promoData: Record<string, string>): Record<stri
     return {
       formType: 'promo',
       timestamp: new Date().toISOString(),
-      
+
       // Тип промо
       promoType: promoData.promoType,
-      
+
       // Общие поля для еженедельного промо
       releaseLink: promoData.promoWeeklyReleaseLink || '',
       upcOrName: promoData.promoWeeklyUPC || '',
@@ -341,19 +345,19 @@ export function preparePromoData(promoData: Record<string, string>): Record<stri
       genre: promoData.promoWeeklyGenre || '',
       focusTrack: promoData.promoWeeklyFocusTrack || '',
       additionalInfo: promoData.promoWeeklyExtra || '',
-      
+
       // Пустые поля для еженедельного промо
       artistAndTitle: '',
       releaseDescription: '',
       artistInfo: '',
       artistPhotos: '',
       socialLinks: '',
-      
+
       // Контакты
       contactInfo: promoData.promoContact || '',
     };
   }
-  
+
   // Fallback
   return {
     formType: 'promo',
@@ -379,7 +383,7 @@ export async function submitToGoogleSheets(
   formType: FormType,
   data: Record<string, string>
 ): Promise<SubmitResponse> {
-  const preparedData = formType === 'distribution' 
+  const preparedData = formType === 'distribution'
     ? prepareDistributionData(data)
     : preparePromoData(data);
   if (DEBUG_LOGGING) {

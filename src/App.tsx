@@ -154,7 +154,7 @@ interface ValidationResult {
 
 function validateStep1(data: Record<string, string>): ValidationResult {
   const errors: string[] = [];
-  
+
   if (!data.tariff) errors.push('Выберите тариф');
   if (!data.releaseType) errors.push('Выберите тип релиза');
   if (!data.releaseName?.trim()) errors.push('Укажите название релиза');
@@ -174,7 +174,7 @@ function validateStep1(data: Record<string, string>): ValidationResult {
     errors.push('Укажите Pre-Save в Яндекс Музыке');
   }
   if (!data.karaokeAddition) errors.push('Выберите добавление караоке');
-  
+
   // Validate tracks
   const trackCount = getTrackCount(data);
   try {
@@ -190,7 +190,7 @@ function validateStep1(data: Record<string, string>): ValidationResult {
   } catch {
     errors.push('Заполните информацию о треках');
   }
-  
+
   return { valid: errors.length === 0, errors };
 }
 
@@ -204,13 +204,13 @@ function normalizeDistributionData(data: Record<string, string>): Record<string,
 
 function validateStep2(data: Record<string, string>): ValidationResult {
   const errors: string[] = [];
-  
+
   if (!data.fullName?.trim()) errors.push('Укажите ФИО');
   if (!data.passportNumber?.trim()) errors.push('Укажите серию и номер паспорта');
   if (!data.issuedBy?.trim()) errors.push('Укажите кем выдан паспорт');
   if (!data.issueDate) errors.push('Укажите дату выдачи паспорта');
   if (!data.email?.trim()) errors.push('Укажите электронную почту');
-  
+
   return { valid: errors.length === 0, errors };
 }
 
@@ -223,22 +223,22 @@ function validateStep3(agreed: boolean): ValidationResult {
 
 function validateStep4(data: Record<string, string>): ValidationResult {
   const errors: string[] = [];
-  
+
   if (!data.contactInfo?.trim()) errors.push('Укажите контакты для связи');
   if (!data.paymentProof?.trim()) errors.push('Загрузите фото оплаты');
-  
+
   return { valid: errors.length === 0, errors };
 }
 
 function validatePromo(data: Record<string, string>): ValidationResult {
   const errors: string[] = [];
   const promoType = data.promoType;
-  
+
   if (!promoType) {
     errors.push('Выберите тип промо');
     return { valid: false, errors };
   }
-  
+
   if (promoType === 'detailed') {
     if (!data.promoReleaseLink?.trim()) errors.push('Укажите ссылку на релиз');
     if (!data.promoUPC?.trim()) errors.push('Укажите UPC или название релиза');
@@ -256,9 +256,9 @@ function validatePromo(data: Record<string, string>): ValidationResult {
     if (!data.promoWeeklyReleaseDate) errors.push('Укажите дату релиза');
     if (!data.promoWeeklyGenre?.trim()) errors.push('Укажите жанр релиза');
   }
-  
+
   if (!data.promoContact?.trim()) errors.push('Укажите контакт для связи');
-  
+
   return { valid: errors.length === 0, errors };
 }
 
@@ -279,14 +279,14 @@ export function App() {
   const scrollToTopInstant = useCallback(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, []);
-  
+
   // Listen for hash changes
   useEffect(() => {
     const handleHashChange = () => {
       setMode(getRouteFromHash());
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
-    
+
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
@@ -302,7 +302,7 @@ export function App() {
     setMode(newMode);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
-  
+
   // Distribution form state
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<Record<string, string>>({});
@@ -310,16 +310,16 @@ export function App() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
-  
+
   // Promo form state
   const [promoData, setPromoData] = useState<Record<string, string>>({});
   const [promoSubmitted, setPromoSubmitted] = useState(false);
   const [promoSubmitting, setPromoSubmitting] = useState(false);
   const [promoErrors, setPromoErrors] = useState<string[]>([]);
-  
+
   // Tariff expandable state: only one tariff can be expanded at a time
   const [expandedTariffIndex, setExpandedTariffIndex] = useState<number | null>(null);
-  
+
   // Offer modal state
   const [showOfferModal, setShowOfferModal] = useState(false);
 
@@ -335,7 +335,7 @@ export function App() {
   const handleChange = useCallback((key: string, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   }, []);
-  
+
   const handlePromoChange = useCallback((key: string, value: string) => {
     setPromoData((prev) => ({ ...prev, [key]: value }));
   }, []);
@@ -343,7 +343,7 @@ export function App() {
   const goNext = () => {
     const normalized = normalizeDistributionData(formData);
     let validation: ValidationResult = { valid: true, errors: [] };
-    
+
     if (currentStep === 1) {
       validation = validateStep1(normalized);
     } else if (currentStep === 2) {
@@ -351,13 +351,13 @@ export function App() {
     } else if (currentStep === 3) {
       validation = validateStep3(agreed);
     }
-    
+
     if (!validation.valid) {
       setValidationErrors(validation.errors);
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    
+
     setValidationErrors([]);
     setCurrentStep((s) => Math.min(s + 1, 4));
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -375,18 +375,18 @@ export function App() {
     const step2 = validateStep2(normalized);
     const step3 = validateStep3(agreed);
     const step4 = validateStep4(normalized);
-    
+
     const allErrors = [...step1.errors, ...step2.errors, ...step3.errors, ...step4.errors];
-    
+
     if (allErrors.length > 0) {
       setValidationErrors(allErrors);
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    
+
     setValidationErrors([]);
     setSubmitting(true);
-    
+
     try {
       const result = await submitToGoogleSheets('distribution', normalized);
       if (result.success) {
@@ -403,19 +403,19 @@ export function App() {
       scrollToTopInstant();
     }
   };
-  
+
   const handlePromoSubmit = async () => {
     const validation = validatePromo(promoData);
-    
+
     if (!validation.valid) {
       setPromoErrors(validation.errors);
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    
+
     setPromoErrors([]);
     setPromoSubmitting(true);
-    
+
     try {
       const result = await submitToGoogleSheets('promo', promoData);
       if (result.success) {
@@ -432,13 +432,13 @@ export function App() {
       scrollToTopInstant();
     }
   };
-  
+
   const goHome = () => {
     navigateTo('home');
     setValidationErrors([]);
     setPromoErrors([]);
   };
-  
+
   const resetDistribution = () => {
     setSubmitted(false);
     setCurrentStep(1);
@@ -446,7 +446,7 @@ export function App() {
     setAgreed(false);
     setValidationErrors([]);
   };
-  
+
   const resetPromo = () => {
     setPromoSubmitted(false);
     setPromoData({});
@@ -588,7 +588,7 @@ export function App() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50/30">
         <Header />
-        
+
         <div className="mx-auto max-w-4xl px-4 py-16">
           {/* Hero */}
           <div className="text-center mb-12">
@@ -606,7 +606,7 @@ export function App() {
               Выберите нужный раздел для работы с вашим релизом
             </p>
           </div>
-          
+
           {/* Service Cards */}
           <div className="grid md:grid-cols-2 gap-6">
             {/* Distribution Card */}
@@ -616,33 +616,33 @@ export function App() {
               className="group relative overflow-hidden rounded-3xl border-2 border-purple-100 bg-white p-8 text-left shadow-xl shadow-purple-100/20 hover:border-purple-300 hover:shadow-2xl hover:shadow-purple-200/30 transition-all duration-300 hover:-translate-y-1"
             >
               <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-purple-100 to-transparent rounded-bl-full opacity-50 group-hover:opacity-100 transition-opacity" />
-              
+
               <div className="relative">
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center mb-6 shadow-lg shadow-purple-200/50 group-hover:scale-110 transition-transform">
                   <Disc3 className="w-8 h-8 text-white" />
                 </div>
-                
+
                 <h2 className="text-2xl font-bold text-gray-900 mb-3">
                   Дистрибуция
                 </h2>
                 <p className="text-gray-500 mb-6 leading-relaxed">
                   Отправьте ваш трек на дистрибуцию на все популярные музыкальные площадки мира
                 </p>
-                
+
                 <div className="flex flex-wrap gap-2 mb-6">
                   <span className="rounded-full bg-purple-50 px-3 py-1 text-xs font-medium text-purple-600">Spotify</span>
                   <span className="rounded-full bg-purple-50 px-3 py-1 text-xs font-medium text-purple-600">Apple Music</span>
                   <span className="rounded-full bg-purple-50 px-3 py-1 text-xs font-medium text-purple-600">VK Music</span>
                   <span className="rounded-full bg-purple-50 px-3 py-1 text-xs font-medium text-purple-600">Яндекс Музыка</span>
                 </div>
-                
+
                 <div className="flex items-center gap-2 text-purple-600 font-semibold group-hover:gap-3 transition-all">
                   Начать
                   <ChevronRight className="w-5 h-5" />
                 </div>
               </div>
             </button>
-            
+
             {/* Promo Card */}
             <button
               type="button"
@@ -650,24 +650,24 @@ export function App() {
               className="group relative overflow-hidden rounded-3xl border-2 border-amber-100 bg-white p-8 text-left shadow-xl shadow-amber-100/20 hover:border-amber-300 hover:shadow-2xl hover:shadow-amber-200/30 transition-all duration-300 hover:-translate-y-1"
             >
               <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-amber-100 to-transparent rounded-bl-full opacity-50 group-hover:opacity-100 transition-opacity" />
-              
+
               <div className="relative">
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center mb-6 shadow-lg shadow-amber-200/50 group-hover:scale-110 transition-transform">
                   <Megaphone className="w-8 h-8 text-white" />
                 </div>
-                
+
                 <h2 className="text-2xl font-bold text-gray-900 mb-3">
                   Промо
                 </h2>
                 <p className="text-gray-500 mb-6 leading-relaxed">
                   Отправьте информацию о релизе для продвижения на цифровых площадках
                 </p>
-                
+
                 <div className="flex flex-wrap gap-2 mb-6">
                   <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-600">Детальное промо</span>
                   <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-600">Еженедельное промо</span>
                 </div>
-                
+
                 <div className="flex items-center gap-2 text-amber-600 font-semibold group-hover:gap-3 transition-all">
                   Начать
                   <ChevronRight className="w-5 h-5" />
@@ -675,7 +675,7 @@ export function App() {
               </div>
             </button>
           </div>
-          
+
           {/* Tariffs Section */}
           <section id="tariffs-section" className="mt-10 rounded-3xl border border-purple-200/50 bg-gradient-to-br from-purple-50/80 via-white to-blue-50/50 p-6 md:p-8 shadow-lg shadow-purple-100/40">
             {/* Header */}
@@ -771,13 +771,13 @@ export function App() {
                   {tariff.badge && (
                     <div className={cn(
                       'mb-3 inline-block rounded-full px-3 py-1 text-xs font-bold capitalize',
-                      tariff.recommended 
-                        ? 'bg-emerald-100 text-emerald-700' 
+                      tariff.recommended
+                        ? 'bg-emerald-100 text-emerald-700'
                         : tariff.name === 'Платинум'
-                        ? 'bg-amber-100 text-amber-700'
-                        : tariff.name === 'Продвинутый'
-                        ? 'bg-sky-100 text-sky-700'
-                        : 'bg-gray-100 text-gray-700'
+                          ? 'bg-amber-100 text-amber-700'
+                          : tariff.name === 'Продвинутый'
+                            ? 'bg-sky-100 text-sky-700'
+                            : 'bg-gray-100 text-gray-700'
                     )}>
                       {tariff.badge}
                     </div>
@@ -819,39 +819,40 @@ export function App() {
                         const fullValue = rawValueParts.join(':').trim();
                         const shortValue = idx === 2 ? fullValue.split('(')[0].trim() : fullValue;
                         return (
-                        <div key={price} className="grid grid-cols-[1fr_auto] items-center gap-3">
-                          <span className={cn(
-                            'font-medium',
-                            idx === 0 ? 'text-sm text-gray-800' : 'text-xs text-gray-700'
-                          )}>
-                            {label}
-                          </span>
-                          <span className={cn(
-                            'font-bold text-right',
-                            idx === 0 
-                              ? cn('text-lg', tariff.titleClass)
-                              : 'text-sm text-gray-900'
-                          )}>
-                            {shortValue}
-                          </span>
-                        </div>
-                      )})}
+                          <div key={price} className="grid grid-cols-[1fr_auto] items-center gap-3">
+                            <span className={cn(
+                              'font-medium',
+                              idx === 0 ? 'text-sm text-gray-800' : 'text-xs text-gray-700'
+                            )}>
+                              {label}
+                            </span>
+                            <span className={cn(
+                              'font-bold text-right',
+                              idx === 0
+                                ? cn('text-lg', tariff.titleClass)
+                                : 'text-sm text-gray-900'
+                            )}>
+                              {shortValue}
+                            </span>
+                          </div>
+                        )
+                      })}
                     </div>
                   </div>
 
                   {/* CTA Button */}
                   <div className="mb-4">
-                    <button 
+                    <button
                       onClick={() => navigateTo('distribution')}
                       className={cn(
                         'w-full h-12 px-4 rounded-xl font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2',
                         tariff.name === 'Базовый'
                           ? 'border-2 border-purple-500 text-purple-600 bg-white hover:bg-purple-50'
                           : tariff.name === 'Продвинутый'
-                          ? 'border-2 border-sky-400 text-sky-600 bg-white hover:bg-sky-50'
-                          : tariff.name === 'Премиум'
-                          ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-300'
-                          : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:shadow-lg hover:shadow-amber-300'
+                            ? 'border-2 border-sky-400 text-sky-600 bg-white hover:bg-sky-50'
+                            : tariff.name === 'Премиум'
+                              ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:shadow-lg hover:shadow-emerald-300'
+                              : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:shadow-lg hover:shadow-amber-300'
                       )}>
                       Начать
                       <ChevronRight className="w-4 h-4" />
@@ -870,10 +871,10 @@ export function App() {
                       tariff.name === 'Базовый'
                         ? 'text-purple-600 hover:text-purple-700'
                         : tariff.name === 'Продвинутый'
-                        ? 'text-sky-600 hover:text-sky-700'
-                        : tariff.name === 'Премиум'
-                        ? 'text-emerald-600 hover:text-emerald-700'
-                        : 'text-amber-600 hover:text-amber-700',
+                          ? 'text-sky-600 hover:text-sky-700'
+                          : tariff.name === 'Премиум'
+                            ? 'text-emerald-600 hover:text-emerald-700'
+                            : 'text-amber-600 hover:text-amber-700',
                       'background-none border-none p-0 h-auto'
                     )}>
                     <span>Все цены и возможности →</span>
@@ -882,7 +883,7 @@ export function App() {
                       expandedTariffIndex === tariffIndex && 'rotate-180'
                     )}>▼</span>
                   </button>
-                  
+
                   {/* Expandable Content */}
                   {expandedTariffIndex === tariffIndex && (
                     <div className="mt-4 space-y-4 text-sm border-t border-gray-200 pt-4 overflow-hidden">
@@ -1002,7 +1003,7 @@ export function App() {
               >
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M15.684 0H8.316C1.592 0 0 1.592 0 8.316v7.368C0 22.408 1.592 24 8.316 24h7.368C22.408 24 24 22.408 24 15.684V8.316C24 1.592 22.408 0 15.684 0zm3.692 17.123h-1.744c-.66 0-.864-.525-2.05-1.727-1.033-1-1.49-1.135-1.744-1.135-.356 0-.458.102-.458.593v1.575c0 .424-.135.678-1.253.678-1.846 0-3.896-1.118-5.335-3.202C4.624 10.857 4 8.684 4 8.245c0-.254.102-.491.593-.491h1.744c.44 0 .61.203.78.677.847 2.49 2.27 4.673 2.86 4.673.22 0 .322-.102.322-.66V9.721c-.068-1.186-.695-1.287-.695-1.71 0-.203.17-.407.44-.407h2.744c.373 0 .508.203.508.643v3.473c0 .372.17.508.271.508.22 0 .407-.136.813-.542 1.27-1.422 2.168-3.608 2.168-3.608.119-.254.322-.491.763-.491h1.744c.525 0 .644.27.525.643-.22 1.017-2.354 4.031-2.354 4.031-.186.305-.254.44 0 .78.186.254.796.779 1.203 1.253.745.847 1.32 1.558 1.473 2.05.17.49-.085.744-.576.744z"/>
+                    <path d="M15.684 0H8.316C1.592 0 0 1.592 0 8.316v7.368C0 22.408 1.592 24 8.316 24h7.368C22.408 24 24 22.408 24 15.684V8.316C24 1.592 22.408 0 15.684 0zm3.692 17.123h-1.744c-.66 0-.864-.525-2.05-1.727-1.033-1-1.49-1.135-1.744-1.135-.356 0-.458.102-.458.593v1.575c0 .424-.135.678-1.253.678-1.846 0-3.896-1.118-5.335-3.202C4.624 10.857 4 8.684 4 8.245c0-.254.102-.491.593-.491h1.744c.44 0 .61.203.78.677.847 2.49 2.27 4.673 2.86 4.673.22 0 .322-.102.322-.66V9.721c-.068-1.186-.695-1.287-.695-1.71 0-.203.17-.407.44-.407h2.744c.373 0 .508.203.508.643v3.473c0 .372.17.508.271.508.22 0 .407-.136.813-.542 1.27-1.422 2.168-3.608 2.168-3.608.119-.254.322-.491.763-.491h1.744c.525 0 .644.27.525.643-.22 1.017-2.354 4.031-2.354 4.031-.186.305-.254.44 0 .78.186.254.796.779 1.203 1.253.745.847 1.32 1.558 1.473 2.05.17.49-.085.744-.576.744z" />
                   </svg>
                 </div>
                 <div>
@@ -1010,7 +1011,7 @@ export function App() {
                   <p className="text-xs text-gray-500">Группа</p>
                 </div>
               </a>
-              
+
               {/* Telegram Channel */}
               <a
                 href="https://t.me/pfvmusic"
@@ -1020,7 +1021,7 @@ export function App() {
               >
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                    <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
                   </svg>
                 </div>
                 <div>
@@ -1028,7 +1029,7 @@ export function App() {
                   <p className="text-xs text-gray-500">Канал</p>
                 </div>
               </a>
-              
+
               {/* Support */}
               <a
                 href="https://t.me/pfvmusic_support"
@@ -1038,7 +1039,7 @@ export function App() {
               >
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                   </svg>
                 </div>
                 <div>
@@ -1049,7 +1050,7 @@ export function App() {
             </div>
           </div>
         </div>
-        
+
         <Footer />
         {renderOfferModal()}
       </div>
@@ -1070,21 +1071,21 @@ export function App() {
                 <CheckCircle2 className="h-12 w-12 text-white" />
               </div>
             </div>
-            
+
             <h2 className="text-3xl font-extrabold text-gray-900 mb-4">
               Оплата прошла{' '}
               <span className="bg-gradient-to-r from-emerald-500 to-emerald-600 bg-clip-text text-transparent">
                 успешно!
               </span>
             </h2>
-            
+
             <p className="text-gray-600 mb-2 leading-relaxed text-lg">
               Благодарим за оплату!
             </p>
             <p className="text-gray-500 text-sm mb-8 max-w-md mx-auto">
               Ваш платёж успешно обработан. Мы начнём работу над вашим релизом в ближайшее время.
             </p>
-            
+
             <div className="bg-emerald-50 rounded-2xl p-6 mb-8 border border-emerald-100">
               <div className="flex items-center justify-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
@@ -1096,7 +1097,7 @@ export function App() {
                 Свяжитесь с нами для подтверждения данных и уточнения деталей релиза.
               </p>
             </div>
-            
+
             {/* Contact Links */}
             <div className="flex flex-wrap justify-center gap-3 mb-8">
               <a
@@ -1106,7 +1107,7 @@ export function App() {
                 className="inline-flex items-center gap-2 rounded-xl bg-sky-50 border border-sky-100 px-5 py-3 text-sm font-semibold text-sky-700 hover:bg-sky-100 transition-all"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                  <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
                 </svg>
                 Telegram Support
               </a>
@@ -1117,12 +1118,12 @@ export function App() {
                 className="inline-flex items-center gap-2 rounded-xl bg-blue-50 border border-blue-100 px-5 py-3 text-sm font-semibold text-blue-700 hover:bg-blue-100 transition-all"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M15.684 0H8.316C1.592 0 0 1.592 0 8.316v7.368C0 22.408 1.592 24 8.316 24h7.368C22.408 24 24 22.408 24 15.684V8.316C24 1.592 22.408 0 15.684 0zm3.692 17.123h-1.744c-.66 0-.864-.525-2.05-1.727-1.033-1-1.49-1.135-1.744-1.135-.356 0-.458.102-.458.593v1.575c0 .424-.135.678-1.253.678-1.846 0-3.896-1.118-5.335-3.202C4.624 10.857 4 8.684 4 8.245c0-.254.102-.491.593-.491h1.744c.44 0 .61.203.78.677.847 2.49 2.27 4.673 2.86 4.673.22 0 .322-.102.322-.66V9.721c-.068-1.186-.695-1.287-.695-1.71 0-.203.17-.407.44-.407h2.744c.373 0 .508.203.508.643v3.473c0 .372.17.508.271.508.22 0 .407-.136.813-.542 1.27-1.422 2.168-3.608 2.168-3.608.119-.254.322-.491.763-.491h1.744c.525 0 .644.27.525.643-.22 1.017-2.354 4.031-2.354 4.031-.186.305-.254.44 0 .78.186.254.796.779 1.203 1.253.745.847 1.32 1.558 1.473 2.05.17.49-.085.744-.576.744z"/>
+                  <path d="M15.684 0H8.316C1.592 0 0 1.592 0 8.316v7.368C0 22.408 1.592 24 8.316 24h7.368C22.408 24 24 22.408 24 15.684V8.316C24 1.592 22.408 0 15.684 0zm3.692 17.123h-1.744c-.66 0-.864-.525-2.05-1.727-1.033-1-1.49-1.135-1.744-1.135-.356 0-.458.102-.458.593v1.575c0 .424-.135.678-1.253.678-1.846 0-3.896-1.118-5.335-3.202C4.624 10.857 4 8.684 4 8.245c0-.254.102-.491.593-.491h1.744c.44 0 .61.203.78.677.847 2.49 2.27 4.673 2.86 4.673.22 0 .322-.102.322-.66V9.721c-.068-1.186-.695-1.287-.695-1.71 0-.203.17-.407.44-.407h2.744c.373 0 .508.203.508.643v3.473c0 .372.17.508.271.508.22 0 .407-.136.813-.542 1.27-1.422 2.168-3.608 2.168-3.608.119-.254.322-.491.763-.491h1.744c.525 0 .644.27.525.643-.22 1.017-2.354 4.031-2.354 4.031-.186.305-.254.44 0 .78.186.254.796.779 1.203 1.253.745.847 1.32 1.558 1.473 2.05.17.49-.085.744-.576.744z" />
                 </svg>
                 ВКонтакте
               </a>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <button
                 type="button"
@@ -1160,21 +1161,21 @@ export function App() {
                 <XCircle className="h-12 w-12 text-white" />
               </div>
             </div>
-            
+
             <h2 className="text-3xl font-extrabold text-gray-900 mb-4">
               Ошибка{' '}
               <span className="bg-gradient-to-r from-red-500 to-red-600 bg-clip-text text-transparent">
                 оплаты
               </span>
             </h2>
-            
+
             <p className="text-gray-600 mb-2 leading-relaxed text-lg">
               К сожалению, платёж не был завершён
             </p>
             <p className="text-gray-500 text-sm mb-8 max-w-md mx-auto">
               Пожалуйста, проверьте данные карты и попробуйте снова. Если проблема повторяется, свяжитесь с нашей поддержкой.
             </p>
-            
+
             <div className="bg-red-50 rounded-2xl p-6 mb-8 border border-red-100">
               <div className="flex items-center justify-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
@@ -1201,7 +1202,7 @@ export function App() {
                 </li>
               </ul>
             </div>
-            
+
             {/* Contact Support */}
             <div className="bg-purple-50 rounded-2xl p-6 mb-8 border border-purple-100">
               <div className="flex items-center justify-center gap-3 mb-3">
@@ -1223,7 +1224,7 @@ export function App() {
                 @pfvmusic_support
               </a>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <button
                 type="button"
@@ -1262,21 +1263,21 @@ export function App() {
                 <Clock className="h-12 w-12 text-white" />
               </div>
             </div>
-            
+
             <h2 className="text-3xl font-extrabold text-gray-900 mb-4">
               Обработка{' '}
               <span className="bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">
                 платежа
               </span>
             </h2>
-            
+
             <p className="text-gray-600 mb-2 leading-relaxed text-lg">
               Ваш платёж находится в обработке
             </p>
             <p className="text-gray-500 text-sm mb-8 max-w-md mx-auto">
               Пожалуйста, подождите. Это может занять несколько минут. Не закрывайте страницу.
             </p>
-            
+
             <div className="bg-amber-50 rounded-2xl p-6 mb-8 border border-amber-100">
               <div className="flex items-center justify-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center animate-pulse">
@@ -1288,7 +1289,7 @@ export function App() {
                 Мы проверяем ваш платёж. После завершения вы получите уведомление.
               </p>
             </div>
-            
+
             {/* Info Box */}
             <div className="bg-gray-50 rounded-2xl p-6 mb-8 border border-gray-100">
               <h3 className="font-semibold text-gray-800 mb-3">Что происходит?</h3>
@@ -1307,7 +1308,7 @@ export function App() {
                 </li>
               </ul>
             </div>
-            
+
             {/* Contact */}
             <div className="bg-purple-50 rounded-2xl p-6 mb-8 border border-purple-100">
               <p className="text-sm text-purple-700 mb-3">
@@ -1323,7 +1324,7 @@ export function App() {
                 @pfvmusic_support
               </a>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <button
                 type="button"
@@ -1387,11 +1388,11 @@ export function App() {
         </div>
       );
     }
-    
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-amber-50/80 via-white to-amber-50/40">
         <Header onBack={goHome} />
-        
+
         {/* Hero */}
         <div className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-amber-100/50 to-transparent pointer-events-none" />
@@ -1411,7 +1412,7 @@ export function App() {
             </p>
           </div>
         </div>
-        
+
         {/* Validation Errors */}
         {promoErrors.length > 0 && (
           <div className="mx-auto max-w-3xl px-4 mb-6">
@@ -1440,11 +1441,11 @@ export function App() {
             </div>
           </div>
         )}
-        
+
         {/* Promo Form */}
         <div className="mx-auto max-w-3xl px-4 pb-8">
           <StepPromo data={promoData} onChange={handlePromoChange} />
-          
+
           {/* Submit Button */}
           <div className="flex justify-end mt-8">
             <button
@@ -1467,7 +1468,7 @@ export function App() {
             </button>
           </div>
         </div>
-        
+
         <Footer />
       </div>
     );
@@ -1735,8 +1736,8 @@ function Footer() {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-md shadow-purple-200/50 overflow-hidden bg-white">
-                <img src="/Frame%203.png" alt="PFVMUSIC" className="w-5 h-5 object-contain" />
-              </div>
+              <img src="/Frame%203.png" alt="PFVMUSIC" className="w-5 h-5 object-contain" />
+            </div>
             <div>
               <span className="text-sm font-bold text-gray-900">PFVMUSIC</span>
               <p className="text-[10px] text-gray-400 font-medium">Музыкальное издательство</p>

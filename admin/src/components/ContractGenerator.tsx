@@ -156,6 +156,10 @@ export function ContractGenerator({ data, onBack, onUpdateContractNumber }: Cont
   const handleOpenSignPreview = () => {
     setShowSignPreview(true);
     setSignError('');
+    // Auto-create sign link if not already created
+    if (!signLink && !data.signedUrl && !signCreating) {
+      handleCreateSignLink();
+    }
   };
 
   const handleCreateSignLink = async () => {
@@ -497,7 +501,7 @@ export function ContractGenerator({ data, onBack, onUpdateContractNumber }: Cont
                   disabled={signCreating}
                   className="text-xs px-2.5 py-1 rounded bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600/30 transition-colors disabled:opacity-60"
                 >
-                  {signCreating ? 'Создание…' : 'Создать ссылку'}
+                  {signCreating ? 'Создание…' : signLink ? 'Пересоздать ссылку' : 'Создать ссылку'}
                 </button>
               )}
               {signLink && (
@@ -522,7 +526,18 @@ export function ContractGenerator({ data, onBack, onUpdateContractNumber }: Cont
             </div>
           </div>
           <div className="px-5 py-3 text-xs text-dark-400">
-            {signError ? <span className="text-red-400">{signError}</span> : 'Проверьте документ и создайте ссылку на подпись.'}
+            {signCreating ? (
+              <span className="text-primary-400 flex items-center gap-2">
+                <RefreshCw size={12} className="animate-spin" />
+                Создаём ссылку для подписания...
+              </span>
+            ) : signError ? (
+              <span className="text-red-400">{signError}</span>
+            ) : signLink ? (
+              <span className="text-green-400">✓ Ссылка создана и готова к отправке</span>
+            ) : (
+              'Проверьте документ и создайте ссылку на подпись.'
+            )}
           </div>
           <div className="p-5">
             <iframe

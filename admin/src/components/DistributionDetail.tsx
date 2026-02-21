@@ -34,7 +34,7 @@ function InfoRow({ label, value, mono, link }: { label: string; value: string; m
         ) : (
           <span className={cn('text-sm text-white break-words', mono && 'font-mono')}>{value}</span>
         )}
-        <button onClick={handleCopy} className="p-1 rounded text-dark-500 hover:text-white shrink-0 transition-colors" title="Копировать">
+        <button type="button" onClick={handleCopy} className="p-1 rounded text-dark-500 hover:text-white shrink-0 transition-colors" title="Копировать">
           {copied ? <Check size={12} className="text-green-400" /> : <Copy size={12} />}
         </button>
       </div>
@@ -70,16 +70,17 @@ function formatPrice(p: number) {
 
 export function DistributionDetail({ data, onBack, onStatusChange, onGenerateContract, onCreateSignLink }: DistributionDetailProps) {
   const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const tracks = Array.isArray(data.tracks) ? data.tracks : [];
   const basePrice = PRICES[data.tariff]?.[data.releaseType] || 0;
   const karaokePerTrack = KARAOKE_PRICES[data.tariff] || 0;
-  const karaokeCost = data.karaoke ? karaokePerTrack * data.tracks.length : 0;
+  const karaokeCost = data.karaoke ? karaokePerTrack * tracks.length : 0;
 
   return (
     <div className="space-y-5 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <button onClick={onBack} className="p-2 rounded-lg bg-dark-800 border border-dark-700 text-dark-400 hover:text-white transition-colors">
+          <button type="button" onClick={onBack} className="p-2 rounded-lg bg-dark-800 border border-dark-700 text-dark-400 hover:text-white transition-colors">
             <ArrowLeft size={18} />
           </button>
           <div>
@@ -100,6 +101,7 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
         </div>
         <div className="relative z-30 inline-block">
           <button
+            type="button"
             onClick={() => setShowStatusMenu(!showStatusMenu)}
             className={cn('text-sm px-3 py-1.5 rounded-lg border flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity', STATUS_COLORS[data.status])}
           >
@@ -110,6 +112,7 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
             <div className="absolute z-50 top-full mt-2 left-0 w-full min-w-[180px] bg-dark-800 border border-dark-600 rounded-lg shadow-2xl py-1 ring-1 ring-black/30">
               {ALL_STATUSES.map(s => (
                 <button
+                  type="button"
                   key={s}
                   onClick={() => {
                     onStatusChange(data.id, s);
@@ -137,7 +140,7 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
           </div>
           {data.karaoke && karaokeCost > 0 && (
             <div>
-              <p className="text-xs text-primary-300/70">Караоке ({data.tracks.length} × {formatPrice(karaokePerTrack)})</p>
+              <p className="text-xs text-primary-300/70">Караоке ({tracks.length} × {formatPrice(karaokePerTrack)})</p>
               <p className="text-lg font-bold text-white">{formatPrice(karaokeCost)}</p>
             </div>
           )}
@@ -187,6 +190,7 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
           {onCreateSignLink && (
             <div className="py-2">
               <button
+                type="button"
                 onClick={() => onCreateSignLink(data.id)}
                 className="text-xs px-3 py-1.5 rounded-lg bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600/30 transition-colors"
               >
@@ -198,16 +202,19 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
       </div>
 
       {/* Tracks */}
-      <Section title={`Треки (${data.tracks.length})`} icon={<Music2 size={16} className="text-green-400" />}>
+      <Section title={`Треки (${tracks.length})`} icon={<Music2 size={16} className="text-green-400" />}>
         <div className="space-y-4 py-2">
-          {data.tracks.map((track, idx) => {
-            const artistDisplay = track.artists.map((a, i) => {
+          {tracks.map((track, idx) => {
+            const artists = Array.isArray(track?.artists) ? track.artists : [];
+            const lyricists = Array.isArray(track?.lyricists) ? track.lyricists : [];
+            const composers = Array.isArray(track?.composers) ? track.composers : [];
+            const artistDisplay = artists.map((a, i) => {
               if (i === 0) return a.name;
               return `${a.separator === 'feat.' ? ' feat. ' : ', '}${a.name}`;
             }).join('');
 
             return (
-              <div key={track.id} className="bg-dark-700/40 rounded-lg p-4 border border-dark-600/50">
+              <div key={track?.id || `${idx}-${track?.name || 'track'}`} className="bg-dark-700/40 rounded-lg p-4 border border-dark-600/50">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center text-green-400 text-xs font-bold">
                     {idx + 1}
@@ -229,8 +236,8 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                  <div><span className="text-dark-500">Авторы текста:</span> <span className="text-dark-300">{track.lyricists.join(', ')}</span></div>
-                  <div><span className="text-dark-500">Композиторы:</span> <span className="text-dark-300">{track.composers.join(', ')}</span></div>
+                  <div><span className="text-dark-500">Авторы текста:</span> <span className="text-dark-300">{lyricists.join(', ')}</span></div>
+                  <div><span className="text-dark-500">Композиторы:</span> <span className="text-dark-300">{composers.join(', ')}</span></div>
                 </div>
                 {track.lyrics && (
                   <details className="mt-2">
@@ -260,6 +267,7 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
           </div>
           {onGenerateContract && (
             <button
+              type="button"
               onClick={() => onGenerateContract(data.id)}
               className="px-4 py-2.5 rounded-lg bg-green-600/20 border border-green-500/30 text-green-400 text-sm font-medium hover:bg-green-600/30 transition-colors flex items-center gap-2 shrink-0"
             >

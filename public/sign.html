@@ -76,6 +76,7 @@
       font-size: 18px;
       box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
       flex-shrink: 0;
+      line-height: 1;
     }
 
     .header-logo svg {
@@ -83,6 +84,8 @@
       height: 24px;
       stroke: white;
       stroke-width: 1.5;
+      display: block;
+      flex-shrink: 0;
     }
 
     .header-title {
@@ -110,6 +113,7 @@
     .header-actions {
       display: flex;
       gap: 12px;
+      align-items: center;
     }
 
     .btn-home {
@@ -126,6 +130,8 @@
       font-weight: 600;
       transition: all 0.2s ease;
       cursor: pointer;
+      line-height: 1;
+      min-height: 38px;
     }
 
     .btn-home svg {
@@ -133,6 +139,8 @@
       height: 16px;
       stroke: currentColor;
       stroke-width: 2;
+      display: block;
+      flex-shrink: 0;
     }
 
     .btn-home:hover {

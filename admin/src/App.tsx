@@ -22,7 +22,7 @@ import {
   isAuthenticated,
   logout,
 } from './store';
-import { fetchSheetRows } from './services/googleSheetsAdmin';
+import { fetchSheetRows, updateSheetRow, deleteSheetRow, createSignLink } from './services/googleSheetsAdmin';
 
 type View =
   | { type: 'dashboard' }
@@ -42,6 +42,17 @@ export function App() {
   const [promos, setPromos] = useState<PromoData[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [remoteInfo, setRemoteInfo] = useState<{ loaded: boolean; source: 'remote' | 'local' | 'none'; distCount?: number; promoCount?: number; error?: string }>({ loaded: false, source: 'none' });
+
+  // Local status overrides that persist across page reloads
+  const STATUS_OVERRIDES_KEY = 'pfvmusic_status_overrides';
+  const getStatusOverrides = (): Record<string, string> => {
+    try { return JSON.parse(localStorage.getItem(STATUS_OVERRIDES_KEY) || '{}'); } catch { return {}; }
+  };
+  const saveStatusOverride = (id: string, status: string) => {
+    const overrides = getStatusOverrides();
+    overrides[id] = status;
+    localStorage.setItem(STATUS_OVERRIDES_KEY, JSON.stringify(overrides));
+  };
 
   const normalizeBool = (v: any): boolean => {
     if (v === true || v === false) return v;
@@ -70,6 +81,65 @@ export function App() {
     }
   };
 
+  const normalizeTariff = (v: any): DistributionData['tariff'] => {
+    const raw = String(v || '').trim().toLowerCase();
+    if (raw === 'базовый' || raw === 'basic') return 'basic';
+    if (raw === 'продвинутый' || raw === 'advanced') return 'advanced';
+    if (raw === 'премиум' || raw === 'premium') return 'premium';
+    if (raw === 'платинум' || raw === 'platinum') return 'platinum';
+    return 'basic';
+  };
+
+  const normalizeReleaseType = (v: any): DistributionData['releaseType'] => {
+    const raw = String(v || '').trim().toLowerCase();
+    if (raw === 'сингл' || raw === 'single') return 'single';
+    if (raw === 'ep') return 'ep';
+    if (raw === 'альбом' || raw === 'album') return 'album';
+    return 'single';
+  };
+
+  const normalizeStatus = (v: any): DistributionData['status'] => {
+    const raw = String(v || '').trim().toLowerCase();
+    if (raw === 'new' || raw === 'новый') return 'new';
+    if (raw === 'in_progress' || raw === 'в работе') return 'in_progress';
+    if (raw === 'paid' || raw === 'оплачен') return 'paid';
+    if (raw === 'signed' || raw === 'подписан') return 'signed';
+    if (raw === 'released' || raw === 'выпущен') return 'released';
+    if (raw === 'rejected' || raw === 'отклонён' || raw === 'отклонен') return 'rejected';
+    return 'new';
+  };
+
+  const toStringArray = (v: any): string[] => {
+    if (!v) return [];
+    if (Array.isArray(v)) return v.map(String).filter(Boolean);
+    if (typeof v === 'string') return v.split(',').map((s: string) => s.trim()).filter(Boolean);
+    return [];
+  };
+
+  const normalizeTracks = (rawTracks: any): DistributionData['tracks'] => {
+    const parsed = parseTracks(rawTracks);
+    return parsed.map((track: any, idx: number) => ({
+      id: String(track?.id || `track-${idx + 1}`),
+      name: String(track?.name || ''),
+      version: String(track?.version || ''),
+      artists: Array.isArray(track?.artists) && track.artists.length > 0
+        ? track.artists
+          .map((a: any) => ({
+            name: String(a?.name || ''),
+            separator: a?.separator === 'feat.' ? 'feat.' : ',',
+          }))
+          .filter((a: any) => a.name)
+        : typeof track?.artists === 'string' && track.artists.trim()
+          ? [{ name: track.artists.trim(), separator: ',' }]
+          : [{ name: String(track?.artist || ''), separator: ',' }],
+      lyricists: toStringArray(track?.lyricists),
+      composers: toStringArray(track?.composers),
+      explicit: normalizeBool(track?.explicit ?? track?.explicitContent),
+      substances: normalizeBool(track?.substances ?? track?.substanceMention),
+      lyrics: String(track?.lyrics || ''),
+    }));
+  };
+
   const refresh = useCallback(() => {
     setDistributions(getDistributions());
     setPromos(getPromos());
@@ -87,9 +157,9 @@ export function App() {
       const rows = await fetchSheetRows('distributions');
       const distCount = Array.isArray(rows) ? rows.length : 0;
       const mapped = (Array.isArray(rows) ? rows : []).map((r: any, idx: number) => ({
-        id: r.id || r.ID || `remote-${idx}`,
-        tariff: (r.tariff as any) || (r.Tariff as any) || r.tariff_name || 'basic',
-        releaseType: (r.releaseType as any) || (r.ReleaseType as any) || r.release_type || 'single',
+        id: String(r.id || r.ID || r.contract_number || `remote-${idx}`),
+        tariff: normalizeTariff((r.tariff as any) || (r.Tariff as any) || r.tariff_name),
+        releaseType: normalizeReleaseType((r.releaseType as any) || (r.ReleaseType as any) || r.release_type),
         releaseName: r.releaseName || r.ReleaseName || r.title || r.work_title || '',
         mainArtist: r.mainArtist || r.MainArtist || r.artist || r.pseudonym || '',
         releaseVersion: r.releaseVersion || r.release_version || '',
@@ -98,7 +168,7 @@ export function App() {
         language: r.language || '',
         releaseDate: r.releaseDate || r.release_date || '',
         coverLink: r.coverLink || r.cover_link || '',
-        tracks: parseTracks(r.tracks || r.tracks_json),
+        tracks: normalizeTracks(r.tracks || r.tracks_json),
         tiktokStart: r.tiktokStart || r.tiktok_excerpt || '',
         tiktokFull: normalizeBool(r.tiktokFull ?? r.tiktok_full),
         preSaveYandex: normalizeBool(r.yandexPreSave ?? r.yandex_presave),
@@ -113,11 +183,21 @@ export function App() {
         contacts: r.contactInfo || r.contacts || r.contact || '',
         artistProfileLinks: r.artistProfileLinks || r.artist_profile_links || '',
         submittedAt: r.timestamp || r.submittedAt || new Date().toISOString(),
-        status: (r.status as any) || r.contract_status || 'new',
+        status: normalizeStatus((r.status as any) || r.contract_status),
         totalPrice: normalizeNumber(r.totalPrice ?? r.total ?? r.total_price),
         contractNumber: r.contractNumber || r.contract_number || '',
+        rowIndex: Number(r._row || r.row || 0) || undefined,
       }));
-      setDistributions(mapped as DistributionData[]);
+
+      // Apply local status overrides on top of remote data
+      const overrides = getStatusOverrides();
+      const finalMapped = mapped.map((d: any) => {
+        if (overrides[d.id]) {
+          return { ...d, status: overrides[d.id] };
+        }
+        return d;
+      });
+      setDistributions(finalMapped as DistributionData[]);
 
       const promoRows = await fetchSheetRows('promos');
       const promoCount = Array.isArray(promoRows) ? promoRows.length : 0;
@@ -168,10 +248,10 @@ export function App() {
 
   const activeTab: AdminTab =
     view.type === 'dashboard' ? 'dashboard' :
-    view.type === 'distributions' || view.type === 'distribution-detail' || view.type === 'distribution-contract' ? 'distributions' :
-    view.type === 'promos' || view.type === 'promo-detail' ? 'promos' :
-    view.type === 'promocodes' ? 'promocodes' :
-    'settings';
+      view.type === 'distributions' || view.type === 'distribution-detail' || view.type === 'distribution-contract' ? 'distributions' :
+        view.type === 'promos' || view.type === 'promo-detail' ? 'promos' :
+          view.type === 'promocodes' ? 'promocodes' :
+            'settings';
 
   const handleTabChange = (tab: AdminTab) => {
     switch (tab) {
@@ -184,26 +264,42 @@ export function App() {
   };
 
   const handleDistStatusChange = (id: string, status: DistributionData['status']) => {
+    // Update local state immediately
+    setDistributions(prev => prev.map(d => d.id === id ? { ...d, status } : d));
     updateDistributionStatus(id, status);
-    setRefreshKey(k => k + 1);
+    saveStatusOverride(id, status);
+
+    // Try to update remote in background (fire-and-forget)
+    const current = distributions.find(d => d.id === id);
+    if (current?.rowIndex) {
+      updateSheetRow('distributions', current.rowIndex, {
+        contract_status: status,
+        status,
+      }).catch(() => { /* ignore remote errors */ });
+    }
   };
 
   const handlePromoStatusChange = (id: string, status: PromoData['status']) => {
     updatePromoStatus(id, status);
-    setRefreshKey(k => k + 1);
+    // Update local state directly
+    setPromos(prev => prev.map(p => p.id === id ? { ...p, status } : p));
   };
 
-  const handleDistDelete = (id: string) => {
+  const handleDistDelete = async (id: string) => {
+    const current = distributions.find(d => d.id === id);
+    if (current?.rowIndex) {
+      await deleteSheetRow('distributions', current.rowIndex);
+    }
     deleteDistribution(id);
     if ((view.type === 'distribution-detail' || view.type === 'distribution-contract') && view.id === id) {
       setView({ type: 'distributions' });
     }
-    setRefreshKey(k => k + 1);
+    setDistributions(prev => prev.filter(d => d.id !== id));
   };
 
   const handleContractNumberUpdate = (id: string, contractNumber: string) => {
     updateDistributionContractNumber(id, contractNumber);
-    setRefreshKey(k => k + 1);
+    setDistributions(prev => prev.map(d => d.id === id ? { ...d, contractNumber } : d));
   };
 
   const handlePromoDelete = (id: string) => {
@@ -211,7 +307,7 @@ export function App() {
     if (view.type === 'promo-detail' && view.id === id) {
       setView({ type: 'promos' });
     }
-    setRefreshKey(k => k + 1);
+    setPromos(prev => prev.filter(p => p.id !== id));
   };
 
   const handleResetData = () => {
@@ -242,14 +338,48 @@ export function App() {
             onDelete={handleDistDelete}
             onStatusChange={handleDistStatusChange}
             onGenerateContract={(id) => setView({ type: 'distribution-contract', id })}
+            onCreateSignLink={async (id) => {
+              const dist = distributions.find(d => d.id === id);
+              if (!dist) return null;
+
+              // Generate contract number if missing
+              const contractNum = dist.contractNumber || (() => {
+                const now = new Date();
+                const yy = String(now.getFullYear()).slice(-2);
+                const mm = String(now.getMonth() + 1).padStart(2, '0');
+                const dd = String(now.getDate()).padStart(2, '0');
+                const seq = String(Math.floor(Math.random() * 900) + 100);
+                return `ЛД-${yy}${mm}${dd}-${seq}`;
+              })();
+
+              try {
+                const res = await createSignLink(contractNum, dist.rowIndex);
+                if (res?.signUrl) {
+                  // Save to distribution data
+                  setDistributions(prev => prev.map(d => d.id === id
+                    ? { ...d, signLink: res.signUrl!, contractNumber: contractNum }
+                    : d
+                  ));
+                  if (!dist.contractNumber) {
+                    updateDistributionContractNumber(id, contractNum);
+                  }
+                  return res.signUrl;
+                }
+              } catch { /* fallback below */ }
+              return null;
+            }}
           />
         );
 
       case 'distribution-detail': {
         const data = distributions.find(d => d.id === view.id);
         if (!data) {
-          setView({ type: 'distributions' });
-          return null;
+          return (
+            <div className="text-center py-20">
+              <p className="text-dark-400 mb-4">Заявка не найдена или данные ещё загружаются...</p>
+              <button onClick={() => setView({ type: 'distributions' })} className="px-4 py-2 rounded-lg bg-primary-600 text-white text-sm hover:bg-primary-700 transition-colors">← К списку</button>
+            </div>
+          );
         }
         return (
           <DistributionDetail
@@ -264,8 +394,12 @@ export function App() {
       case 'distribution-contract': {
         const data = distributions.find(d => d.id === view.id);
         if (!data) {
-          setView({ type: 'distributions' });
-          return null;
+          return (
+            <div className="text-center py-20">
+              <p className="text-dark-400 mb-4">Заявка не найдена или данные ещё загружаются...</p>
+              <button onClick={() => setView({ type: 'distributions' })} className="px-4 py-2 rounded-lg bg-primary-600 text-white text-sm hover:bg-primary-700 transition-colors">← К списку</button>
+            </div>
+          );
         }
         return (
           <ContractGenerator
@@ -289,8 +423,12 @@ export function App() {
       case 'promo-detail': {
         const data = promos.find(p => p.id === view.id);
         if (!data) {
-          setView({ type: 'promos' });
-          return null;
+          return (
+            <div className="text-center py-20">
+              <p className="text-dark-400 mb-4">Промо не найдено или данные ещё загружаются...</p>
+              <button onClick={() => setView({ type: 'promos' })} className="px-4 py-2 rounded-lg bg-primary-600 text-white text-sm hover:bg-primary-700 transition-colors">← К списку</button>
+            </div>
+          );
         }
         return (
           <PromoDetail
