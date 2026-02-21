@@ -156,6 +156,19 @@ export async function createSignLink(
   rowIndex?: number,
   payload?: { contractHtml?: string; signSource?: string }
 ): Promise<{ signUrl?: string; token?: string; success?: boolean } | null> {
+  const mainSiteBase = await getSignBaseUrl();
+
+  // Normalize any sign URL to point to the main site with /#sign?token= format
+  const normalizeSignUrl = (url: string): string => {
+    if (!url) return url;
+    // Extract token from any format: /sign.html?token=X, /sign?token=X, /#sign?token=X
+    const tokenMatch = url.match(/token=([^&]*)/);
+    if (tokenMatch) {
+      return `${mainSiteBase}/#sign?token=${tokenMatch[1]}`;
+    }
+    return url;
+  };
+
   // Try remote APIs first, then fall back to local token generation
   try {
     let res = await fetchViaProxyPost('/api/sign', {
@@ -166,12 +179,11 @@ export async function createSignLink(
       signSource: payload?.signSource || 'internal',
     });
     if (!res.ok && (res.status === 404 || res.status === 405)) {
-      const signBaseUrl = await getSignBaseUrl();
       res = await postDirectToScript({
         action: 'sign_create',
         contractNumber,
         row: rowIndex,
-        signBaseUrl,
+        signBaseUrl: mainSiteBase,
         signExpiresDays: 7,
         contractHtml: payload?.contractHtml || '',
         signSource: payload?.signSource || 'internal',
@@ -180,16 +192,19 @@ export async function createSignLink(
     const text = await res.text();
     const json = parseJsonSafe(text);
     if (res.ok && json?.success) {
+      // Fix the URL from server to point to main site
+      if (json.signUrl) {
+        json.signUrl = normalizeSignUrl(json.signUrl);
+      }
       return json;
     }
   } catch {
     // Remote calls failed — fall back to client-side generation below
   }
 
-  // Fallback: generate sign link locally using the main site URL (not admin)
-  const signBase = await getSignBaseUrl();
+  // Fallback: generate sign link locally using the main site URL
   const token = btoa(JSON.stringify({ contractNumber, rowIndex, timestamp: Date.now() }));
-  const signUrl = `${signBase}/#sign?token=${encodeURIComponent(token)}`;
+  const signUrl = `${mainSiteBase}/#sign?token=${encodeURIComponent(token)}`;
 
   return {
     signUrl,
