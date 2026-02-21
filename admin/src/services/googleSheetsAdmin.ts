@@ -186,9 +186,10 @@ export async function createSignLink(
     // Remote calls failed — fall back to client-side generation below
   }
 
-  // Fallback: generate sign link locally
+  // Fallback: generate sign link locally using the main site URL (not admin)
+  const signBase = await getSignBaseUrl();
   const token = btoa(JSON.stringify({ contractNumber, rowIndex, timestamp: Date.now() }));
-  const signUrl = `${window.location.origin.replace(/:\d+$/, '')}/#sign?token=${encodeURIComponent(token)}`;
+  const signUrl = `${signBase}/#sign?token=${encodeURIComponent(token)}`;
 
   return {
     signUrl,
