@@ -1714,12 +1714,11 @@ function Header({ onBack }: { onBack?: () => void }) {
               <ArrowLeft className="w-5 h-5 text-gray-600" />
             </button>
           )}
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-purple-200/50 overflow-hidden bg-white">
-            {/* Use uploaded logo from public/ so it resolves both in dev and production */}
-            <img src="/Frame%203.png" alt="PFVMUSIC" className="w-8 h-8 object-contain" />
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg shadow-purple-200/50 overflow-hidden bg-white">
+            <img src="/Frame%203.png" alt="PFVMUSIC" className="w-full h-full object-contain" />
           </div>
           <div>
-            <h1 className="text-base font-extrabold text-gray-900 tracking-tight">PFVMUSIC</h1>
+            <span className="text-base font-extrabold text-gray-900 tracking-tight">PFVMUSIC</span>
             <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest">Издательство</p>
           </div>
         </div>

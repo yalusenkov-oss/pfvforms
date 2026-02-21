@@ -11,11 +11,11 @@ interface ContractData {
 }
 
 const SIGNING_STAGES = [
-  { emoji: '📋', text: 'Проверяем данные договора…', duration: 1500 },
-  { emoji: '🔐', text: 'Верифицируем подпись…', duration: 1800 },
-  { emoji: '✍️', text: 'Ставим вашу подпись…', duration: 2000 },
-  { emoji: '📄', text: 'Договор почти готов!', duration: 1200 },
-  { emoji: '✅', text: 'Готово! Договор подписан', duration: 0 },
+  { emoji: '🔍', text: 'Проверяем данные договора…', duration: 1200 },
+  { emoji: '🔐', text: 'Шифруем вашу подпись квантовым ключом…', duration: 1500 },
+  { emoji: '🖊️', text: 'Ставим вашу подпись…', duration: 1800 },
+  { emoji: '🦋', text: 'Договор обретает юридическую силу…', duration: 1200 },
+  { emoji: '🎉', text: 'Поздравляем, всё официально!', duration: 0 },
 ];
 
 export default function SignPage() {
@@ -305,10 +305,18 @@ export default function SignPage() {
                     )}
                     <div>
                       <p className="font-semibold text-sm mb-1">
-                        {signed ? 'Подписано' : 'Не подписано'}
+                        {signed ? '✅ Подписано' : 'Не подписано'}
                       </p>
                       {signed && (
                         <p className="text-xs text-green-700">{signature}</p>
+                      )}
+                      {signed && (
+                        <button
+                          onClick={handleDownloadHTML}
+                          className="mt-1 text-xs text-green-600 underline hover:text-green-800 transition-colors"
+                        >
+                          📥 Скачать копию договора
+                        </button>
                       )}
                       {!signed && (
                         <p className="text-xs text-gray-600">Нажмите кнопку ниже, чтобы подписать договор</p>
@@ -336,21 +344,20 @@ export default function SignPage() {
                 </div>
               </div>
 
-              {/* Sign Button */}
+              {/* Sign / Re-download Button */}
               <button
-                onClick={handleSign}
-                disabled={signed}
+                onClick={signed ? handleDownloadHTML : handleSign}
                 className={cn(
                   'w-full px-6 py-3 rounded-xl font-bold text-white text-lg transition-all duration-200 flex items-center justify-center gap-2',
                   signed
-                    ? 'bg-gray-300 cursor-not-allowed'
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl cursor-pointer'
                     : 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 shadow-lg hover:shadow-xl'
                 )}
               >
                 {signed ? (
                   <>
-                    <CheckCircle2 size={20} />
-                    Договор подписан
+                    <Download size={20} />
+                    Подписан — скачать снова
                   </>
                 ) : (
                   <>
