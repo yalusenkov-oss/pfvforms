@@ -1948,6 +1948,13 @@ function getSignData(data) {
   const signedPdfId = row[signedPdfIdIdx] || '';
   if (!contractHtml) return { success: false, error: 'Internal contract HTML missing' };
 
+  const idx = {
+    contractNumber: headers.indexOf('contract_number'),
+    licensorName: headers.indexOf('licensor_name'),
+    workTitle: headers.indexOf('work_title'),
+    releaseType: headers.indexOf('release_type')
+  };
+
   return {
     success: true,
     status: row[signStatusIdx] || 'pending',
@@ -1956,6 +1963,10 @@ function getSignData(data) {
     signSource: 'internal',
     contractHtml: contractHtml || '',
     signedPdfId: signedPdfId || '',
+    contractNumber: (idx.contractNumber >= 0 ? row[idx.contractNumber] : '') || '',
+    licensorName: (idx.licensorName >= 0 ? row[idx.licensorName] : '') || '',
+    workTitle: (idx.workTitle >= 0 ? row[idx.workTitle] : '') || '',
+    releaseType: (idx.releaseType >= 0 ? row[idx.releaseType] : '') || '',
     docUrl: '',
     previewUrl: '',
     pdfUrl: ''
