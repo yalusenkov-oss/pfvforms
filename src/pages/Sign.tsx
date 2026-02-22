@@ -1,124 +1,125 @@
-import { useEffect, useState, useRef } from 'react';
-import { FileText, Download, AlertCircle, CheckCircle2, Loader2, Home, PenLine, ShieldCheck, Sparkles } from 'lucide-react';
-import { cn } from '@/utils/cn';
+import { useState, useCallback, useEffect } from 'react';
+import { Loader2, AlertCircle } from 'lucide-react';
+import { Header } from '@/components/sign/Header';
+import { ContractInfo } from '@/components/sign/ContractInfo';
+import { ContractDocument } from '@/components/sign/ContractDocument';
+import { SignatureBlock } from '@/components/sign/SignatureBlock';
+import { InfoBlock } from '@/components/sign/InfoBlock';
+import { Footer } from '@/components/sign/Footer';
 
-interface ContractData {
-  contractNumber: string;
-  contractHtml: string;
-  licensorName: string;
-  workTitle: string;
-  releaseType: string;
+// ════════════════════════════════════════════════════════════════
+// Google Apps Script URL resolution (same pattern as main app)
+// ════════════════════════════════════════════════════════════════
+let _cachedScriptUrl: string | null = null;
+
+async function getScriptUrl(): Promise<string> {
+  if (_cachedScriptUrl) return _cachedScriptUrl;
+
+  try {
+    const envUrl = ((import.meta as any)?.env?.VITE_GOOGLE_SCRIPT_URL as string) || '';
+    if (envUrl) { _cachedScriptUrl = envUrl; return envUrl; }
+  } catch { }
+
+  try {
+    const w = window as any;
+    if (w?.VITE_GOOGLE_SCRIPT_URL) {
+      _cachedScriptUrl = String(w.VITE_GOOGLE_SCRIPT_URL);
+      return _cachedScriptUrl;
+    }
+  } catch { }
+
+  try {
+    const res = await fetch('/config.json', { cache: 'no-store' });
+    if (res.ok) {
+      const obj = await res.json();
+      if (obj?.VITE_GOOGLE_SCRIPT_URL) {
+        _cachedScriptUrl = String(obj.VITE_GOOGLE_SCRIPT_URL);
+        return _cachedScriptUrl;
+      }
+    }
+  } catch { }
+
+  return '';
 }
 
-const SIGNING_STAGES = [
-  { emoji: '🔍', text: 'Проверяем данные договора…', duration: 1200 },
-  { emoji: '🔐', text: 'Шифруем вашу подпись квантовым ключом…', duration: 1500 },
-  { emoji: '🖊️', text: 'Ставим вашу подпись…', duration: 1800 },
-  { emoji: '🦋', text: 'Договор обретает юридическую силу…', duration: 1200 },
-  { emoji: '🎉', text: 'Поздравляем, всё официально!', duration: 0 },
-];
-
+// ════════════════════════════════════════════════════════════════
+// Sign Page Component
+// ════════════════════════════════════════════════════════════════
 export default function SignPage() {
-  const [contract, setContract] = useState<ContractData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [signed, setSigned] = useState(false);
-  const [signature, setSignature] = useState('');
-  const [signing, setSigning] = useState(false);
-  const [signingStage, setSigningStage] = useState(0);
-  const [downloadUrl, setDownloadUrl] = useState('');
-  const signingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Extract token from URL hash (e.g., #sign?token=xyz)
-  const getTokenFromHash = () => {
+  // Contract data from GAS
+  const [contractNumber, setContractNumber] = useState('');
+  const [contractHtml, setContractHtml] = useState('');
+  const [licensorName, setLicensorName] = useState('');
+  const [workTitle, setWorkTitle] = useState('');
+  const [releaseType, setReleaseType] = useState('');
+
+  // Signing state
+  const [isSigned, setIsSigned] = useState(false);
+  const [signedDate, setSignedDate] = useState<string | null>(null);
+  const [showOverlay, setShowOverlay] = useState(false);
+  const [signatureData, setSignatureData] = useState<string | null>(null);
+  const [downloadUrl, setDownloadUrl] = useState('');
+
+  // Extract token from URL hash (#sign?token=xyz)
+  const getToken = () => {
     const hash = window.location.hash;
-    const tokenMatch = hash.match(/token=([^&]*)/);
-    return tokenMatch ? decodeURIComponent(tokenMatch[1]) : null;
+    const m = hash.match(/token=([^&]*)/);
+    return m ? decodeURIComponent(m[1]) : null;
   };
 
-  const token = getTokenFromHash();
+  const token = getToken();
 
-  useEffect(() => {
+  // ═══ Fetch contract data from Google Apps Script ═══
+  const fetchContract = useCallback(async () => {
     if (!token) {
-      setError('Токен договора не найден');
+      setError('Токен договора не найден в URL');
       setLoading(false);
       return;
     }
 
-    fetchContract();
-  }, [token]);
-
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (signingTimerRef.current) clearTimeout(signingTimerRef.current);
-    };
-  }, []);
-
-  // Get Google Apps Script URL (same logic as main app)
-  const getScriptUrl = async (): Promise<string> => {
-    try {
-      const envUrl = ((import.meta as any)?.env?.VITE_GOOGLE_SCRIPT_URL as string) || '';
-      if (envUrl) return envUrl;
-    } catch { }
-    try {
-      const w = window as any;
-      if (w?.VITE_GOOGLE_SCRIPT_URL) return String(w.VITE_GOOGLE_SCRIPT_URL);
-    } catch { }
-    try {
-      const res = await fetch('/config.json', { cache: 'no-store' });
-      if (res.ok) {
-        const obj = await res.json();
-        if (obj?.VITE_GOOGLE_SCRIPT_URL) return String(obj.VITE_GOOGLE_SCRIPT_URL);
-      }
-    } catch { }
-    return '';
-  };
-
-  const fetchContract = async () => {
     try {
       setLoading(true);
-      const scriptUrl = await getScriptUrl();
-      if (!scriptUrl) throw new Error('Google Script URL не настроен');
+      setError('');
 
-      const url = `${scriptUrl}?action=sign_get&token=${encodeURIComponent(token || '')}`;
+      const scriptUrl = await getScriptUrl();
+      if (!scriptUrl) throw new Error('Google Script URL не настроен. Проверьте config.json');
+
+      const url = `${scriptUrl}?action=sign_get&token=${encodeURIComponent(token)}`;
       const res = await fetch(url, { redirect: 'follow' });
       const text = await res.text();
 
       let data: any;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        throw new Error('Некорректный ответ сервера');
-      }
+      try { data = JSON.parse(text); } catch { throw new Error('Некорректный ответ сервера'); }
 
-      if (!data?.success) {
-        throw new Error(data?.error || 'Договор не найден');
-      }
+      if (!data?.success) throw new Error(data?.error || 'Договор не найден');
 
+      setContractNumber(data.contractNumber || 'N/A');
+      setContractHtml(data.contractHtml || '');
+      setLicensorName(data.licensorName || 'Автор');
+      setWorkTitle(data.workTitle || 'Произведение');
+      setReleaseType(data.releaseType || 'Релиз');
+
+      // If already signed on server
       if (data.status === 'signed') {
-        setSigned(true);
-        setSignature(`Подписано: ${data.signedAt || 'ранее'}`);
+        setIsSigned(true);
+        setSignedDate(data.signedAt || 'ранее');
         setDownloadUrl(data.signedUrl || data.downloadUrl || '');
       }
-
-      setContract({
-        contractNumber: data.contractNumber || 'N/A',
-        contractHtml: data.contractHtml || '',
-        licensorName: data.licensorName || 'Автор',
-        workTitle: data.workTitle || 'Произведение',
-        releaseType: data.releaseType || 'Релиз',
-      });
-      setError('');
     } catch (err: any) {
       setError(err?.message || 'Ошибка при загрузке договора');
-      setContract(null);
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
-  const submitSignatureToServer = async () => {
+  useEffect(() => { fetchContract(); }, [fetchContract]);
+
+  // ═══ Submit signature to Google Apps Script ═══
+  const submitSignatureToServer = useCallback(async () => {
+    if (!token) return;
     try {
       const scriptUrl = await getScriptUrl();
       if (!scriptUrl) return;
@@ -129,8 +130,8 @@ export default function SignPage() {
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
           action: 'sign_submit',
-          token: token || '',
-          signature: `Подписано электронно: ${new Date().toLocaleString('ru-RU')}`,
+          token,
+          signature: signatureData || `Подписано электронно: ${new Date().toLocaleString('ru-RU')}`,
         }),
       });
       const text = await res.text();
@@ -142,156 +143,56 @@ export default function SignPage() {
     } catch (e) {
       console.error('submitSignature error:', e);
     }
-  };
+  }, [token, signatureData]);
 
-  const runSigningAnimation = () => {
-    setSigning(true);
-    setSigningStage(0);
+  // ═══ Handlers matching the design component interface ═══
+  const handleSign = useCallback(() => {
+    const now = new Date();
+    const formatted = now.toLocaleString('ru-RU', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+    });
+    setIsSigned(true);
+    setSignedDate(formatted);
+    // Submit to server in background
+    submitSignatureToServer();
+  }, [submitSignatureToServer]);
 
-    let currentStage = 0;
+  const handleSigningStart = useCallback(() => {
+    setShowOverlay(true);
+  }, []);
 
-    const advanceStage = () => {
-      if (currentStage < SIGNING_STAGES.length - 1) {
-        currentStage++;
-        setSigningStage(currentStage);
+  const handleOverlayComplete = useCallback(() => {
+    setShowOverlay(false);
+  }, []);
 
-        if (currentStage < SIGNING_STAGES.length - 1) {
-          signingTimerRef.current = setTimeout(advanceStage, SIGNING_STAGES[currentStage].duration);
-        } else {
-          // Final stage — mark as signed after a brief pause
-          signingTimerRef.current = setTimeout(() => {
-            setSigning(false);
-            setSigned(true);
-            setSignature(`Подписано: ${new Date().toLocaleString('ru-RU')}`);
-            // Submit signature to server in background
-            submitSignatureToServer();
-          }, 1500);
-        }
-      }
-    };
+  const handleSignatureChange = useCallback((data: string | null) => {
+    setSignatureData(data);
+  }, []);
 
-    signingTimerRef.current = setTimeout(advanceStage, SIGNING_STAGES[0].duration);
-  };
-
-  const handleSign = () => {
-    if (signing || signed) return;
-    runSigningAnimation();
-  };
-
-  const handleDownloadHTML = () => {
-    // If we have a server-generated download URL, use it
+  // ═══ Download handler ═══
+  const handleDownload = useCallback(() => {
     if (downloadUrl) {
       window.open(downloadUrl, '_blank');
       return;
     }
-    // Fallback: download contract HTML locally
-    if (!contract) return;
-    const blob = new Blob([contract.contractHtml], { type: 'text/html;charset=utf-8' });
+    if (!contractHtml) return;
+    const blob = new Blob([contractHtml], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Договор_${contract.contractNumber}.html`;
+    a.download = `Договор_${contractNumber}.html`;
     a.click();
     URL.revokeObjectURL(url);
-  };
+  }, [downloadUrl, contractHtml, contractNumber]);
 
-  const handleDownloadPDF = () => {
-    if (downloadUrl) {
-      window.open(downloadUrl, '_blank');
-      return;
-    }
-    if (!contract) return;
-    alert('PDF экспорт требует бэкенда для конвертации. Используйте браузер (Ctrl+P → Сохранить как PDF)');
-  };
-
-  const totalSignDuration = SIGNING_STAGES.reduce((sum, s) => sum + s.duration, 0) + 1500;
-  const elapsedDuration = SIGNING_STAGES.slice(0, signingStage).reduce((sum, s) => sum + s.duration, 0);
-  const progressPercent = signing ? Math.min(((elapsedDuration) / totalSignDuration) * 100, 95) : (signed ? 100 : 0);
-
-  // Signing overlay
-  if (signing) {
-    const stage = SIGNING_STAGES[signingStage];
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-purple-50/30 flex items-center justify-center">
-        <div className="max-w-md w-full mx-4">
-          <div className="rounded-3xl bg-white border border-purple-100 shadow-2xl shadow-purple-200/30 p-10 text-center">
-            {/* Animated document icon */}
-            <div className="relative mb-8">
-              <div className="w-24 h-24 mx-auto rounded-2xl bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center animate-pulse">
-                <span className="text-5xl transition-all duration-500" key={signingStage}>
-                  {stage.emoji}
-                </span>
-              </div>
-              {/* Floating sparkles */}
-              <div className="absolute -top-2 -right-2 animate-bounce">
-                <Sparkles className="w-6 h-6 text-purple-400" />
-              </div>
-              <div className="absolute -bottom-1 -left-2 animate-bounce" style={{ animationDelay: '0.5s' }}>
-                <Sparkles className="w-4 h-4 text-purple-300" />
-              </div>
-            </div>
-
-            {/* Stage text */}
-            <p className="text-lg font-bold text-gray-900 mb-2 transition-all duration-300" key={`text-${signingStage}`}>
-              {stage.text}
-            </p>
-            <p className="text-sm text-gray-500 mb-8">
-              Пожалуйста, подождите
-            </p>
-
-            {/* Progress bar */}
-            <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden mb-4">
-              <div
-                className="h-full bg-gradient-to-r from-purple-500 to-purple-600 rounded-full transition-all duration-700 ease-out"
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
-
-            {/* Stage indicators */}
-            <div className="flex justify-center gap-2">
-              {SIGNING_STAGES.map((_, idx) => (
-                <div
-                  key={idx}
-                  className={cn(
-                    'w-2 h-2 rounded-full transition-all duration-300',
-                    idx <= signingStage ? 'bg-purple-500 scale-110' : 'bg-gray-200'
-                  )}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  // ═══ RENDER ═══
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-purple-50/30">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-purple-100 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-purple-100">
-                <FileText className="w-5 h-5 text-purple-600" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">Подписание договора</h1>
-                <p className="text-xs text-gray-500">PFV Forms — Платформа дистрибуции</p>
-              </div>
-            </div>
-            <a
-              href="/"
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-purple-50 text-purple-600 font-medium text-sm hover:bg-purple-100 transition-colors"
-            >
-              <Home size={16} />
-              На главную
-            </a>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50/30 flex flex-col">
+      <Header />
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 max-w-3xl mx-auto w-full px-4 sm:px-6 py-8 space-y-6">
+        {/* Loading */}
         {loading && (
           <div className="flex flex-col items-center justify-center gap-4 py-20">
             <Loader2 className="w-12 h-12 text-purple-600 animate-spin" />
@@ -299,8 +200,9 @@ export default function SignPage() {
           </div>
         )}
 
-        {error && (
-          <div className="rounded-2xl bg-gradient-to-r from-red-50 to-red-50/50 border border-red-200 p-6 mb-6">
+        {/* Error */}
+        {error && !loading && (
+          <div className="rounded-2xl bg-gradient-to-r from-red-50 to-red-50/50 border border-red-200 p-6">
             <div className="flex gap-4">
               <AlertCircle className="w-6 h-6 text-red-500 flex-shrink-0 mt-0.5" />
               <div>
@@ -317,163 +219,48 @@ export default function SignPage() {
           </div>
         )}
 
-        {contract && !loading && (
+        {/* Contract loaded */}
+        {!loading && !error && contractHtml && (
           <>
             {/* Contract Info Card */}
-            <div className="rounded-2xl bg-white border border-purple-100 shadow-sm p-6 mb-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Номер договора</p>
-                  <p className="text-2xl font-bold text-gray-900 font-mono">{contract.contractNumber}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Произведение</p>
-                  <p className="text-lg font-semibold text-gray-900 truncate">{contract.workTitle}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Автор</p>
-                  <p className="text-sm text-gray-700">{contract.licensorName}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Тип релиза</p>
-                  <p className="text-sm text-gray-700">{contract.releaseType}</p>
-                </div>
-              </div>
+            <div className="animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+              <ContractInfo
+                contractNumber={contractNumber}
+                trackName={workTitle}
+                authorName={licensorName}
+                releaseType={releaseType}
+              />
             </div>
 
-            {/* Contract Preview */}
-            <div className="rounded-2xl bg-white border border-purple-100 shadow-sm overflow-hidden mb-6">
-              <div className="bg-gradient-to-r from-purple-50 to-purple-50/50 border-b border-purple-100 px-6 py-4">
-                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <FileText size={20} className="text-purple-600" />
-                  Документ договора
-                </h2>
-              </div>
-              <div className="p-6">
-                {/* Contract Content */}
-                <div
-                  className="prose prose-sm max-w-none text-gray-800 bg-gray-50 rounded-lg p-6 border border-gray-200 max-h-[600px] overflow-y-auto"
-                  dangerouslySetInnerHTML={{ __html: contract.contractHtml }}
-                  style={{ fontSize: '12px', lineHeight: '1.6' }}
-                />
-              </div>
+            {/* Contract Document */}
+            <div className="animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+              <ContractDocument htmlContent={contractHtml} />
             </div>
 
-            {/* Signature Status & Actions */}
-            <div className="rounded-2xl bg-white border border-purple-100 shadow-sm p-6 mb-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                {/* Signature Status */}
-                <div className={cn(
-                  'rounded-xl p-4 border-2 transition-all',
-                  signed
-                    ? 'bg-green-50 border-green-300'
-                    : 'bg-gray-50 border-gray-200'
-                )}>
-                  <div className="flex items-start gap-3">
-                    {signed ? (
-                      <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
-                    ) : (
-                      <div className="w-6 h-6 rounded-full border-2 border-gray-300 flex-shrink-0 mt-0.5" />
-                    )}
-                    <div>
-                      <p className="font-semibold text-sm mb-1">
-                        {signed ? '✅ Подписано' : 'Не подписано'}
-                      </p>
-                      {signed && (
-                        <p className="text-xs text-green-700">{signature}</p>
-                      )}
-                      {signed && (
-                        <button
-                          onClick={handleDownloadHTML}
-                          className="mt-1 text-xs text-green-600 underline hover:text-green-800 transition-colors"
-                        >
-                          📥 Скачать копию договора
-                        </button>
-                      )}
-                      {!signed && (
-                        <p className="text-xs text-gray-600">Нажмите кнопку ниже, чтобы подписать договор</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Download Buttons */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleDownloadHTML}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-50 text-blue-600 font-medium text-sm hover:bg-blue-100 transition-colors border border-blue-200"
-                  >
-                    <Download size={16} />
-                    HTML
-                  </button>
-                  <button
-                    onClick={handleDownloadPDF}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-50 text-red-600 font-medium text-sm hover:bg-red-100 transition-colors border border-red-200"
-                  >
-                    <Download size={16} />
-                    PDF
-                  </button>
-                </div>
-              </div>
-
-              {/* Sign / Re-download Button */}
-              <button
-                onClick={signed ? handleDownloadHTML : handleSign}
-                className={cn(
-                  'w-full px-6 py-3 rounded-xl font-bold text-white text-lg transition-all duration-200 flex items-center justify-center gap-2',
-                  signed
-                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl cursor-pointer'
-                    : 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 shadow-lg hover:shadow-xl'
-                )}
-              >
-                {signed ? (
-                  <>
-                    <Download size={20} />
-                    Подписан — скачать снова
-                  </>
-                ) : (
-                  <>
-                    <PenLine size={20} />
-                    Подписать договор
-                  </>
-                )}
-              </button>
+            {/* Signature Block */}
+            <div className="animate-fade-in-up space-y-6" style={{ animationDelay: '0.3s' }}>
+              <SignatureBlock
+                isSigned={isSigned}
+                signedDate={signedDate}
+                onSign={handleSign}
+                onSigningStart={handleSigningStart}
+                showOverlay={showOverlay}
+                onOverlayComplete={handleOverlayComplete}
+                signatureData={signatureData}
+                onSignatureChange={handleSignatureChange}
+                onDownload={handleDownload}
+              />
             </div>
 
-            {/* Success Banner */}
-            {signed && (
-              <div className="rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50/50 border border-green-200 p-6 mb-6 animate-in">
-                <div className="flex gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
-                    <ShieldCheck className="w-6 h-6 text-green-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-green-900 mb-1">Договор успешно подписан!</h3>
-                    <p className="text-sm text-green-800 leading-relaxed">
-                      Ваш договор был подписан. Вы можете скачать его копию для своих записей.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Info Box */}
-            <div className="rounded-2xl bg-gradient-to-r from-purple-50 to-purple-50/50 border border-purple-200 p-6">
-              <p className="text-sm text-gray-700 leading-relaxed">
-                ℹ️ Подписав этот договор, вы подтверждаете, что согласны со всеми условиями лицензионного соглашения.
-                Пожалуйста, внимательно прочитайте все положения перед подписанием.
-              </p>
+            {/* Info Block */}
+            <div className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+              <InfoBlock />
             </div>
           </>
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-purple-100 bg-white/50 backdrop-blur-sm mt-16 py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-gray-600">
-          <p>© 2026 PFV Forms. Все права защищены.</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
