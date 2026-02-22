@@ -1,5 +1,4 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { Trash2 } from 'lucide-react';
 
 interface SignatureCanvasProps {
   onSignatureChange: (dataUrl: string | null) => void;
@@ -114,9 +113,8 @@ export function SignatureCanvas({ onSignatureChange }: SignatureCanvasProps) {
       </div>
       <button
         onClick={clearCanvas}
-        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+        className="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-100 rounded-[12px] text-[14px] font-medium text-gray-600 hover:bg-gray-100 transition-colors shadow-sm"
       >
-        <Trash2 className="w-4 h-4" />
         🗑 Очистить
       </button>
     </div>

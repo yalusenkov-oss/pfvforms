@@ -188,10 +188,10 @@ export default function SignPage() {
 
   // ═══ RENDER ═══
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50/30 flex flex-col">
+    <div className="min-h-screen bg-[#fafafc] flex flex-col font-sans">
       <Header />
 
-      <main className="flex-1 max-w-3xl mx-auto w-full px-4 sm:px-6 py-8 space-y-6">
+      <main className="flex-1 max-w-[800px] mx-auto w-full px-4 sm:px-6 py-8 space-y-8">
         {/* Loading */}
         {loading && (
           <div className="flex flex-col items-center justify-center gap-4 py-20">

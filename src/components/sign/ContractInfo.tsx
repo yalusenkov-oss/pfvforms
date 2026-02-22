@@ -9,26 +9,29 @@ interface ContractInfoProps {
 
 export function ContractInfo({ contractNumber, trackName, authorName, releaseType }: ContractInfoProps) {
   return (
-    <div className="relative bg-white rounded-2xl border border-gray-100 shadow-xl shadow-purple-100/20 p-6 sm:p-8 overflow-hidden">
-      <div className="absolute top-5 left-5 sm:top-6 sm:left-6 w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
-        <FileText className="w-5 h-5 text-purple-600" />
+    <div className="relative bg-white rounded-[20px] border border-gray-100 shadow-sm p-8 flex gap-8">
+      {/* Icon Area */}
+      <div className="w-12 h-12 shrink-0 rounded-[14px] bg-purple-100/80 flex items-center justify-center">
+        <FileText className="w-6 h-6 text-purple-600" />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 pt-14 sm:pt-0 sm:pl-16">
+
+      {/* Grid Area */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-8 gap-x-12 w-full">
         <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Номер договора</p>
-          <p className="text-2xl font-bold font-mono text-gray-900">{contractNumber}</p>
+          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Номер договора</p>
+          <p className="text-3xl font-black text-gray-900 tracking-tight">{contractNumber}</p>
         </div>
         <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Произведение</p>
-          <p className="text-lg font-semibold text-gray-900">{trackName}</p>
+          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Произведение</p>
+          <p className="text-xl font-bold text-gray-900 tracking-tight">{trackName}</p>
         </div>
         <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Автор</p>
-          <p className="text-lg font-semibold text-gray-900">{authorName}</p>
+          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Автор</p>
+          <p className="text-xl font-bold text-gray-900 tracking-tight leading-tight max-w-[200px]">{authorName}</p>
         </div>
         <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Тип релиза</p>
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-purple-100 text-purple-700">
+          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Тип релиза</p>
+          <span className="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-bold bg-purple-100 text-purple-600">
             {releaseType}
           </span>
         </div>
