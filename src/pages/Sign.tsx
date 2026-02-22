@@ -255,14 +255,14 @@ export default function SignPage() {
             </div>
 
             {/* Two-column layout on desktop */}
-            <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-5 gap-6 items-start">
               {/* Left column: Contract Document (takes 3/5 on xl) */}
               <div className="xl:col-span-3 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
                 <ContractDocument htmlContent={contractHtml} />
               </div>
 
               {/* Right column: Signature + Info (takes 2/5 on xl) */}
-              <div className="xl:col-span-2 space-y-6 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+              <div className="xl:col-span-2 space-y-6 animate-fade-in-up md:sticky md:top-24" style={{ animationDelay: '0.3s' }}>
                 <SignatureBlock
                   isSigned={isSigned}
                   signedDate={signedDate}
