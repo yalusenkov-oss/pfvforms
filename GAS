@@ -1847,11 +1847,8 @@ function createSignLink(data) {
   const stored = storeContractHtml(htmlWithOwnerSig, fileName, existingHtml);
   sheet.getRange(rowIndex, extraCols.contractHtml).setValue(stored.value);
   sheet.getRange(rowIndex, extraCols.signSource).setValue('internal');
-  sheet.getRange(rowIndex, signCols.signDocId).setValue('');
-
-  const signBaseUrl = String(data.signBaseUrl || '').replace(/\/$/, '');
-  if (!signBaseUrl) return { success: false, error: 'Missing signBaseUrl' };
-
+  const signBaseUrl = 'https://pfvmusic.ru';
+  
   const token = generateSignToken();
   const expiresDays = Number(data.signExpiresDays || 7);
   const expiresAt = new Date();
