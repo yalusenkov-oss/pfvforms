@@ -26,6 +26,7 @@ export default function SignPage() {
   const [signature, setSignature] = useState('');
   const [signing, setSigning] = useState(false);
   const [signingStage, setSigningStage] = useState(0);
+  const [downloadUrl, setDownloadUrl] = useState('');
   const signingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Extract token from URL hash (e.g., #sign?token=xyz)
@@ -54,23 +55,56 @@ export default function SignPage() {
     };
   }, []);
 
+  // Get Google Apps Script URL (same logic as main app)
+  const getScriptUrl = async (): Promise<string> => {
+    try {
+      const envUrl = ((import.meta as any)?.env?.VITE_GOOGLE_SCRIPT_URL as string) || '';
+      if (envUrl) return envUrl;
+    } catch { }
+    try {
+      const w = window as any;
+      if (w?.VITE_GOOGLE_SCRIPT_URL) return String(w.VITE_GOOGLE_SCRIPT_URL);
+    } catch { }
+    try {
+      const res = await fetch('/config.json', { cache: 'no-store' });
+      if (res.ok) {
+        const obj = await res.json();
+        if (obj?.VITE_GOOGLE_SCRIPT_URL) return String(obj.VITE_GOOGLE_SCRIPT_URL);
+      }
+    } catch { }
+    return '';
+  };
+
   const fetchContract = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/sign?action=get&token=${encodeURIComponent(token || '')}`);
+      const scriptUrl = await getScriptUrl();
+      if (!scriptUrl) throw new Error('Google Script URL не настроен');
 
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: не удалось загрузить договор`);
+      const url = `${scriptUrl}?action=sign_get&token=${encodeURIComponent(token || '')}`;
+      const res = await fetch(url, { redirect: 'follow' });
+      const text = await res.text();
+
+      let data: any;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error('Некорректный ответ сервера');
       }
 
-      const data = await res.json();
-      if (!data?.success || !data?.contractHtml) {
+      if (!data?.success) {
         throw new Error(data?.error || 'Договор не найден');
+      }
+
+      if (data.status === 'signed') {
+        setSigned(true);
+        setSignature(`Подписано: ${data.signedAt || 'ранее'}`);
+        setDownloadUrl(data.signedUrl || data.downloadUrl || '');
       }
 
       setContract({
         contractNumber: data.contractNumber || 'N/A',
-        contractHtml: data.contractHtml,
+        contractHtml: data.contractHtml || '',
         licensorName: data.licensorName || 'Автор',
         workTitle: data.workTitle || 'Произведение',
         releaseType: data.releaseType || 'Релиз',
@@ -81,6 +115,32 @@ export default function SignPage() {
       setContract(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const submitSignatureToServer = async () => {
+    try {
+      const scriptUrl = await getScriptUrl();
+      if (!scriptUrl) return;
+
+      const res = await fetch(scriptUrl, {
+        method: 'POST',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'sign_submit',
+          token: token || '',
+          signature: `Подписано электронно: ${new Date().toLocaleString('ru-RU')}`,
+        }),
+      });
+      const text = await res.text();
+      let data: any;
+      try { data = JSON.parse(text); } catch { data = {}; }
+      if (data?.downloadUrl || data?.signedUrl) {
+        setDownloadUrl(data.downloadUrl || data.signedUrl);
+      }
+    } catch (e) {
+      console.error('submitSignature error:', e);
     }
   };
 
@@ -103,6 +163,8 @@ export default function SignPage() {
             setSigning(false);
             setSigned(true);
             setSignature(`Подписано: ${new Date().toLocaleString('ru-RU')}`);
+            // Submit signature to server in background
+            submitSignatureToServer();
           }, 1500);
         }
       }
@@ -117,6 +179,12 @@ export default function SignPage() {
   };
 
   const handleDownloadHTML = () => {
+    // If we have a server-generated download URL, use it
+    if (downloadUrl) {
+      window.open(downloadUrl, '_blank');
+      return;
+    }
+    // Fallback: download contract HTML locally
     if (!contract) return;
     const blob = new Blob([contract.contractHtml], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -128,6 +196,10 @@ export default function SignPage() {
   };
 
   const handleDownloadPDF = () => {
+    if (downloadUrl) {
+      window.open(downloadUrl, '_blank');
+      return;
+    }
     if (!contract) return;
     alert('PDF экспорт требует бэкенда для конвертации. Используйте браузер (Ctrl+P → Сохранить как PDF)');
   };
