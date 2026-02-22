@@ -106,7 +106,11 @@ export default function SignPage() {
       if (data.status === 'signed') {
         setIsSigned(true);
         setSignedDate(data.signedAt || 'ранее');
-        setDownloadUrl(data.signedUrl || data.downloadUrl || '');
+        let dUrl = data.downloadUrl || data.signedUrl || '';
+        if (data.signedPdfId) {
+          dUrl = `https://drive.google.com/uc?export=download&id=${data.signedPdfId}`;
+        }
+        setDownloadUrl(dUrl);
       }
     } catch (err: any) {
       setError(err?.message || 'Ошибка при загрузке договора');
@@ -146,6 +150,14 @@ export default function SignPage() {
   }, [token, signatureData]);
 
   // ═══ Handlers matching the design component interface ═══
+  const injectSignatureLocally = (html: string, dataUrl: string) => {
+    const imgTag = `<img src="${dataUrl}" style="height:60px;width:auto;" />`;
+    let result = String(html);
+    // Use robust regex to catch {{signature_client}} even if wrapped in spans or &nbsp;
+    result = result.replace(/\{\{[^}]*signature_client(?:_[123])?[^}]*\}\}/g, imgTag);
+    return result;
+  };
+
   const handleSign = useCallback(() => {
     const now = new Date();
     const formatted = now.toLocaleString('ru-RU', {
@@ -154,9 +166,13 @@ export default function SignPage() {
     });
     setIsSigned(true);
     setSignedDate(formatted);
+    // Instant visual update of HTML
+    if (signatureData) {
+      setContractHtml(prev => injectSignatureLocally(prev, signatureData));
+    }
     // Submit to server in background
     submitSignatureToServer();
-  }, [submitSignatureToServer]);
+  }, [submitSignatureToServer, signatureData]);
 
   const handleSigningStart = useCallback(() => {
     setShowOverlay(true);
@@ -171,11 +187,17 @@ export default function SignPage() {
   }, []);
 
   // ═══ Download handler ═══
-  const handleDownload = useCallback(() => {
-    if (downloadUrl) {
-      window.open(downloadUrl, '_blank');
+  const handleDownload = useCallback((type: 'pdf' | 'html' = 'pdf') => {
+    if (type === 'pdf') {
+      if (downloadUrl) {
+        window.open(downloadUrl, '_blank');
+      } else {
+        alert('Пожалуйста, подождите пару секунд, PDF-документ генерируется...');
+      }
       return;
     }
+
+    // HTML fallback
     if (!contractHtml) return;
     const blob = new Blob([contractHtml], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);

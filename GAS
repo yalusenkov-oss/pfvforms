@@ -1750,19 +1750,9 @@ function embedOwnerSignatureInHtml(html) {
 function injectSignatureIntoHtml(html, signatureDataUrl) {
   if (!html) return '';
   const imgTag = `<img src="${signatureDataUrl}" style="height:60px;width:auto;" />`;
-  const markers = [
-    '{{signature_client}}',
-    '{{signature_client_1}}',
-    '{{signature_client_2}}',
-    '{{signature_client_3}}',
-    '{{ signature_client }}'
-  ];
   let result = String(html);
-  markers.forEach(m => {
-    result = result.split(m).join(imgTag);
-  });
-  // also handle regex-like escaped markers if present
-  result = result.replace(/\{\{\s*signature_client\s*\}\}/g, imgTag);
+  // Match {{signature_client}}, {{ signature_client_1 }}, and variations with any tags or entities inside
+  result = result.replace(/\{\{[^}]*signature_client(?:_[123])?[^}]*\}\}/g, imgTag);
   return result;
 }
 

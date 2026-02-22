@@ -12,7 +12,7 @@ interface SignatureBlockProps {
   onOverlayComplete: () => void;
   signatureData: string | null;
   onSignatureChange: (data: string | null) => void;
-  onDownload?: () => void;
+  onDownload?: (type: 'pdf' | 'html') => void;
 }
 
 export function SignatureBlock({
@@ -76,7 +76,7 @@ export function SignatureBlock({
             <div className="flex items-center gap-3">
               <button
                 disabled={!isSigned}
-                onClick={onDownload}
+                onClick={() => onDownload?.('html')}
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-[14px] font-bold bg-white border border-gray-100 text-gray-400 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed hover:text-gray-700 hover:border-gray-200 transition-colors"
               >
                 <Download className="w-4 h-4" />
@@ -84,7 +84,7 @@ export function SignatureBlock({
               </button>
               <button
                 disabled={!isSigned}
-                onClick={onDownload}
+                onClick={() => onDownload?.('pdf')}
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-[14px] font-bold bg-white border border-gray-100 text-gray-400 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed hover:text-gray-700 hover:border-gray-200 transition-colors"
               >
                 <Download className="w-4 h-4" />
@@ -115,7 +115,7 @@ export function SignatureBlock({
           {/* Sign/Download button */}
           {isSigned ? (
             <button
-              onClick={onDownload}
+              onClick={() => onDownload?.('pdf')}
               className="w-full py-5 rounded-[16px] text-[16px] font-bold text-white bg-[#00b06b] hover:bg-[#009b5d] transition-colors flex items-center justify-center gap-2 shadow-sm"
             >
               <Download className="w-5 h-5" />
