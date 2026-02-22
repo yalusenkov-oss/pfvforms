@@ -213,7 +213,7 @@ export default function SignPage() {
     <div className="min-h-screen bg-[#fafafc] flex flex-col font-sans">
       <Header />
 
-      <main className="flex-1 max-w-[800px] mx-auto w-full px-4 sm:px-6 py-8 space-y-8">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
         {/* Loading */}
         {loading && (
           <div className="flex flex-col items-center justify-center gap-4 py-20">
@@ -244,8 +244,8 @@ export default function SignPage() {
         {/* Contract loaded */}
         {!loading && !error && contractHtml && (
           <>
-            {/* Contract Info Card */}
-            <div className="animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+            {/* Contract Info — full width */}
+            <div className="animate-fade-in-up mb-6" style={{ animationDelay: '0.1s' }}>
               <ContractInfo
                 contractNumber={contractNumber}
                 trackName={workTitle}
@@ -254,29 +254,28 @@ export default function SignPage() {
               />
             </div>
 
-            {/* Contract Document */}
-            <div className="animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-              <ContractDocument htmlContent={contractHtml} />
-            </div>
+            {/* Two-column layout on desktop */}
+            <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+              {/* Left column: Contract Document (takes 3/5 on xl) */}
+              <div className="xl:col-span-3 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+                <ContractDocument htmlContent={contractHtml} />
+              </div>
 
-            {/* Signature Block */}
-            <div className="animate-fade-in-up space-y-6" style={{ animationDelay: '0.3s' }}>
-              <SignatureBlock
-                isSigned={isSigned}
-                signedDate={signedDate}
-                onSign={handleSign}
-                onSigningStart={handleSigningStart}
-                showOverlay={showOverlay}
-                onOverlayComplete={handleOverlayComplete}
-                signatureData={signatureData}
-                onSignatureChange={handleSignatureChange}
-                onDownload={handleDownload}
-              />
-            </div>
-
-            {/* Info Block */}
-            <div className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-              <InfoBlock />
+              {/* Right column: Signature + Info (takes 2/5 on xl) */}
+              <div className="xl:col-span-2 space-y-6 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+                <SignatureBlock
+                  isSigned={isSigned}
+                  signedDate={signedDate}
+                  onSign={handleSign}
+                  onSigningStart={handleSigningStart}
+                  showOverlay={showOverlay}
+                  onOverlayComplete={handleOverlayComplete}
+                  signatureData={signatureData}
+                  onSignatureChange={handleSignatureChange}
+                  onDownload={handleDownload}
+                />
+                <InfoBlock />
+              </div>
             </div>
           </>
         )}

@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
+import { Trash2 } from 'lucide-react';
 
 interface SignatureCanvasProps {
   onSignatureChange: (dataUrl: string | null) => void;
@@ -89,14 +90,14 @@ export function SignatureCanvas({ onSignatureChange }: SignatureCanvasProps) {
   }, [onSignatureChange]);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 max-w-sm">
       <div className="relative">
         <canvas
           ref={canvasRef}
-          width={800}
-          height={300}
+          width={600}
+          height={200}
           className="w-full border-2 border-dashed border-purple-200 rounded-xl bg-white cursor-crosshair touch-none"
-          style={{ maxHeight: '150px' }}
+          style={{ maxHeight: '120px' }}
           onMouseDown={startDrawing}
           onMouseMove={draw}
           onMouseUp={stopDrawing}
@@ -111,12 +112,15 @@ export function SignatureCanvas({ onSignatureChange }: SignatureCanvasProps) {
           </div>
         )}
       </div>
-      <button
-        onClick={clearCanvas}
-        className="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-100 rounded-[12px] text-[14px] font-medium text-gray-600 hover:bg-gray-100 transition-colors shadow-sm"
-      >
-        🗑 Очистить
-      </button>
+      <div className="flex justify-center">
+        <button
+          onClick={clearCanvas}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-500 bg-transparent hover:bg-gray-100/50 transition-colors"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+          Очистить
+        </button>
+      </div>
     </div>
   );
 }
