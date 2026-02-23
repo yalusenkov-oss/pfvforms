@@ -213,7 +213,7 @@ export default function SignPage() {
     <div className="min-h-screen bg-[#fafafc] flex flex-col font-sans">
       <Header />
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 xl:px-12">
         {/* Loading */}
         {loading && (
           <div className="flex flex-col items-center justify-center gap-4 py-20">
@@ -255,14 +255,14 @@ export default function SignPage() {
             </div>
 
             {/* Two-column layout on desktop */}
-            <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
-              {/* Left column: Contract Document (takes 3/5 on xl) */}
-              <div className="xl:col-span-3 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+            <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(360px,420px)] gap-6 items-start">
+              {/* Left column: Contract Document */}
+              <div className="min-w-0 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
                 <ContractDocument htmlContent={contractHtml} />
               </div>
 
-              {/* Right column: Signature + Info (takes 2/5 on xl) */}
-              <div className="xl:col-span-2 space-y-6 animate-fade-in-up md:sticky md:top-24" style={{ animationDelay: '0.3s' }}>
+              {/* Right column: Signature + Info */}
+              <div className="min-w-0 space-y-6 animate-fade-in-up xl:sticky xl:top-24" style={{ animationDelay: '0.3s' }}>
                 <SignatureBlock
                   isSigned={isSigned}
                   signedDate={signedDate}
