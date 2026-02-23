@@ -110,7 +110,8 @@ export default async function handler(req, res) {
         signBaseUrl,
         signExpiresDays,
         contractHtml: payload.contractHtml,
-        signSource: payload.signSource || 'internal'
+        signSource: payload.signSource || 'internal',
+        forceRegenerate: payload.forceRegenerate || false
       };
     } else if (action === 'get') {
       scriptPayload = { action: 'sign_get', token: payload.token };

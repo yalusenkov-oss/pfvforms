@@ -183,6 +183,7 @@ export function ContractGenerator({ data, onBack, onUpdateContractNumber }: Cont
       const res = await createSignLink(contractNumber, data.rowIndex, {
         contractHtml: signableContractHTML,
         signSource: 'internal',
+        forceRegenerate: !!signLink
       });
       if (res?.signUrl) {
         setSignLink(res.signUrl);

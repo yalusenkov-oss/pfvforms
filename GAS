@@ -1785,6 +1785,27 @@ function createSignLink(data) {
   const contractNumber = row[idx.contractNumber] || data.contractNumber;
   if (!contractNumber) return { success: false, error: 'Missing contract_number' };
 
+  // Добавленная проверка на существующую ссылку
+  const signCols = getSignColumns(sheet);
+  const existingToken = sheet.getRange(rowIndex, signCols.signToken).getValue();
+  const existingLink = sheet.getRange(rowIndex, signCols.signLink).getValue();
+  
+  if (existingToken && existingLink && !data.forceRegenerate && !data.regenerate) {
+    const existingExpiresAt = sheet.getRange(rowIndex, signCols.signExpiresAt).getValue();
+    let expiresStr = '';
+    try { 
+      expiresStr = existingExpiresAt instanceof Date ? existingExpiresAt.toISOString() : new Date(existingExpiresAt).toISOString(); 
+    } catch(e) {}
+    
+    return {
+      success: true,
+      signUrl: existingLink,
+      expiresAt: expiresStr,
+      contractNumber: contractNumber,
+      message: 'Ссылка уже была сгенерирована ранее, возвращаем старую.'
+    };
+  }
+
   const currentDate = new Date();
   const formattedDate = formatDate(currentDate);
   const futureDate = new Date();

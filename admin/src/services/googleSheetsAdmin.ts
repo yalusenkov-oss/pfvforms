@@ -154,7 +154,7 @@ export async function deleteSheetRow(sheet: string, rowIndex: number): Promise<b
 export async function createSignLink(
   contractNumber: string,
   rowIndex?: number,
-  payload?: { contractHtml?: string; signSource?: string }
+  payload?: { contractHtml?: string; signSource?: string; forceRegenerate?: boolean }
 ): Promise<{ signUrl?: string; token?: string; success?: boolean } | null> {
   const mainSiteBase = await getSignBaseUrl();
 
@@ -177,6 +177,7 @@ export async function createSignLink(
       row: rowIndex,
       contractHtml: payload?.contractHtml || '',
       signSource: payload?.signSource || 'internal',
+      forceRegenerate: payload?.forceRegenerate || false
     });
     if (!res.ok && (res.status === 404 || res.status === 405)) {
       res = await postDirectToScript({
@@ -187,6 +188,7 @@ export async function createSignLink(
         signExpiresDays: 7,
         contractHtml: payload?.contractHtml || '',
         signSource: payload?.signSource || 'internal',
+        forceRegenerate: payload?.forceRegenerate || false
       });
     }
     const text = await res.text();
