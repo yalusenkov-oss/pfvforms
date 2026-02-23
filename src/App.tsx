@@ -1633,7 +1633,7 @@ export function App() {
           {currentStep === 1 && <StepOne data={formData} onChange={handleChange} />}
           {currentStep === 2 && <StepTwo data={formData} onChange={handleChange} />}
           {currentStep === 3 && <StepThree agreed={agreed} onAgree={setAgreed} />}
-          {currentStep === 4 && <StepFour data={formData} onChange={handleChange} onGoToPromo={() => navigateTo('promo')} />}
+          {currentStep === 4 && <StepFour data={formData} onChange={handleChange} />}
         </div>
 
         {/* Navigation Buttons */}

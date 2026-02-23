@@ -143,6 +143,7 @@ export function DistributionList({ distributions, onView, onDelete, onStatusChan
                 <th className="text-left text-xs text-dark-400 font-medium px-4 py-3">Тариф</th>
                 <th className="text-left text-xs text-dark-400 font-medium px-4 py-3">Тип</th>
                 <th className="text-left text-xs text-dark-400 font-medium px-4 py-3">Дата подачи</th>
+                <th className="text-left text-xs text-dark-400 font-medium px-4 py-3">Площадки</th>
                 <th className="text-left text-xs text-dark-400 font-medium px-4 py-3">Сумма</th>
                 <th className="text-left text-xs text-dark-400 font-medium px-4 py-3">Подписание</th>
                 <th className="text-left text-xs text-dark-400 font-medium px-4 py-3">Статус</th>
@@ -175,6 +176,17 @@ export function DistributionList({ distributions, onView, onDelete, onStatusChan
                   </td>
                   <td className="px-4 py-3 text-sm text-dark-300">{RELEASE_TYPE_LABELS[d.releaseType]}</td>
                   <td className="px-4 py-3 text-sm text-dark-400">{formatDate(d.submittedAt)}</td>
+                  <td className="px-4 py-3">
+                    {d.platforms === 'no-apple' ? (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full border bg-purple-500/20 text-purple-400 border-purple-500/30">
+                        Без Apple
+                      </span>
+                    ) : (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full border border-dark-600 bg-dark-700/30 text-dark-400">
+                        Все
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-sm text-white font-medium">{formatPrice(d.totalPrice)}</td>
                   <td className="px-4 py-3">
                     {d.signStatus === 'signed' || d.signedUrl ? (
@@ -314,7 +326,7 @@ export function DistributionList({ distributions, onView, onDelete, onStatusChan
                 </div>
               </div>
               <div className="flex items-center justify-between text-xs text-dark-400">
-                <span>{TARIFF_LABELS[d.tariff]} · {RELEASE_TYPE_LABELS[d.releaseType]}</span>
+                <span>{TARIFF_LABELS[d.tariff]} · {RELEASE_TYPE_LABELS[d.releaseType]} · {d.platforms === 'no-apple' ? 'Без Apple' : 'Все'}</span>
                 <span className="text-white font-medium">{formatPrice(d.totalPrice)}</span>
               </div>
               <div className="flex items-center gap-2">

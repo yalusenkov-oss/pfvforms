@@ -415,6 +415,7 @@ function saveDistribution(data) {
         workTitle: data.releaseName || '',
         musicAuthor: musicAuthorValue || '',
         lyricsAuthor: lyricsAuthorValue || '',
+        platforms: data.platforms || '',
         email: data.email || '',
         contact: data.contactInfo || '',
         sheetUrl: SpreadsheetApp.getActiveSpreadsheet().getUrl()
@@ -745,6 +746,7 @@ function buildDistributionMessage(data) {
     `▸ Псевдоним: ${escapeMd(data.pseudonym || 'не указан')}`,
     `▸ Тариф: ${escapeMd(data.tariff)}`,
     `▸ Тип релиза: ${escapeMd(data.releaseType || 'не указан')}`,
+    `▸ Площадки: ${escapeMd(data.platforms === 'no-apple' ? 'Без Apple Music' : 'Все площадки')}`,
     `▸ Дата релиза: ${escapeMd(data.releaseDate || 'не указана')}`,
     "",
     "🎵 *Произведение*",
