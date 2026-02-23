@@ -160,6 +160,7 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
           <InfoRow label="Тип релиза" value={RELEASE_TYPE_LABELS[data.releaseType]} />
           <InfoRow label="Жанр" value={data.genre} />
           <InfoRow label="Язык" value={data.language} />
+          <InfoRow label="Площадки" value={data.platforms === 'no-apple' ? 'Без Apple Music' : 'Все площадки'} />
           <InfoRow label="Дата релиза" value={formatDate(data.releaseDate)} />
           <InfoRow label="Ссылка на релиз" value={data.releaseLink} link />
           <InfoRow label="Обложка" value={data.coverLink} link />
@@ -239,9 +240,6 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
                     )}
                     {!track.noSubstances && (
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 font-medium" title="Не подтверждено отсутствие запрещённых веществ">⚠️ В-ва</span>
-                    )}
-                    {track.platforms === 'no-apple' && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 border border-purple-500/30 font-medium" title="Без Apple Music">Без Apple</span>
                     )}
                   </div>
                 </div>

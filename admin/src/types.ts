@@ -8,7 +8,6 @@ export interface TrackData {
   composers: string[];
   explicit: boolean;
   noSubstances: boolean;
-  platforms: 'all' | 'no-apple';
   lyrics: string;
 }
 
@@ -28,6 +27,7 @@ export interface DistributionData {
   genre: string;
   language: string;
   releaseDate: string;
+  platforms: 'all' | 'no-apple';
   coverLink: string;
   tracks: TrackData[];
   tiktokStart: string;

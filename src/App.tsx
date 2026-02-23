@@ -174,6 +174,7 @@ function validateStep1(data: Record<string, string>): ValidationResult {
     errors.push('Укажите Pre-Save в Яндекс Музыке');
   }
   if (!data.karaokeAddition) errors.push('Выберите добавление караоке');
+  if (!data.platforms) errors.push('Выберите площадки для модерации');
 
   // Validate tracks
   const trackCount = getTrackCount(data);
@@ -187,7 +188,6 @@ function validateStep1(data: Record<string, string>): ValidationResult {
       if (!track?.explicitContent) errors.push(`Трек ${i + 1}: укажите наличие ненормативной лексики`);
       if (!track?.noSubstances) errors.push(`Трек ${i + 1}: необходимо подтвердить отсутствие упоминаний наркотических веществ`);
       if (!track?.lyrics?.trim()) errors.push(`Трек ${i + 1}: текст трека обязателен`);
-      if (!track?.platforms) errors.push(`Трек ${i + 1}: выберите площадки для модерации`);
     }
   } catch {
     errors.push('Заполните информацию о треках');

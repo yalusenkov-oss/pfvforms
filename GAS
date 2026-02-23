@@ -80,7 +80,7 @@ function setupDistributionSheet(sheet) {
     'base_price', 'karaoke_price', 'total_price', 'payment_proof_url', 'contract_number', 'percentage',
     'contract_status', 'music_author', 'lyrics_author', 'lyrics_texts', 'document_status', 'telegram_status',
     'sign_status', 'sign_token', 'sign_expires_at', 'sign_link', 'sign_doc_id', 'signed_url', 'signed_at',
-    'contract_html', 'sign_source', 'signed_pdf_id'
+    'contract_html', 'sign_source', 'signed_pdf_id', 'platforms'
   ];
 
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
@@ -377,15 +377,19 @@ function saveDistribution(data) {
       musicAuthorValue || '',
       lyricsAuthorValue || '',
       collectLyricsFromTracks(tracksArray) || '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      ''
+      '', // 35 document_status
+      '', // 36 telegram_status
+      '', // 37 sign_status
+      '', // 38 sign_token
+      '', // 39 sign_expires_at
+      '', // 40 sign_link
+      '', // 41 sign_doc_id
+      '', // 42 signed_url
+      '', // 43 signed_at
+      '', // 44 contract_html
+      '', // 45 sign_source
+      '', // 46 signed_pdf_id
+      data.platforms || '' // 47 platforms
     ];
 
     sheet.appendRow(row);
@@ -1158,7 +1162,8 @@ function mapDistributionRow(headers, row) {
     signExpiresAt: raw.sign_expires_at || '',
     signDocId: raw.sign_doc_id || '',
     signedUrl: raw.signed_url || '',
-    signedAt: raw.signed_at || ''
+    signedAt: raw.signed_at || '',
+    platforms: raw.platforms || ''
   };
 }
 

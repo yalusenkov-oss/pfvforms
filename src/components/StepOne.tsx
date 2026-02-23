@@ -61,7 +61,6 @@ interface TrackData {
   composers: string[];
   explicitContent: string;
   noSubstances: boolean;
-  platforms: string;
   lyrics: string;
 }
 
@@ -74,7 +73,6 @@ function getDefaultTrack(): TrackData {
     composers: [''],
     explicitContent: '',
     noSubstances: false,
-    platforms: 'all',
     lyrics: '',
   };
 }
@@ -187,7 +185,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
               : 'border-gray-200 bg-gradient-to-br from-white to-gray-50/50 hover:border-gray-300'
           )}>
             {tariff === 'Базовый' && (
-              <div className="absolute top-3 left-3">
+              <div className="absolute top-3 right-3">
                 <span className="text-[10px] font-bold text-white px-2.5 py-1 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 shadow-md">✓ ВЫБРАНО</span>
               </div>
             )}
@@ -222,7 +220,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
               : 'border-gray-200 bg-gradient-to-br from-white to-gray-50/50 hover:border-gray-300'
           )}>
             {tariff === 'Продвинутый' && (
-              <div className="absolute top-3 left-3">
+              <div className="absolute top-3 right-3">
                 <span className="text-[10px] font-bold text-white px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500 to-purple-600 shadow-md">✓ ВЫБРАНО</span>
               </div>
             )}
@@ -257,7 +255,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
               : 'border-emerald-300 bg-gradient-to-br from-emerald-50/80 to-emerald-50/30 hover:border-emerald-400'
           )}>
             {tariff === 'Премиум' && (
-              <div className="absolute top-3 left-3">
+              <div className="absolute top-3 right-3">
                 <span className="text-[10px] font-bold text-white px-2.5 py-1 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-md">✓ ВЫБРАНО</span>
               </div>
             )}
@@ -297,7 +295,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
               : 'border-orange-300 bg-gradient-to-br from-orange-50/80 to-orange-50/30 hover:border-orange-400'
           )}>
             {tariff === 'Платинум' && (
-              <div className="absolute top-3 left-3">
+              <div className="absolute top-3 right-3">
                 <span className="text-[10px] font-bold text-white px-2.5 py-1 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 shadow-md">✓ ВЫБРАНО</span>
               </div>
             )}
@@ -811,7 +809,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
                     <Divider label="Контент" />
 
                     {/* Explicit */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-4">
                       <RadioGroup
                         label="Ненормативная лексика" required
                         icon={<AlertCircle className="w-4 h-4" />}
@@ -821,6 +819,21 @@ export function StepOne({ data, onChange }: StepOneProps) {
                         onChange={(v) => updateTrack(i, 'explicitContent', v)}
                         horizontal
                       />
+                    </div>
+
+                    {/* Lyrics */}
+                    <div className="mt-4">
+                      <TextArea
+                        label="Текст трека" required
+                        icon={<PenTool className="w-4 h-4" />}
+                        value={track.lyrics}
+                        onChange={(e) => updateTrack(i, 'lyrics', e.target.value)}
+                        placeholder="Текст трека..."
+                        className="min-h-[100px]"
+                      />
+                      <p className="text-xs text-gray-500 mt-2">
+                        Добавление текста является обязательным для проверки трека на упоминание наркотических веществ.
+                      </p>
                     </div>
 
                     {/* Checkbox No Substances */}
@@ -845,43 +858,32 @@ export function StepOne({ data, onChange }: StepOneProps) {
                         onChange={(e) => updateTrack(i, 'noSubstances', e.target.checked)}
                       />
                     </label>
-
-                    {/* Lyrics */}
-                    <div className="mt-4">
-                      <TextArea
-                        label="Текст трека" required
-                        icon={<PenTool className="w-4 h-4" />}
-                        value={track.lyrics}
-                        onChange={(e) => updateTrack(i, 'lyrics', e.target.value)}
-                        placeholder="Текст трека..."
-                        className="min-h-[100px]"
-                      />
-                      <p className="text-xs text-gray-500 mt-2">
-                        Добавление текста является обязательным для проверки трека на упоминание наркотических веществ.
-                      </p>
-                    </div>
-
-                    {/* Platforms */}
-                    <div className="mt-4">
-                      <RadioGroup
-                        label="Площадки" required
-                        icon={<Globe className="w-4 h-4" />}
-                        name={`platforms_${i}`}
-                        options={['Все площадки', 'Без Apple Music']}
-                        value={track.platforms === 'no-apple' ? 'Без Apple Music' : track.platforms === 'all' ? 'Все площадки' : ''}
-                        onChange={(v) => updateTrack(i, 'platforms', v === 'Без Apple Music' ? 'no-apple' : 'all')}
-                        horizontal
-                      />
-                      <p className="text-xs text-gray-500 mt-2">
-                        Прохождение модерации без Apple Music осуществляется быстрее. После выпуска можно добавить релиз на данную площадку, написав в поддержку.
-                      </p>
-                    </div>
                   </div>
                 )}
               </div>
             );
           })}
         </div>
+      </StepCard>
+
+      {/* ═══ CARD 4.5: Platforms ═══ */}
+      <StepCard
+        title="Площадки дистрибуции"
+        subtitle="Выберите площадки для размещения релиза"
+        icon={<Globe className="w-5 h-5" />}
+      >
+        <RadioGroup
+          label="Размещение" required
+          icon={<Globe className="w-4 h-4" />}
+          name="platforms"
+          options={['Все площадки', 'Без Apple Music']}
+          value={data.platforms === 'no-apple' ? 'Без Apple Music' : data.platforms === 'all' ? 'Все площадки' : ''}
+          onChange={(v) => onChange('platforms', v === 'Без Apple Music' ? 'no-apple' : 'all')}
+          horizontal
+        />
+        <p className="text-xs text-gray-500 mt-2">
+          Прохождение модерации без Apple Music осуществляется быстрее. После выпуска можно добавить релиз на данную площадку, написав в поддержку.
+        </p>
       </StepCard>
 
       {/* ═══ CARD 5: TikTok ═══ */}

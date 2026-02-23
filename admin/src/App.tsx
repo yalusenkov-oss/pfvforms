@@ -136,7 +136,6 @@ export function App() {
       composers: toStringArray(track?.composers),
       explicit: normalizeBool(track?.explicit ?? track?.explicitContent),
       noSubstances: normalizeBool(track?.noSubstances ?? track?.substances ?? track?.substanceMention),
-      platforms: track?.platforms === 'no-apple' ? 'no-apple' : 'all',
       lyrics: String(track?.lyrics || ''),
     }));
   };
@@ -168,6 +167,7 @@ export function App() {
         genre: r.genre || '',
         language: r.language || '',
         releaseDate: r.releaseDate || r.release_date || '',
+        platforms: r.platforms === 'no-apple' ? 'no-apple' : 'all',
         coverLink: r.coverLink || r.cover_link || '',
         tracks: normalizeTracks(r.tracks || r.tracks_json),
         tiktokStart: r.tiktokStart || r.tiktok_excerpt || '',
