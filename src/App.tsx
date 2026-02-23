@@ -750,12 +750,12 @@ export function App() {
             </div>
 
             {/* Tariff Cards Grid - 2 основных сверху, 2 дополнительных снизу */}
-            <div className="grid items-start gap-5 md:grid-cols-2">
+            <div className="grid items-stretch gap-5 md:grid-cols-2">
               {TARIFFS.map((tariff, tariffIndex) => (
                 <div
                   key={tariff.name}
                   className={cn(
-                    'rounded-2xl border-2 p-6 bg-white transition-all duration-300 hover:shadow-lg hover:-translate-y-1',
+                    'rounded-2xl border-2 p-6 bg-white transition-all duration-300 hover:shadow-lg hover:-translate-y-1 h-full flex flex-col',
                     tariff.cardClass
                   )}
                 >
@@ -841,7 +841,7 @@ export function App() {
                   </div>
 
                   {/* CTA Button */}
-                  <div className="mb-4">
+                  <div className="mb-4 mt-auto">
                     <button
                       onClick={() => navigateTo('distribution')}
                       className={cn(
