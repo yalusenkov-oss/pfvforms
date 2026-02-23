@@ -153,8 +153,15 @@ export default function SignPage() {
   const injectSignatureLocally = (html: string, dataUrl: string) => {
     const imgTag = `<img src="${dataUrl}" style="height:60px;width:auto;" />`;
     let result = String(html);
-    // Use robust regex to catch {{signature_client}} even if wrapped in spans or &nbsp;
-    result = result.replace(/\{\{[^}]*signature_client(?:_[123])?[^}]*\}\}/g, imgTag);
+
+    // Replace all possible client/licensor signature markers, even with inner tags or entities
+    const regex = /\{\{(?:<[^>]*>|&[^;]+;|\s)*(?:signature_client|signature_licensor)(?:_[123])?(?:<[^>]*>|&[^;]+;|\s)*\}\}/g;
+    result = result.replace(regex, imgTag);
+
+    // Fallback simple replacement just in case
+    result = result.replace(/\{\{\s*signature_client\s*\}\}/g, imgTag);
+    result = result.replace(/\{\{\s*signature_licensor\s*\}\}/g, imgTag);
+
     return result;
   };
 

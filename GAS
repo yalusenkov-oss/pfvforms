@@ -1751,8 +1751,15 @@ function injectSignatureIntoHtml(html, signatureDataUrl) {
   if (!html) return '';
   const imgTag = `<img src="${signatureDataUrl}" style="height:60px;width:auto;" />`;
   let result = String(html);
-  // Match {{signature_client}}, {{ signature_client_1 }}, and variations with any tags or entities inside
-  result = result.replace(/\{\{[^}]*signature_client(?:_[123])?[^}]*\}\}/g, imgTag);
+  
+  // Replace all possible client/licensor signature markers, even with inner tags or entities
+  const regex = /\{\{(?:<[^>]*>|&[^;]+;|\s)*(?:signature_client|signature_licensor)(?:_[123])?(?:<[^>]*>|&[^;]+;|\s)*\}\}/g;
+  result = result.replace(regex, imgTag);
+
+  // Fallback simple replacement just in case
+  result = result.replace(/\{\{\s*signature_client\s*\}\}/g, imgTag);
+  result = result.replace(/\{\{\s*signature_licensor\s*\}\}/g, imgTag);
+  
   return result;
 }
 
@@ -2021,11 +2028,15 @@ function submitSignature(data) {
     const pdfFile = createPdfFromHtml(signedHtml, fileName);
     const signedUrl = pdfFile.getUrl();
     const downloadUrl = `https://drive.google.com/uc?export=download&id=${pdfFile.getId()}`;
-
     sheet.getRange(r + 1, signCols.signStatus).setValue('signed');
     sheet.getRange(r + 1, signCols.signedUrl).setValue(signedUrl);
     sheet.getRange(r + 1, signCols.signedAt).setValue(new Date().toISOString());
     sheet.getRange(r + 1, extraCols.signedPdfId).setValue(pdfFile.getId());
+    
+    // Save the signed HTML back so it loads with signature next time
+    const storedHtml = storeContractHtml(signedHtml, fileName, row[extraCols.contractHtml - 1]);
+    sheet.getRange(r + 1, extraCols.contractHtml).setValue(storedHtml.value);
+    
     const contractStatusCol = getOrCreateColumn(sheet, 'contract_status');
     sheet.getRange(r + 1, contractStatusCol).setValue('signed');
 
