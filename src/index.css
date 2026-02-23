@@ -15,13 +15,27 @@ body {
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideDown {
-  from { opacity: 0; max-height: 0; }
-  to { opacity: 1; max-height: 1000px; }
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+
+  to {
+    opacity: 1;
+    max-height: 1000px;
+  }
 }
 
 .animate-in {
@@ -30,18 +44,41 @@ body {
 
 /* Sign page animations */
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes floatSparkle {
-  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.7; }
-  50% { transform: translateY(-15px) rotate(180deg); opacity: 1; }
+
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0.7;
+  }
+
+  50% {
+    transform: translateY(-15px) rotate(180deg);
+    opacity: 1;
+  }
 }
 
 .animate-fade-in-up {
@@ -60,10 +97,23 @@ body {
   animation: floatSparkle 2s ease-in-out infinite;
 }
 
-.contract-scroll::-webkit-scrollbar { width: 6px; }
-.contract-scroll::-webkit-scrollbar-track { background: #f3f4f6; border-radius: 3px; }
-.contract-scroll::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
-.contract-scroll::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+.contract-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.contract-scroll::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 3px;
+}
+
+.contract-scroll::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.contract-scroll::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
@@ -192,11 +242,12 @@ input[type="date"]:hover::-moz-calendar-picker-indicator {
 
 /* Responsive Adaptations */
 @media (max-width: 1024px) {
+
   /* Tariff cards: 2 columns instead of 2 */
   .tariff-grid {
     grid-template-columns: 1fr 1fr;
   }
-  
+
   /* Information blocks: 1 column */
   .info-blocks {
     grid-template-columns: 1fr;
@@ -204,22 +255,23 @@ input[type="date"]:hover::-moz-calendar-picker-indicator {
 }
 
 @media (max-width: 768px) {
+
   /* Tariff cards: single column */
   .tariff-grid {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  
+
   /* Features list: single column */
   .features-list {
     grid-template-columns: 1fr;
   }
-  
+
   /* Reduce padding on cards */
   .tariff-card {
     padding: 24px 20px;
   }
-  
+
   /* Info pills: scroll horizontally if needed */
   .tags-container {
     overflow-x: auto;
@@ -227,4 +279,97 @@ input[type="date"]:hover::-moz-calendar-picker-indicator {
     gap: 12px;
     padding-bottom: 8px;
   }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes progressFill {
+  from {
+    width: 0%;
+  }
+
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes floatSparkle {
+
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0.7;
+  }
+
+  50% {
+    transform: translateY(-15px) rotate(180deg);
+    opacity: 1;
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.5s ease-out forwards;
+}
+
+.animate-float-sparkle {
+  animation: floatSparkle 2s ease-in-out infinite;
+}
+
+/* Custom scrollbar for contract */
+.contract-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.contract-scroll::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 3px;
+}
+
+.contract-scroll::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.contract-scroll::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
 }

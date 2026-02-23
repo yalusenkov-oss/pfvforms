@@ -255,7 +255,7 @@ export default function SignPage() {
             </div>
 
             {/* Two-column layout on desktop */}
-            <div className="grid grid-cols-1 xl:grid-cols-5 gap-6 items-start">
+            <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
               {/* Left column: Contract Document (takes 3/5 on xl) */}
               <div className="xl:col-span-3 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
                 <ContractDocument htmlContent={contractHtml} />

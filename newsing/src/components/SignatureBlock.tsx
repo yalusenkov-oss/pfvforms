@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { Download, ShieldCheck, CheckCircle, Circle } from 'lucide-react';
 import { SignatureCanvas } from './SignatureCanvas';
 import { SigningOverlay } from './SigningOverlay';
@@ -24,8 +24,6 @@ export function SignatureBlock({
   signatureData,
   onSignatureChange,
 }: SignatureBlockProps) {
-  const [_activeTab] = useState<'draw'>('draw');
-
   const handleSign = useCallback(() => {
     if (!signatureData || isSigned) return;
     onSigningStart();
@@ -48,9 +46,9 @@ export function SignatureBlock({
           </div>
         </div>
 
-        <div className="p-6 sm:p-8 space-y-6">
-          {/* Status & Download row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="p-6 sm:p-8 space-y-5">
+          {/* Status & Download */}
+          <div className="space-y-3">
             {/* Signature status */}
             {isSigned ? (
               <div className="flex items-start gap-3 p-4 rounded-xl bg-green-50 border border-green-200">
@@ -78,17 +76,17 @@ export function SignatureBlock({
             )}
 
             {/* Download buttons */}
-            <div className="flex items-center gap-3 justify-end">
+            <div className="flex items-center gap-3">
               <button
                 disabled={!isSigned}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 <Download className="w-4 h-4" />
                 HTML
               </button>
               <button
                 disabled={!isSigned}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 <Download className="w-4 h-4" />
                 PDF
@@ -98,20 +96,8 @@ export function SignatureBlock({
 
           {/* Signature input */}
           {!isSigned && (
-            <div className="space-y-4">
-              {/* Tabs */}
-              <div className="flex gap-1 bg-gray-100 p-1 rounded-lg w-fit">
-                <button
-                  className="px-4 py-2 rounded-md text-sm font-semibold bg-white text-purple-700 shadow-sm"
-                >
-                  🖊️ Нарисовать подпись
-                </button>
-              </div>
-
-              {/* Canvas */}
-              {_activeTab === 'draw' && (
-                <SignatureCanvas onSignatureChange={onSignatureChange} />
-              )}
+            <div className="flex justify-center">
+              <SignatureCanvas onSignatureChange={onSignatureChange} />
             </div>
           )}
 

@@ -13,7 +13,7 @@ export function ContractInfo({ contractNumber, trackName, authorName, releaseTyp
       <div className="absolute top-5 left-5 sm:top-6 sm:left-6 w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
         <FileText className="w-5 h-5 text-purple-600" />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 pt-14 sm:pt-0 sm:pl-16">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 pt-14 sm:pt-0 sm:pl-16">
         <div>
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Номер договора</p>
           <p className="text-2xl font-bold font-mono text-gray-900">{contractNumber}</p>

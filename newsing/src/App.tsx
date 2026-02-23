@@ -157,9 +157,9 @@ export function App() {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50/30">
       <Header />
       
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-        {/* Contract Info Card */}
-        <div className="animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Contract Info — full width */}
+        <div className="animate-fade-in-up mb-6" style={{ animationDelay: '0.1s' }}>
           <ContractInfo
             contractNumber="PFV-202602-8683"
             trackName="Северное сияние"
@@ -168,28 +168,28 @@ export function App() {
           />
         </div>
 
-        {/* Contract Document */}
-        <div className="animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-          <ContractDocument htmlContent={sampleContractHTML} />
-        </div>
+        {/* Two-column layout on desktop */}
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+          {/* Left column: Contract Document (takes 3/5 on xl) */}
+          <div className="xl:col-span-3 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+            <ContractDocument htmlContent={sampleContractHTML} />
+          </div>
 
-        {/* Signature Block */}
-        <div className="animate-fade-in-up space-y-6" style={{ animationDelay: '0.3s' }}>
-          <SignatureBlock
-            isSigned={isSigned}
-            signedDate={signedDate}
-            onSign={handleSign}
-            onSigningStart={handleSigningStart}
-            showOverlay={showOverlay}
-            onOverlayComplete={handleOverlayComplete}
-            signatureData={signatureData}
-            onSignatureChange={handleSignatureChange}
-          />
-        </div>
+          {/* Right column: Signature + Info (takes 2/5 on xl) */}
+          <div className="xl:col-span-2 space-y-6 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+            <SignatureBlock
+              isSigned={isSigned}
+              signedDate={signedDate}
+              onSign={handleSign}
+              onSigningStart={handleSigningStart}
+              showOverlay={showOverlay}
+              onOverlayComplete={handleOverlayComplete}
+              signatureData={signatureData}
+              onSignatureChange={handleSignatureChange}
+            />
 
-        {/* Info Block */}
-        <div className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-          <InfoBlock />
+            <InfoBlock />
+          </div>
         </div>
       </main>
 
