@@ -111,7 +111,7 @@ export function SignatureBlock({
               className="w-full py-4 rounded-xl text-base font-bold text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg shadow-green-200/50 transition-all duration-200 flex items-center justify-center gap-2"
             >
               <Download className="w-5 h-5" />
-              ⬇️ Подписан — скачать снова
+              Скачать договор
             </button>
           ) : (
             <button
