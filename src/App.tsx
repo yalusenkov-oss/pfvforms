@@ -750,12 +750,12 @@ export function App() {
             </div>
 
             {/* Tariff Cards Grid - 2 основных сверху, 2 дополнительных снизу */}
-            <div className="grid items-stretch gap-5 md:grid-cols-2">
+            <div className="grid items-start gap-5 md:grid-cols-2">
               {TARIFFS.map((tariff, tariffIndex) => (
                 <div
                   key={tariff.name}
                   className={cn(
-                    'rounded-2xl border-2 p-6 bg-white transition-all duration-300 hover:shadow-lg hover:-translate-y-1 h-full flex flex-col',
+                    'rounded-2xl border-2 p-6 bg-white transition-all duration-300 hover:shadow-lg hover:-translate-y-1',
                     tariff.cardClass
                   )}
                 >
@@ -768,20 +768,22 @@ export function App() {
                   </div>
 
                   {/* Badge */}
-                  {tariff.badge && (
-                    <div className={cn(
-                      'mb-3 inline-block rounded-full px-3 py-1 text-xs font-bold capitalize',
-                      tariff.recommended
-                        ? 'bg-emerald-100 text-emerald-700'
-                        : tariff.name === 'Платинум'
-                          ? 'bg-amber-100 text-amber-700'
-                          : tariff.name === 'Продвинутый'
-                            ? 'bg-sky-100 text-sky-700'
-                            : 'bg-gray-100 text-gray-700'
-                    )}>
-                      {tariff.badge}
-                    </div>
-                  )}
+                  <div className="h-7 mb-3">
+                    {tariff.badge && (
+                      <div className={cn(
+                        'inline-block rounded-full px-3 py-1 text-xs font-bold capitalize',
+                        tariff.recommended
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : tariff.name === 'Платинум'
+                            ? 'bg-amber-100 text-amber-700'
+                            : tariff.name === 'Продвинутый'
+                              ? 'bg-sky-100 text-sky-700'
+                              : 'bg-gray-100 text-gray-700'
+                      )}>
+                        {tariff.badge}
+                      </div>
+                    )}
+                  </div>
 
                   {/* Title & Subtitle */}
                   <div className="mb-4">
@@ -804,7 +806,7 @@ export function App() {
                       </div>
                       <div className="pt-2.5 border-t border-gray-200">
                         <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-1">Срок обработки</p>
-                        <p className="text-sm font-semibold text-gray-900">{tariff.turnaround}</p>
+                        <p className="text-sm font-semibold text-gray-900 md:min-h-[40px] flex items-center">{tariff.turnaround}</p>
                       </div>
                     </div>
                   </div>
@@ -841,7 +843,7 @@ export function App() {
                   </div>
 
                   {/* CTA Button */}
-                  <div className="mb-4 mt-auto">
+                  <div className="mb-4">
                     <button
                       onClick={() => navigateTo('distribution')}
                       className={cn(
