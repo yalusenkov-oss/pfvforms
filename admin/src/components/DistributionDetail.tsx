@@ -89,9 +89,9 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
               <span className={cn(
                 'text-xs px-2 py-0.5 rounded-full',
                 data.tariff === 'basic' ? 'bg-slate-500/20 text-slate-400' :
-                data.tariff === 'advanced' ? 'bg-blue-500/20 text-blue-400' :
-                data.tariff === 'premium' ? 'bg-purple-500/20 text-purple-400' :
-                'bg-amber-500/20 text-amber-400'
+                  data.tariff === 'advanced' ? 'bg-blue-500/20 text-blue-400' :
+                    data.tariff === 'premium' ? 'bg-purple-500/20 text-purple-400' :
+                      'bg-amber-500/20 text-amber-400'
               )}>
                 {TARIFF_LABELS[data.tariff]}
               </span>
@@ -184,7 +184,14 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
 
         {/* Signing */}
         <Section title="Подписание" icon={<FileText size={16} className="text-emerald-400" />}>
-          <InfoRow label="Статус" value={data.signStatus || 'Не создано'} />
+          <InfoRow
+            label="Статус"
+            value={
+              data.signStatus === 'signed' || data.signedUrl ? 'Подписан' :
+                data.signLink ? 'Ссылка отправлена' :
+                  'Не создано'
+            }
+          />
           <InfoRow label="Ссылка на подпись" value={data.signLink || ''} link />
           <InfoRow label="Подписанный договор" value={data.signedUrl || ''} link />
           {onCreateSignLink && (

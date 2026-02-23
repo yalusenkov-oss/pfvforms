@@ -144,6 +144,7 @@ export function DistributionList({ distributions, onView, onDelete, onStatusChan
                 <th className="text-left text-xs text-dark-400 font-medium px-4 py-3">Тип</th>
                 <th className="text-left text-xs text-dark-400 font-medium px-4 py-3">Дата подачи</th>
                 <th className="text-left text-xs text-dark-400 font-medium px-4 py-3">Сумма</th>
+                <th className="text-left text-xs text-dark-400 font-medium px-4 py-3">Подписание</th>
                 <th className="text-left text-xs text-dark-400 font-medium px-4 py-3">Статус</th>
                 <th className="text-right text-xs text-dark-400 font-medium px-4 py-3">Действия</th>
               </tr>
@@ -175,6 +176,21 @@ export function DistributionList({ distributions, onView, onDelete, onStatusChan
                   <td className="px-4 py-3 text-sm text-dark-300">{RELEASE_TYPE_LABELS[d.releaseType]}</td>
                   <td className="px-4 py-3 text-sm text-dark-400">{formatDate(d.submittedAt)}</td>
                   <td className="px-4 py-3 text-sm text-white font-medium">{formatPrice(d.totalPrice)}</td>
+                  <td className="px-4 py-3">
+                    {d.signStatus === 'signed' || d.signedUrl ? (
+                      <span className="text-xs px-2 py-0.5 rounded-full border bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                        Подписан
+                      </span>
+                    ) : d.signLink ? (
+                      <span className="text-xs px-2 py-0.5 rounded-full border bg-blue-500/20 text-blue-400 border-blue-500/30">
+                        Отправлен
+                      </span>
+                    ) : (
+                      <span className="text-xs px-2 py-0.5 rounded-full border bg-dark-700/50 text-dark-400 border-dark-600">
+                        Не создано
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="relative">
                       <button
@@ -282,9 +298,20 @@ export function DistributionList({ distributions, onView, onDelete, onStatusChan
                     <p className="text-xs text-dark-400">{d.mainArtist} · {d.id}</p>
                   </div>
                 </div>
-                <span className={cn('text-xs px-2 py-0.5 rounded-full border shrink-0', STATUS_COLORS[d.status])}>
-                  {STATUS_LABELS[d.status]}
-                </span>
+                <div className="flex flex-col gap-1 items-end">
+                  <span className={cn('text-xs px-2 py-0.5 rounded-full border shrink-0', STATUS_COLORS[d.status])}>
+                    {STATUS_LABELS[d.status]}
+                  </span>
+                  {d.signStatus === 'signed' || d.signedUrl ? (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full border bg-emerald-500/20 text-emerald-400 border-emerald-500/30 shrink-0">
+                      Подписан
+                    </span>
+                  ) : d.signLink ? (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full border bg-blue-500/20 text-blue-400 border-blue-500/30 shrink-0">
+                      Отправлен
+                    </span>
+                  ) : null}
+                </div>
               </div>
               <div className="flex items-center justify-between text-xs text-dark-400">
                 <span>{TARIFF_LABELS[d.tariff]} · {RELEASE_TYPE_LABELS[d.releaseType]}</span>

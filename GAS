@@ -1858,7 +1858,6 @@ function createSignLink(data) {
   const licensorName = replacements['{{licensor_name}}'] || 'Без имени';
   const fileName = `Договор №${contractNumber} - ${licensorName}`;
   let contractHtml = data.contractHtml ? String(data.contractHtml) : '';
-  const signCols = getSignColumns(sheet);
   const extraCols = getSignExtraColumns(sheet);
 
   if (!contractHtml) {

@@ -187,6 +187,10 @@ export function App() {
         totalPrice: normalizeNumber(r.totalPrice ?? r.total ?? r.total_price),
         contractNumber: r.contractNumber || r.contract_number || '',
         rowIndex: Number(r._row || r.row || 0) || undefined,
+        signStatus: r.signStatus || r.sign_status || '',
+        signLink: r.signLink || r.sign_link || '',
+        signedUrl: r.signedUrl || r.signed_url || '',
+        signedAt: r.signedAt || r.signed_at || '',
       }));
 
       // Apply local status overrides on top of remote data
