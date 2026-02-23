@@ -14,13 +14,12 @@ export function ContractDocument({ htmlContent }: ContractDocumentProps) {
         </div>
       </div>
       <div className="p-4 sm:p-6 flex-1 min-h-0">
-        <div
-          className="contract-scroll max-h-[70vh] xl:max-h-none xl:h-full overflow-y-auto border border-gray-200 rounded-lg bg-gray-50 p-4 sm:p-6"
-          style={{ fontSize: '12px', lineHeight: '1.6' }}
-        >
-          <div
-            className="prose prose-sm max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-strong:text-gray-900"
-            dangerouslySetInnerHTML={{ __html: htmlContent }}
+        <div className="contract-scroll max-h-[70vh] xl:max-h-[800px] overflow-hidden border border-gray-200 rounded-lg bg-gray-50">
+          <iframe
+            title="contract-preview"
+            srcDoc={htmlContent}
+            sandbox=""
+            className="w-full h-[70vh] xl:h-[800px] bg-white border-0"
           />
         </div>
       </div>

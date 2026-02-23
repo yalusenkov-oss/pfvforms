@@ -90,7 +90,7 @@ export function SignatureCanvas({ onSignatureChange }: SignatureCanvasProps) {
   }, [onSignatureChange]);
 
   return (
-    <div className="space-y-3 max-w-sm">
+    <div className="space-y-3 w-full">
       <div className="relative">
         <canvas
           ref={canvasRef}
