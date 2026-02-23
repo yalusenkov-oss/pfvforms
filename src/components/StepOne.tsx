@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Input, TextArea, RadioGroup, InfoBox, StepCard, Divider, NumberStepper, DatePicker, Select } from './UI';
 import {
   Music2, User, Link2, Disc3, Calendar, Image, Globe, Clock,
-  Mic2, PenTool, Hash, Bookmark, TicketPercent, Pill, Type, Banknote,
+  Mic2, PenTool, Hash, Bookmark, TicketPercent, Type, Banknote,
   AlertCircle, ChevronDown, ChevronUp, Plus, X, Users, ChevronRight
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
@@ -14,10 +14,10 @@ interface StepOneProps {
 
 /* ═══ Pricing data ═══ */
 const PRICES: Record<string, Record<string, number>> = {
-  'Базовый':      { 'Single': 500,  'EP': 700,  'Album': 900  },
-  'Продвинутый':  { 'Single': 690,  'EP': 890,  'Album': 1200 },
-  'Премиум':      { 'Single': 1200, 'EP': 1690, 'Album': 2290 },
-  'Платинум':     { 'Single': 4990, 'EP': 6490, 'Album': 7990 },
+  'Базовый': { 'Single': 500, 'EP': 700, 'Album': 900 },
+  'Продвинутый': { 'Single': 690, 'EP': 890, 'Album': 1200 },
+  'Премиум': { 'Single': 1200, 'EP': 1690, 'Album': 2290 },
+  'Платинум': { 'Single': 4990, 'EP': 6490, 'Album': 7990 },
 };
 
 const KARAOKE_PRICES: Record<string, number> = {
@@ -60,7 +60,8 @@ interface TrackData {
   lyricists: string[];
   composers: string[];
   explicitContent: string;
-  substanceMention: string;
+  noSubstances: boolean;
+  platforms: string;
   lyrics: string;
 }
 
@@ -72,7 +73,8 @@ function getDefaultTrack(): TrackData {
     lyricists: [''],
     composers: [''],
     explicitContent: '',
-    substanceMention: '',
+    noSubstances: false,
+    platforms: 'all',
     lyrics: '',
   };
 }
@@ -150,7 +152,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
     if (!track.artists || track.artists.length === 0) return '';
     const parts: string[] = [];
     const featParts: string[] = [];
-    
+
     track.artists.forEach(a => {
       if (a.name.trim()) {
         if (a.type === 'feat') {
@@ -160,7 +162,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
         }
       }
     });
-    
+
     let result = parts.join(', ');
     if (featParts.length > 0) {
       result += (result ? ' feat. ' : 'feat. ') + featParts.join(', ');
@@ -660,12 +662,12 @@ export function StepOne({ data, onChange }: StepOneProps) {
                           <Plus className="w-3.5 h-3.5" /> Добавить исполнителя
                         </button>
                       </div>
-                      
+
                       <div className="space-y-2">
                         {track.artists.map((artist, ai) => (
                           <div key={ai} className="flex items-center gap-2">
                             <span className="text-xs text-gray-400 w-5 text-right flex-shrink-0 font-mono">{ai + 1}.</span>
-                            
+
                             {ai > 0 && (
                               <Select
                                 value={artist.type}
@@ -681,7 +683,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
                                 className="w-28 flex-shrink-0 text-xs py-2.5"
                               />
                             )}
-                            
+
                             <input
                               className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 shadow-sm transition-all placeholder:text-gray-400 focus:border-purple-400 focus:outline-none focus:ring-3 focus:ring-purple-100 hover:border-purple-300"
                               value={artist.name}
@@ -692,7 +694,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
                               }}
                               placeholder={ai === 0 ? 'Основной исполнитель' : 'Имя исполнителя'}
                             />
-                            
+
                             {track.artists.length > 1 && (
                               <button
                                 type="button"
@@ -808,7 +810,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
 
                     <Divider label="Контент" />
 
-                    {/* Explicit & Substances */}
+                    {/* Explicit */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <RadioGroup
                         label="Ненормативная лексика" required
@@ -819,25 +821,61 @@ export function StepOne({ data, onChange }: StepOneProps) {
                         onChange={(v) => updateTrack(i, 'explicitContent', v)}
                         horizontal
                       />
-                      <RadioGroup
-                        label="Запрещённые вещества" required
-                        icon={<Pill className="w-4 h-4" />}
-                        name={`substance_${i}`}
-                        options={['Да', 'Нет']}
-                        value={track.substanceMention}
-                        onChange={(v) => updateTrack(i, 'substanceMention', v)}
-                        horizontal
-                      />
                     </div>
 
+                    {/* Checkbox No Substances */}
+                    <label className="flex items-start gap-3 p-4 rounded-xl border cursor-pointer border-gray-200 bg-white hover:border-purple-300 transition-all group mt-4">
+                      <div className="flex-shrink-0 mt-0.5">
+                        <div className={cn(
+                          "w-5 h-5 rounded border flex items-center justify-center transition-colors",
+                          track.noSubstances ? "bg-purple-600 border-purple-600 text-white" : "border-gray-300 bg-white group-hover:border-purple-400"
+                        )}>
+                          {track.noSubstances && <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-gray-900 block group-hover:text-purple-900 transition-colors">
+                          Я подтверждаю, что в треке нет упоминаний наркотических веществ <span className="text-red-500">*</span>
+                        </span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        className="hidden"
+                        checked={track.noSubstances}
+                        onChange={(e) => updateTrack(i, 'noSubstances', e.target.checked)}
+                      />
+                    </label>
+
                     {/* Lyrics */}
-                    <TextArea
-                      label="Текст трека" icon={<PenTool className="w-4 h-4" />}
-                      value={track.lyrics}
-                      onChange={(e) => updateTrack(i, 'lyrics', e.target.value)}
-                      placeholder="Текст трека..."
-                      className="min-h-[100px]"
-                    />
+                    <div className="mt-4">
+                      <TextArea
+                        label="Текст трека" required
+                        icon={<PenTool className="w-4 h-4" />}
+                        value={track.lyrics}
+                        onChange={(e) => updateTrack(i, 'lyrics', e.target.value)}
+                        placeholder="Текст трека..."
+                        className="min-h-[100px]"
+                      />
+                      <p className="text-xs text-gray-500 mt-2">
+                        Добавление текста является обязательным для проверки трека на упоминание наркотических веществ.
+                      </p>
+                    </div>
+
+                    {/* Platforms */}
+                    <div className="mt-4">
+                      <RadioGroup
+                        label="Площадки" required
+                        icon={<Globe className="w-4 h-4" />}
+                        name={`platforms_${i}`}
+                        options={['Все площадки', 'Без Apple Music']}
+                        value={track.platforms === 'no-apple' ? 'Без Apple Music' : track.platforms === 'all' ? 'Все площадки' : ''}
+                        onChange={(v) => updateTrack(i, 'platforms', v === 'Без Apple Music' ? 'no-apple' : 'all')}
+                        horizontal
+                      />
+                      <p className="text-xs text-gray-500 mt-2">
+                        Прохождение модерации без Apple Music осуществляется быстрее. После выпуска можно добавить релиз на данную площадку, написав в поддержку.
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>

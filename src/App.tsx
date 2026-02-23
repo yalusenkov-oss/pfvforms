@@ -185,7 +185,9 @@ function validateStep1(data: Record<string, string>): ValidationResult {
       if (!track?.lyricists?.some((l: string) => l?.trim())) errors.push(`Трек ${i + 1}: укажите автора текста`);
       if (!track?.composers?.some((c: string) => c?.trim())) errors.push(`Трек ${i + 1}: укажите композитора`);
       if (!track?.explicitContent) errors.push(`Трек ${i + 1}: укажите наличие ненормативной лексики`);
-      if (!track?.substanceMention) errors.push(`Трек ${i + 1}: укажите упоминание запрещённых веществ`);
+      if (!track?.noSubstances) errors.push(`Трек ${i + 1}: необходимо подтвердить отсутствие упоминаний наркотических веществ`);
+      if (!track?.lyrics?.trim()) errors.push(`Трек ${i + 1}: текст трека обязателен`);
+      if (!track?.platforms) errors.push(`Трек ${i + 1}: выберите площадки для модерации`);
     }
   } catch {
     errors.push('Заполните информацию о треках');

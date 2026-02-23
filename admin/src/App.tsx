@@ -135,7 +135,8 @@ export function App() {
       lyricists: toStringArray(track?.lyricists),
       composers: toStringArray(track?.composers),
       explicit: normalizeBool(track?.explicit ?? track?.explicitContent),
-      substances: normalizeBool(track?.substances ?? track?.substanceMention),
+      noSubstances: normalizeBool(track?.noSubstances ?? track?.substances ?? track?.substanceMention),
+      platforms: track?.platforms === 'no-apple' ? 'no-apple' : 'all',
       lyrics: String(track?.lyrics || ''),
     }));
   };

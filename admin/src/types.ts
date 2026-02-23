@@ -7,7 +7,8 @@ export interface TrackData {
   lyricists: string[];
   composers: string[];
   explicit: boolean;
-  substances: boolean;
+  noSubstances: boolean;
+  platforms: 'all' | 'no-apple';
   lyrics: string;
 }
 

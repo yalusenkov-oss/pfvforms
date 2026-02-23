@@ -235,10 +235,13 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
                   </div>
                   <div className="flex gap-2 ml-auto">
                     {track.explicit && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30">18+</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 font-medium">18+</span>
                     )}
-                    {track.substances && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">⚠️</span>
+                    {!track.noSubstances && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 font-medium" title="Не подтверждено отсутствие запрещённых веществ">⚠️ В-ва</span>
+                    )}
+                    {track.platforms === 'no-apple' && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 border border-purple-500/30 font-medium" title="Без Apple Music">Без Apple</span>
                     )}
                   </div>
                 </div>
