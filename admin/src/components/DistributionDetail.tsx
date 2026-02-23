@@ -1,4 +1,4 @@
-import { ArrowLeft, Disc3, FileText, Music2, ExternalLink, ChevronDown, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Disc3, FileText, Music2, ExternalLink, ChevronDown, Copy, Check, Send } from 'lucide-react';
 import { useState } from 'react';
 import { DistributionData, TARIFF_LABELS, RELEASE_TYPE_LABELS, STATUS_LABELS, STATUS_COLORS, PRICES, KARAOKE_PRICES } from '../types';
 import { cn } from '../utils/cn';
@@ -71,9 +71,42 @@ function formatPrice(p: number) {
 export function DistributionDetail({ data, onBack, onStatusChange, onGenerateContract, onCreateSignLink }: DistributionDetailProps) {
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const tracks = Array.isArray(data.tracks) ? data.tracks : [];
+  const trackCount = tracks.length || 1;
   const basePrice = PRICES[data.tariff]?.[data.releaseType] || 0;
   const karaokePerTrack = KARAOKE_PRICES[data.tariff] || 0;
-  const karaokeCost = data.karaoke ? karaokePerTrack * tracks.length : 0;
+  const karaokeCost = data.karaoke ? karaokePerTrack * trackCount : 0;
+
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailSuccess, setEmailSuccess] = useState('');
+  const [emailError, setEmailError] = useState('');
+
+  const handleSendEmail = async () => {
+    if (!data.signLink) return;
+    setSendingEmail(true);
+    setEmailSuccess('');
+    setEmailError('');
+    try {
+      const resp = await fetch('/api/send-contract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: data.email,
+          name: data.fullName,
+          contractNumber: data.contractNumber,
+          signLink: data.signLink
+        })
+      });
+      const json = await resp.json();
+      if (!json.success) throw new Error(json.error || 'Ошибка отправки');
+      setEmailSuccess('Письмо успешно отправлено!');
+      setTimeout(() => setEmailSuccess(''), 3000);
+    } catch (err: any) {
+      setEmailError('Ошибка: ' + err.message);
+      setTimeout(() => setEmailError(''), 4000);
+    } finally {
+      setSendingEmail(false);
+    }
+  };
 
   return (
     <div className="space-y-5 animate-fade-in">
@@ -196,7 +229,7 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
           <InfoRow label="Ссылка на подпись" value={data.signLink || ''} link />
           <InfoRow label="Подписанный договор" value={data.signedUrl || ''} link />
           {onCreateSignLink && (
-            <div className="py-2">
+            <div className="py-2 flex flex-wrap gap-2 items-center">
               <button
                 type="button"
                 onClick={() => onCreateSignLink(data.id)}
@@ -204,6 +237,21 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
               >
                 Создать ссылку на подпись
               </button>
+              {data.signLink && (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleSendEmail}
+                    disabled={sendingEmail}
+                    className="text-xs px-3 py-1.5 rounded-lg bg-purple-600/20 text-purple-300 border border-purple-500/30 hover:bg-purple-600/30 transition-colors disabled:opacity-60 flex items-center gap-1.5"
+                  >
+                    <Send size={12} />
+                    {sendingEmail ? 'Отправка...' : 'Отправить письмо'}
+                  </button>
+                  {emailSuccess && <span className="text-xs text-purple-400">✓ {emailSuccess}</span>}
+                  {emailError && <span className="text-xs text-red-400">{emailError}</span>}
+                </div>
+              )}
             </div>
           )}
         </Section>

@@ -11,6 +11,7 @@ import {
   Edit3,
   ChevronDown,
   ChevronUp,
+  Send,
 } from 'lucide-react';
 import { DistributionData, TARIFF_LABELS, RELEASE_TYPE_LABELS } from '../types';
 import {
@@ -85,6 +86,34 @@ export function ContractGenerator({ data, onBack, onUpdateContractNumber }: Cont
   const [signCreating, setSignCreating] = useState(false);
   const [signError, setSignError] = useState('');
   const [signCopied, setSignCopied] = useState(false);
+  const [autoSendEmail, setAutoSendEmail] = useState(true);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailSuccess, setEmailSuccess] = useState('');
+
+  const sendContractEmail = async (link: string) => {
+    setSendingEmail(true);
+    setEmailSuccess('');
+    setSignError('');
+    try {
+      const resp = await fetch('/api/send-contract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: contractData.email,
+          name: contractData.licensorName,
+          contractNumber: contractData.contractNumber,
+          signLink: link
+        })
+      });
+      const json = await resp.json();
+      if (!json.success) throw new Error(json.error || 'Ошибка отправки');
+      setEmailSuccess('Письмо успешно отправлено!');
+    } catch (err: any) {
+      setSignError('Ошибка отправки письма: ' + err.message);
+    } finally {
+      setSendingEmail(false);
+    }
+  };
 
   // Build contract data with current contract number
   const contractData: ContractData = useMemo(() => {
@@ -187,6 +216,9 @@ export function ContractGenerator({ data, onBack, onUpdateContractNumber }: Cont
       });
       if (res?.signUrl) {
         setSignLink(res.signUrl);
+        if (autoSendEmail && !signLink && !data.signedUrl) {
+          sendContractEmail(res.signUrl);
+        }
         try {
           const token = new URL(res.signUrl).searchParams.get('token');
           if (token) {
@@ -520,24 +552,43 @@ export function ContractGenerator({ data, onBack, onUpdateContractNumber }: Cont
                     rel="noopener noreferrer"
                     className="text-xs px-2.5 py-1 rounded bg-dark-700 text-dark-300 hover:text-white transition-colors"
                   >
-                    Открыть ссылку
+                    Открыть
                   </a>
+                  <button
+                    onClick={() => sendContractEmail(signLink)}
+                    disabled={sendingEmail}
+                    className="text-xs px-2.5 py-1 rounded bg-purple-600/20 text-purple-300 border border-purple-500/30 hover:bg-purple-600/30 transition-colors disabled:opacity-60 flex items-center gap-1"
+                  >
+                    <Send size={12} />
+                    {sendingEmail ? 'Отправка...' : 'Отправить письмо'}
+                  </button>
                 </>
               )}
             </div>
           </div>
-          <div className="px-5 py-3 text-xs text-dark-400">
-            {signCreating ? (
-              <span className="text-primary-400 flex items-center gap-2">
+          <div className="px-5 py-3 text-xs bg-dark-800 border-b border-dark-700">
+            <label className="flex items-center gap-2 cursor-pointer w-max text-dark-300 hover:text-white">
+              <input
+                type="checkbox"
+                checked={autoSendEmail}
+                onChange={e => setAutoSendEmail(e.target.checked)}
+                className="rounded border-dark-500 bg-dark-700 text-primary-500 focus:ring-0"
+              />
+              Отправить договор автоматически после создания ссылки
+            </label>
+            {(signCreating || sendingEmail) ? (
+              <span className="text-primary-400 flex items-center gap-2 mt-2">
                 <RefreshCw size={12} className="animate-spin" />
-                Создаём ссылку для подписания...
+                {sendingEmail ? 'Отправка письма...' : 'Создаём ссылку для подписания...'}
               </span>
             ) : signError ? (
-              <span className="text-red-400">{signError}</span>
+              <span className="text-red-400 mt-2 block">{signError}</span>
+            ) : emailSuccess ? (
+              <span className="text-purple-400 mt-2 block">✓ {emailSuccess}</span>
             ) : signLink ? (
-              <span className="text-green-400">✓ Ссылка создана и готова к отправке</span>
+              <span className="text-green-400 mt-2 block">✓ Ссылка создана и готова к отправке</span>
             ) : (
-              'Проверьте документ и создайте ссылку на подпись.'
+              <span className="text-dark-400 mt-2 block">Проверьте документ и создайте ссылку на подпись.</span>
             )}
           </div>
           <div className="p-5">
