@@ -1881,7 +1881,7 @@ function createSignLink(data) {
   const stored = storeContractHtml(htmlWithOwnerSig, fileName, existingHtml);
   sheet.getRange(rowIndex, extraCols.contractHtml).setValue(stored.value);
   sheet.getRange(rowIndex, extraCols.signSource).setValue('internal');
-  const signBaseUrl = 'https://pfvmusic.ru';
+  const signBaseUrl = 'https://pfvm.ru';
   
   const token = generateSignToken();
   const expiresDays = Number(data.signExpiresDays || 7);
