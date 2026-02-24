@@ -39,6 +39,9 @@ export function DistributionList({ distributions, onView, onDelete, onStatusChan
       setCreatingId(d.id);
       try {
         link = (await onCreateSignLink(d.id)) || '';
+        if (!link) {
+          alert('Ссылка не была создана. Проверьте ошибку в админке/GAS логах.');
+        }
       } finally {
         setCreatingId(null);
       }

@@ -386,9 +386,15 @@ export function App() {
                   if (!dist.contractNumber) {
                     updateDistributionContractNumber(id, contractNum);
                   }
+                  if (res.emailSent === false) {
+                    const reason = res.emailError ? `\nПричина: ${res.emailError}` : '';
+                    alert(`Ссылка создана, но письмо не отправилось.${reason}`);
+                  }
                   return res.signUrl;
                 }
-              } catch { /* fallback below */ }
+              } catch (e: any) {
+                alert(`Ошибка создания ссылки: ${e?.message || 'неизвестная ошибка'}`);
+              }
               return null;
             }}
           />
