@@ -284,7 +284,6 @@ export function generateContractHTML(
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Лицензионный договор № ${d.contractNumber}</title>
 <style>
   @page { margin: 2cm; size: A4; }
@@ -316,15 +315,6 @@ export function generateContractHTML(
   .page-break { page-break-before: always; }
   .center { text-align: center; }
   hr { border: none; border-top: 1px solid #ccc; margin: 30px 0; }
-  
-  @media screen and (max-width: 600px) {
-    body { padding: 15px; margin: 0; max-width: 100vw; }
-    .requisites { flex-direction: column; gap: 20px; }
-    .requisites .col { width: 100%; }
-    .header-row { flex-direction: column; align-items: flex-start; gap: 5px; }
-    .sig-line { width: 100%; max-width: 200px; }
-    table.objects { display: block; overflow-x: auto; white-space: nowrap; }
-  }
 </style>
 </head>
 <body>

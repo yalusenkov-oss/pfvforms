@@ -346,7 +346,7 @@ export function DatePicker({ label, required, hint, icon, className, ...props }:
         <input
           type="date"
           className={cn(
-            'w-full max-w-full box-border rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm transition-all duration-200',
+            'w-full min-w-0 appearance-none block box-border rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm transition-all duration-200',
             'placeholder:text-gray-400',
             'focus:border-purple-400 focus:outline-none focus:ring-3 focus:ring-purple-100',
             'hover:border-purple-300',
