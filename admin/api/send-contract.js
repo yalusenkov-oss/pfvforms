@@ -169,7 +169,6 @@ export default async function handler(req, res) {
                       </td>
                     </tr>
                   </table>
-                  <div style="color:#9ca3af;font-size:13px;margin-top:14px;font-weight:500;">Ссылка действительна 7 дней</div>
                 </td>
               </tr>
             </table>
@@ -231,7 +230,7 @@ export default async function handler(req, res) {
             <div style="color:#ffffff;font-size:18px;font-weight:900;letter-spacing:4px;text-transform:uppercase;margin-bottom:20px;">PFVMUSIC</div>
 
             <div style="color:#e5e7eb;font-size:15px;line-height:1.6;margin-bottom:8px;">С уважением,&#8203; Музыкальное издательство <span style="color:#a78bfa;font-weight:700;">PFVMUSIC</span><span style="display:none;opacity:0;color:transparent;font-size:0;max-height:0;line-height:0;mso-hide:all;">${Date.now()}</span></div>
-            <div><a href="mailto:booking@pfvmusic.digital" style="color:#a78bfa;font-size:14px;text-decoration:none;font-weight:700;">booking@pfvmusic.digital</a></div>
+            <div><a href="mailto:support@pfvmusic.digital" style="color:#a78bfa;font-size:14px;text-decoration:none;font-weight:700;">support@pfvmusic.digital</a></div>
 
             <table width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr><td height="32"></td></tr>
