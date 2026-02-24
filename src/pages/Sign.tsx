@@ -6,6 +6,7 @@ import { ContractDocument } from '@/components/sign/ContractDocument';
 import { SignatureBlock } from '@/components/sign/SignatureBlock';
 import { InfoBlock } from '@/components/sign/InfoBlock';
 import { Footer } from '@/components/sign/Footer';
+import { SigningOverlay } from '@/components/sign/SigningOverlay';
 
 // ════════════════════════════════════════════════════════════════
 // Utility to handle signature markers in HTML
@@ -210,7 +211,8 @@ export default function SignPage() {
 
   const handleOverlayComplete = useCallback(() => {
     setShowOverlay(false);
-  }, []);
+    handleSign();
+  }, [handleSign]);
 
   const handleSignatureChange = useCallback((data: string | null) => {
     setSignatureData(data);
@@ -241,6 +243,7 @@ export default function SignPage() {
   // ═══ RENDER ═══
   return (
     <div className="min-h-screen bg-[#fafafc] flex flex-col font-sans">
+      {showOverlay && <SigningOverlay onComplete={handleOverlayComplete} />}
       <Header />
 
       <main className="flex-1 w-full mx-auto px-2.5 sm:px-6 lg:px-8 py-4 sm:py-8 xl:px-12">
@@ -296,10 +299,7 @@ export default function SignPage() {
                 <SignatureBlock
                   isSigned={isSigned}
                   signedDate={signedDate}
-                  onSign={handleSign}
                   onSigningStart={handleSigningStart}
-                  showOverlay={showOverlay}
-                  onOverlayComplete={handleOverlayComplete}
                   signatureData={signatureData}
                   onSignatureChange={handleSignatureChange}
                   onDownload={handleDownload}

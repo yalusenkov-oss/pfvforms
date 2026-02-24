@@ -1,15 +1,11 @@
 import { useCallback } from 'react';
 import { Download, ShieldCheck, CheckCircle, Circle } from 'lucide-react';
 import { SignatureCanvas } from './SignatureCanvas';
-import { SigningOverlay } from './SigningOverlay';
 
 interface SignatureBlockProps {
   isSigned: boolean;
   signedDate: string | null;
-  onSign: () => void;
   onSigningStart: () => void;
-  showOverlay: boolean;
-  onOverlayComplete: () => void;
   signatureData: string | null;
   onSignatureChange: (data: string | null) => void;
   onDownload?: (type: 'pdf' | 'html') => void;
@@ -18,10 +14,7 @@ interface SignatureBlockProps {
 export function SignatureBlock({
   isSigned,
   signedDate,
-  onSign,
   onSigningStart,
-  showOverlay,
-  onOverlayComplete,
   signatureData,
   onSignatureChange,
   onDownload,
@@ -31,15 +24,8 @@ export function SignatureBlock({
     onSigningStart();
   }, [signatureData, isSigned, onSigningStart]);
 
-  const handleOverlayDone = useCallback(() => {
-    onOverlayComplete();
-    onSign();
-  }, [onOverlayComplete, onSign]);
-
   return (
     <>
-      {showOverlay && <SigningOverlay onComplete={handleOverlayDone} />}
-
       <div className="bg-white rounded-2xl border border-gray-100 shadow-xl shadow-purple-100/20 overflow-hidden">
         <div className="px-3 sm:px-8 py-2.5 sm:py-4 bg-gradient-to-r from-purple-50 via-purple-50/60 to-transparent border-b border-gray-100">
           <div className="flex items-center gap-3">
