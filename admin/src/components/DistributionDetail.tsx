@@ -2,6 +2,7 @@ import { ArrowLeft, Disc3, FileText, Music2, ExternalLink, ChevronDown, Copy, Ch
 import { useState } from 'react';
 import { DistributionData, TARIFF_LABELS, RELEASE_TYPE_LABELS, STATUS_LABELS, STATUS_COLORS, PRICES, KARAOKE_PRICES } from '../types';
 import { cn } from '../utils/cn';
+import { createSignLink } from '../services/googleSheetsAdmin';
 
 interface DistributionDetailProps {
   data: DistributionData;
@@ -86,21 +87,12 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
     setEmailSuccess('');
     setEmailError('');
     try {
-      const resp = await fetch('/api/send-contract', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: data.email,
-          name: data.fullName,
-          contractNumber: data.contractNumber,
-          workTitle: data.releaseName || '',
-          releaseType: data.releaseType || '',
-          signLink: data.signLink
-        })
+      const res = await createSignLink(data.contractNumber, data.rowIndex, {
+        forceRegenerate: false,
       });
-      const json = await resp.json();
-      if (!json.success) throw new Error(json.error || 'Ошибка отправки');
-      setEmailSuccess('Письмо успешно отправлено!');
+      if (!res?.success) throw new Error('Не удалось отправить письмо');
+      if (res.emailSent === false) throw new Error(res.emailError || 'Сервер не подтвердил отправку письма');
+      setEmailSuccess('Письмо успешно отправлено (через GAS)');
       setTimeout(() => setEmailSuccess(''), 3000);
     } catch (err: any) {
       setEmailError('Ошибка: ' + err.message);
@@ -224,7 +216,7 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
             label="Статус"
             value={
               data.signStatus === 'signed' || data.signedUrl ? 'Подписан' :
-                data.signLink ? 'Ссылка отправлена' :
+                data.signLink ? 'Ссылка создана' :
                   'Не создано'
             }
           />

@@ -95,21 +95,21 @@ export function ContractGenerator({ data, onBack, onUpdateContractNumber }: Cont
     setEmailSuccess('');
     setSignError('');
     try {
-      const resp = await fetch('/api/send-contract', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: contractData.email,
-          name: contractData.licensorName,
-          contractNumber: contractData.contractNumber,
-          workTitle: contractData.workTitle || '',
-          releaseType: contractData.releaseType || '',
-          signLink: link
-        })
+      const res = await createSignLink(contractData.contractNumber, data.rowIndex, {
+        contractHtml: signableContractHTML,
+        signSource: 'internal',
+        forceRegenerate: false
       });
-      const json = await resp.json();
-      if (!json.success) throw new Error(json.error || 'Ошибка отправки');
-      setEmailSuccess('Письмо успешно отправлено!');
+      if (!res?.success) {
+        throw new Error('Не удалось отправить письмо');
+      }
+      if (res.signUrl && res.signUrl !== link) {
+        setSignLink(res.signUrl);
+      }
+      if (res.emailSent === false) {
+        throw new Error(res.emailError || 'Сервер не подтвердил отправку письма');
+      }
+      setEmailSuccess('Письмо успешно отправлено (через GAS)');
     } catch (err: any) {
       setSignError('Ошибка отправки письма: ' + err.message);
     } finally {

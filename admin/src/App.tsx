@@ -360,9 +360,6 @@ export function App() {
 
               const contractData = { ...extractContractData(dist), contractNumber: contractNum };
               const signableContractHTML = generateContractHTML(contractData, { useSignatureMarkers: true });
-              let signPreviewHTML = signableContractHTML;
-              signPreviewHTML = signPreviewHTML.replace(/\{\{\s*signature_or\s*\}\}/g, '<img src="/signature.png" alt="signature" style="height:60px;width:auto;" />');
-              signPreviewHTML = signPreviewHTML.replace(/\{\{\s*signature_client\s*\}\}/g, '');
 
               try {
                 if (dist.rowIndex) {
@@ -376,7 +373,7 @@ export function App() {
                   }
                 }
                 const res = await createSignLink(contractNum, dist.rowIndex, {
-                  contractHtml: signPreviewHTML,
+                  contractHtml: signableContractHTML,
                   signSource: 'internal',
                   forceRegenerate: !!dist.signLink
                 });

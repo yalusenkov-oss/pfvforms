@@ -195,7 +195,7 @@ export function DistributionList({ distributions, onView, onDelete, onStatusChan
                       </span>
                     ) : d.signLink ? (
                       <span className="text-xs px-2 py-0.5 rounded-full border bg-blue-500/20 text-blue-400 border-blue-500/30">
-                        Отправлен
+                        Ссылка создана
                       </span>
                     ) : (
                       <span className="text-xs px-2 py-0.5 rounded-full border bg-dark-700/50 text-dark-400 border-dark-600">
@@ -320,7 +320,7 @@ export function DistributionList({ distributions, onView, onDelete, onStatusChan
                     </span>
                   ) : d.signLink ? (
                     <span className="text-[10px] px-2 py-0.5 rounded-full border bg-blue-500/20 text-blue-400 border-blue-500/30 shrink-0">
-                      Отправлен
+                      Ссылка создана
                     </span>
                   ) : null}
                 </div>

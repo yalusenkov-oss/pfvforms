@@ -155,7 +155,7 @@ export async function createSignLink(
   contractNumber: string,
   rowIndex?: number,
   payload?: { contractHtml?: string; signSource?: string; forceRegenerate?: boolean }
-): Promise<{ signUrl?: string; token?: string; success?: boolean } | null> {
+): Promise<{ signUrl?: string; token?: string; success?: boolean; emailSent?: boolean; emailError?: string; message?: string } | null> {
   const mainSiteBase = await getSignBaseUrl();
 
   // Normalize any sign URL to point to the main site with /#sign?token= format
@@ -169,7 +169,7 @@ export async function createSignLink(
     return url;
   };
 
-  // Try remote APIs first, then fall back to local token generation
+  // Create sign link only on server so token/email/html stay in sync.
   try {
     let res = await fetchViaProxyPost('/api/sign', {
       action: 'create',
@@ -200,19 +200,10 @@ export async function createSignLink(
       }
       return json;
     }
-  } catch {
-    // Remote calls failed — fall back to client-side generation below
+    throw new Error(json?.error || `Не удалось создать ссылку (HTTP ${res.status})`);
+  } catch (e: any) {
+    throw new Error(e?.message || 'Не удалось создать ссылку на сервере');
   }
-
-  // Fallback: generate sign link locally using the main site URL
-  const token = btoa(JSON.stringify({ contractNumber, rowIndex, timestamp: Date.now() }));
-  const signUrl = `${mainSiteBase}/#sign?token=${encodeURIComponent(token)}`;
-
-  return {
-    signUrl,
-    token,
-    success: true,
-  };
 }
 
 export async function fetchPromoCodes(): Promise<any[] | null> {

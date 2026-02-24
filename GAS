@@ -45,6 +45,14 @@ const TELEGRAM_PROMO = {
   DEBUG_MODE: true
 };
 
+const TELEGRAM_DOCUMENT = {
+  ENABLED: true,
+  BOT_TOKEN: '7725833130:AAEr7if331GMDGHMudemMmXo4ezro9W5lio',
+  CHAT_ID: '-1002584625468',
+  THREAD_ID: 600,
+  DEBUG_MODE: true
+};
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Инициализация листов
 // ═══════════════════════════════════════════════════════════════════════════
@@ -348,7 +356,7 @@ function saveDistribution(data) {
     const signExpiresDays = 14;
     const expiresAt       = new Date();
     expiresAt.setDate(expiresAt.getDate() + signExpiresDays);
-    const signBaseUrl     = 'https://pfvm.ru';
+    const signBaseUrl     = 'https://pfvmusic.digital';
     const signUrl         = signBaseUrl + '/#sign?token=' + signToken;
 
     // Генерируем HTML договора прямо здесь
@@ -979,7 +987,8 @@ function getTelegramConfig(kind) {
     DEBUG_MODE: false
   };
   let override = null;
-  if (kind === 'distribution' || kind === 'document') override = TELEGRAM_DISTRIBUTION;
+  if (kind === 'distribution') override = TELEGRAM_DISTRIBUTION;
+  if (kind === 'document') override = TELEGRAM_DOCUMENT;
   if (kind === 'promo' || kind === 'promo_code') override = TELEGRAM_PROMO;
 
   if (!override) return defaults;
@@ -2280,6 +2289,7 @@ function createSignLink(data) {
     contractNumber: headers.indexOf("contract_number"),
     licensorName: headers.indexOf("licensor_name"),
     tariff: headers.indexOf("tariff"),
+    releaseType: headers.indexOf("release_type"),
     passportSeriesNumber: headers.indexOf("passport_series_number"),
     passportIssuedBy: headers.indexOf("passport_issued_by"),
     passportIssueDate: headers.indexOf("passport_issue_date"),
@@ -2302,16 +2312,41 @@ function createSignLink(data) {
   if (existingToken && existingLink && !data.forceRegenerate && !data.regenerate) {
     const existingExpiresAt = sheet.getRange(rowIndex, signCols.signExpiresAt).getValue();
     let expiresStr = '';
+    let expiresDate = new Date();
     try { 
-      expiresStr = existingExpiresAt instanceof Date ? existingExpiresAt.toISOString() : new Date(existingExpiresAt).toISOString(); 
+      expiresDate = existingExpiresAt instanceof Date ? existingExpiresAt : new Date(existingExpiresAt);
+      expiresStr = expiresDate.toISOString();
     } catch(e) {}
+
+    let emailSent = false;
+    let emailError = '';
+    const recipientEmail = row[idx.email] || '';
+    if (recipientEmail) {
+      try {
+        sendSignLinkEmail({
+          email: recipientEmail,
+          name: row[idx.licensorName] || '',
+          contractNumber: contractNumber,
+          workTitle: row[idx.workTitle] || '',
+          releaseType: row[idx.releaseType] || '',
+          signUrl: existingLink,
+          expiresAt: expiresDate
+        });
+        emailSent = true;
+      } catch (e) {
+        emailError = String(e);
+        Logger.log('createSignLink existing: sendSignLinkEmail error: ' + e);
+      }
+    }
     
     return {
       success: true,
       signUrl: existingLink,
       expiresAt: expiresStr,
       contractNumber: contractNumber,
-      message: 'Ссылка уже была сгенерирована ранее, возвращаем старую.'
+      message: 'Ссылка уже была сгенерирована ранее, возвращаем старую.',
+      emailSent: emailSent,
+      emailError: emailError
     };
   }
 
@@ -2376,7 +2411,7 @@ function createSignLink(data) {
   const stored = storeContractHtml(htmlWithOwnerSig, fileName, existingHtml);
   sheet.getRange(rowIndex, extraCols.contractHtml).setValue(stored.value);
   sheet.getRange(rowIndex, extraCols.signSource).setValue('internal');
-  const signBaseUrl = 'https://pfvm.ru';
+  const signBaseUrl = 'https://pfvmusic.digital';
   
   const token = generateSignToken();
   const expiresDays = Number(data.signExpiresDays || 7);
@@ -2392,9 +2427,31 @@ function createSignLink(data) {
   sheet.getRange(rowIndex, signCols.signedAt).setValue('');
   sheet.getRange(rowIndex, extraCols.signedPdfId).setValue('');
 
+  let emailSent = false;
+  let emailError = '';
+  const recipientEmail = row[idx.email] || '';
+  if (recipientEmail) {
+    try {
+      sendSignLinkEmail({
+        email: recipientEmail,
+        name: row[idx.licensorName] || '',
+        contractNumber: contractNumber,
+        workTitle: row[idx.workTitle] || '',
+        releaseType: row[idx.releaseType] || '',
+        signUrl: signUrl,
+        expiresAt: expiresAt
+      });
+      emailSent = true;
+      Logger.log('✅ createSignLink: email sent to ' + recipientEmail);
+    } catch (e) {
+      emailError = String(e);
+      Logger.log('❌ createSignLink: sendSignLinkEmail error: ' + e);
+    }
+  }
+
   // Отправка ссылки на подписание в Telegram
-  const distCfg = getTelegramConfig('distribution');
-  if (TELEGRAM_CONFIG.NOTIFY_DOC_GENERATED && distCfg.ENABLED && distCfg.BOT_TOKEN && distCfg.CHAT_ID) {
+  const docCfg = getTelegramConfig('document');
+  if (TELEGRAM_CONFIG.NOTIFY_DOC_GENERATED && docCfg.ENABLED && docCfg.BOT_TOKEN && docCfg.CHAT_ID) {
     try {
       const escapeMd = (text) => {
         if (!text) return '';
@@ -2414,7 +2471,7 @@ function createSignLink(data) {
         `📝 [Ссылка на подписание](${escapeMd(signUrl)})`,
         `⏳ Действует до: ${escapeMd(expiresAt.toLocaleDateString('ru-RU'))}`
       ].join("\n");
-      sendToTelegramAPI(msg, distCfg);
+      sendToTelegramAPI(msg, docCfg);
       Logger.log('✅ Telegram: ссылка на подписание отправлена');
     } catch (e) {
       Logger.log('❌ Telegram sign link notification error: ' + e);
@@ -2425,6 +2482,8 @@ function createSignLink(data) {
     success: true,
     signUrl,
     expiresAt: expiresAt.toISOString(),
+    emailSent: emailSent,
+    emailError: emailError,
     docUrl: '',
     previewUrl: '',
     pdfUrl: ''
