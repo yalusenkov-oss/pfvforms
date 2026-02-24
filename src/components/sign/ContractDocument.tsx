@@ -17,7 +17,11 @@ export function ContractDocument({ htmlContent }: ContractDocumentProps) {
         <div className="contract-scroll max-h-[70vh] xl:max-h-[800px] overflow-hidden border border-gray-200 rounded-lg bg-gray-50">
           <iframe
             title="contract-preview"
-            srcDoc={htmlContent}
+            srcDoc={htmlContent.replace('</style>', `
+              @media screen and (max-width: 600px) {
+                body { zoom: 0.875; }
+              }
+            </style>`)}
             sandbox=""
             className="w-full h-[70vh] xl:h-[800px] bg-white border-0"
           />

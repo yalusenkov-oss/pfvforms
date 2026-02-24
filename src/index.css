@@ -254,6 +254,16 @@ input[type="date"]:hover::-moz-calendar-picker-indicator {
   }
 }
 
+@media screen and (max-width: 640px) {
+  .mobile-zoom-80 {
+    zoom: 0.8;
+  }
+
+  .mobile-zoom-70 {
+    zoom: 0.7;
+  }
+}
+
 @media (max-width: 768px) {
 
   /* Tariff cards: single column */

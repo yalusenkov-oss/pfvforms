@@ -217,7 +217,7 @@ export default function SignPage() {
 
   // ═══ RENDER ═══
   return (
-    <div className="min-h-screen bg-[#fafafc] flex flex-col font-sans">
+    <div className="min-h-screen bg-[#fafafc] flex flex-col font-sans mobile-zoom-80">
       <Header />
 
       <main className="flex-1 w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 xl:px-12">
