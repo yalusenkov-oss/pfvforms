@@ -45,110 +45,116 @@ export default async function handler(req, res) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PFVMUSIC — Договор готов к подписанию</title>
   <style type="text/css">
-    body { margin: 0; padding: 0; background-color: #f0f2f5; font-family: Arial, sans-serif; }
+    body { margin: 0; padding: 0; background-color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
     table { border-spacing: 0; border-collapse: collapse; }
-    td { font-family: Arial, sans-serif; }
+    td { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
     .long-link { word-wrap: break-word !important; word-break: break-all !important; overflow-wrap: break-word !important; }
   </style>
 </head>
-<body style="margin:0;padding:0;background-color:#f0f2f5;">
+<body style="margin:0;padding:0;background-color:#f3f4f6;">
 
 <!-- Outer wrapper -->
-<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f0f2f5;">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f3f4f6;">
   <tr>
     <td align="center" style="padding:40px 16px;">
 
       <!-- Email card -->
-      <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.08);">
+      <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,0.08);">
 
         <!-- ===== HEADER ===== -->
         <tr>
-          <td style="background-color:#1b1b3a;padding:52px 40px 44px;text-align:center;">
-            <!-- Logo icon -->
+          <td style="background-color:#12072b; background-image:linear-gradient(135deg, #12072b 0%, #2a1154 100%); padding:50px 40px; text-align:center;">
+            <!-- Logo image -->
             <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 20px;">
               <tr>
-                <td width="68" height="68" align="center" valign="middle" style="background-color:#8b5cf6;border-radius:18px;font-size:30px;line-height:68px;">🎵</td>
+                <td align="center" valign="middle">
+                  <img src="https://pfvforms.vercel.app/Frame%203.png" width="64" height="64" alt="PFVMUSIC Logo" style="display:block; border:none; outline:none; text-decoration:none; border-radius:16px; background-color:#8e44ad;" />
+                </td>
               </tr>
             </table>
-            <div style="color:#ffffff;font-size:26px;font-weight:900;letter-spacing:5px;">PFVMUSIC</div>
-            <div style="color:#a5b4fc;font-size:11px;font-weight:600;letter-spacing:4px;text-transform:uppercase;margin-top:6px;">Издательство</div>
+            <div style="color:#ffffff;font-size:26px;font-weight:900;letter-spacing:4px;text-transform:uppercase;">PFVMUSIC</div>
+            <div style="color:#b29ee6;font-size:11px;font-weight:600;letter-spacing:5px;text-transform:uppercase;margin-top:8px;">Издательство</div>
           </td>
         </tr>
 
         <!-- ===== BODY ===== -->
         <tr>
-          <td style="padding:40px 40px 0;background-color:#ffffff;">
+          <td style="padding:40px 40px 10px;background-color:#ffffff;">
 
             <!-- Greeting -->
-            <div style="color:#111827;font-size:22px;font-weight:800;margin-bottom:10px;">Здравствуйте, ${safeName}!</div>
-            <div style="color:#6b7280;font-size:15px;line-height:1.6;margin-bottom:30px;">
+            <div style="color:#111827;font-size:24px;font-weight:800;margin-bottom:12px;">Здравствуйте, ${safeName}!</div>
+            <div style="color:#4b5563;font-size:16px;line-height:1.6;margin-bottom:32px;">
               Ваш договор успешно сгенерирован и готов к подписанию.<br/>
               Пожалуйста, ознакомьтесь с деталями ниже и подтвердите документ.
             </div>
 
             <!-- Details card -->
-            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#fafbfd;border:1px solid #eef0f4;border-radius:12px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f8f9fa;border:1px solid #e5e7eb;border-radius:14px;">
               <tr>
                 <td style="padding:24px;">
 
                   <!-- Card header -->
                   <table width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
-                      <td width="44" valign="middle">
+                      <td width="48" valign="middle">
                         <table cellpadding="0" cellspacing="0" border="0">
-                          <tr><td width="44" height="44" align="center" valign="middle" style="background-color:#8b5cf6;border-radius:10px;font-size:20px;line-height:44px;">📄</td></tr>
+                          <tr>
+                            <td width="48" height="48" align="center" valign="middle" style="background-color:#7c3aed;color:#ffffff;font-size:22px;border-radius:12px;line-height:48px;">📄</td>
+                          </tr>
                         </table>
                       </td>
-                      <td width="14">&nbsp;</td>
+                      <td width="16">&nbsp;</td>
                       <td valign="middle">
                         <div style="font-size:16px;font-weight:700;color:#111827;">Детали договора</div>
-                        <div style="font-size:12px;color:#9ca3af;margin-top:2px;">Автоматически сгенерировано</div>
+                        <div style="font-size:13px;color:#6b7280;margin-top:2px;">Автоматически сгенерировано</div>
                       </td>
                     </tr>
                   </table>
 
                   <!-- Divider spacing -->
                   <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                    <tr><td height="16"></td></tr>
-                    <tr><td height="1" bgcolor="#eef0f4" style="line-height:1px;font-size:1px;">&nbsp;</td></tr>
-                    <tr><td height="16"></td></tr>
+                    <tr><td height="20"></td></tr>
+                    <tr><td height="1" bgcolor="#e5e7eb" style="line-height:1px;font-size:1px;">&nbsp;</td></tr>
+                    <tr><td height="20"></td></tr>
                   </table>
 
                   <!-- Row: contract number -->
                   <table width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
-                      <td align="left" style="font-size:13px;color:#9ca3af;">№ Договора</td>
-                      <td align="right" style="font-size:14px;font-weight:700;color:#6366f1;">${safeContract}</td>
+                      <td align="left" style="font-size:14px;color:#6b7280;">№ Договора</td>
+                      <td align="right" style="font-size:15px;font-weight:700;color:#7c3aed;">${safeContract}</td>
                     </tr>
                   </table>
                   
                   <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                    <tr><td height="12"></td></tr>
-                    <tr><td height="1" bgcolor="#f0f1f5" style="line-height:1px;font-size:1px;">&nbsp;</td></tr>
-                    <tr><td height="12"></td></tr>
+                    <tr><td height="14"></td></tr>
+                    <tr><td height="1" bgcolor="#f3f4f6" style="line-height:1px;font-size:1px;">&nbsp;</td></tr>
+                    <tr><td height="14"></td></tr>
                   </table>
 
                   <!-- Row: work title -->
                   <table width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
-                      <td align="left" style="font-size:13px;color:#9ca3af;">Произведение</td>
-                      <td align="right" style="font-size:14px;font-weight:600;color:#1f2937;">«${safeWork}»</td>
+                      <td align="left" style="font-size:14px;color:#6b7280;">Произведение</td>
+                      <td align="right" style="font-size:15px;font-weight:600;color:#111827;">«${safeWork}»</td>
                     </tr>
                   </table>
 
                   <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                    <tr><td height="12"></td></tr>
-                    <tr><td height="1" bgcolor="#f0f1f5" style="line-height:1px;font-size:1px;">&nbsp;</td></tr>
-                    <tr><td height="12"></td></tr>
+                    <tr><td height="14"></td></tr>
+                    <tr><td height="1" bgcolor="#f3f4f6" style="line-height:1px;font-size:1px;">&nbsp;</td></tr>
+                    <tr><td height="14"></td></tr>
                   </table>
 
                   <!-- Row: release type -->
                   <table width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
-                      <td align="left" style="font-size:13px;color:#9ca3af;">Тип релиза</td>
-                      <td align="right">
+                      <td align="left" style="font-size:14px;color:#6b7280;" valign="middle">Тип релиза</td>
+                      <td align="right" valign="middle">
                         <table cellpadding="0" cellspacing="0" border="0" align="right">
-                          <tr><td bgcolor="#eef2ff" style="color:#6366f1;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:700;">${safeRelease}</td></tr>
+                          <tr>
+                            <td bgcolor="#ede9fe" style="color:#7c3aed;padding:6px 14px;border-radius:6px;font-size:13px;font-weight:700;">${safeRelease}</td>
+                          </tr>
                         </table>
                       </td>
                     </tr>
@@ -158,42 +164,43 @@ export default async function handler(req, res) {
               </tr>
             </table>
 
-            <!-- CTA button Spacer -->
-            <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td height="32"></td></tr></table>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td height="36"></td></tr></table>
 
             <!-- CTA button -->
             <table width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
                 <td align="center">
-                  <table cellpadding="0" cellspacing="0" border="0" bgcolor="#6366f1" style="border-radius:12px;">
+                  <table cellpadding="0" cellspacing="0" border="0" bgcolor="#7c3aed" style="background-image:linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); border-radius:14px;">
                     <tr>
-                      <td align="center" valign="middle" style="padding:16px 40px;">
-                        <a href="${safeLink}" style="color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;">&#9997;&#65039; Подписать договор</a>
+                      <td align="center" valign="middle" style="padding:18px 44px;">
+                        <a href="${safeLink}" style="color:#ffffff;text-decoration:none;font-weight:bold;font-size:18px;">✍️ Подписать договор</a>
                       </td>
                     </tr>
                   </table>
-                  <div style="color:#b0b8c9;font-size:12px;margin-top:12px;font-weight:500;">Ссылка действительна 7 дней</div>
+                  <div style="color:#9ca3af;font-size:13px;margin-top:14px;font-weight:500;">Ссылка действительна 7 дней</div>
                 </td>
               </tr>
             </table>
 
-            <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td height="32"></td></tr></table>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td height="36"></td></tr></table>
 
             <!-- Support block -->
-            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f5f3ff;border:1px solid #e0e7ff;border-radius:12px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#faf5ff;border:1px solid #e9d5ff;border-radius:14px;">
               <tr>
-                <td style="padding:20px;">
+                <td style="padding:22px;">
                   <table width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
-                      <td width="44" valign="middle">
+                      <td width="48" valign="middle">
                         <table cellpadding="0" cellspacing="0" border="0">
-                          <tr><td width="44" height="44" align="center" valign="middle" style="background-color:#6366f1;border-radius:10px;font-size:20px;line-height:44px;">💬</td></tr>
+                          <tr>
+                            <td width="48" height="48" align="center" valign="middle" style="background-color:#a855f7;color:#ffffff;font-size:22px;border-radius:12px;line-height:48px;">💬</td>
+                          </tr>
                         </table>
                       </td>
-                      <td width="14">&nbsp;</td>
+                      <td width="16">&nbsp;</td>
                       <td valign="middle">
-                        <div style="color:#1f2937;font-size:14px;font-weight:700;margin-bottom:2px;">Есть вопросы по дистрибуции?</div>
-                        <div style="color:#6b7280;font-size:13px;">Напишите нам в Telegram: <a href="https://t.me/pfvmusic_support" style="color:#6366f1;font-weight:700;text-decoration:none;">@pfvmusic_support</a></div>
+                        <div style="color:#111827;font-size:15px;font-weight:700;margin-bottom:4px;">Вопросы по дистрибуции?</div>
+                        <div style="color:#4b5563;font-size:14px;">Поддержка в Telegram: <a href="https://t.me/pfvmusic_support" style="color:#9333ea;font-weight:bold;text-decoration:none;">@pfvmusic_support</a></div>
                       </td>
                     </tr>
                   </table>
@@ -201,18 +208,18 @@ export default async function handler(req, res) {
               </tr>
             </table>
 
-            <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td height="12"></td></tr></table>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td height="20"></td></tr></table>
 
             <!-- Fallback block -->
-            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#fffdf5;border:1px solid #fde68a;border-radius:12px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#fef3c7;border:1px solid #fde68a;border-radius:14px;">
               <tr>
-                <td style="padding:20px;">
-                  <div style="color:#92400e;font-size:14px;font-weight:700;margin-bottom:8px;">⚠️ Кнопка не работает?</div>
-                  <div style="color:#a16207;font-size:13px;line-height:1.5;margin-bottom:12px;">Скопируйте этот адрес и вставьте в строку браузера:</div>
+                <td style="padding:22px;">
+                  <div style="color:#b45309;font-size:15px;font-weight:700;margin-bottom:8px;">⚠️ Кнопка не работает?</div>
+                  <div style="color:#92400e;font-size:14px;line-height:1.5;margin-bottom:14px;">Скопируйте этот адрес и вставьте в строку браузера:</div>
                   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="table-layout:fixed;">
                     <tr>
-                      <td class="long-link" style="background-color:#fefce8;border:1px dashed #fbbf24;border-radius:8px;padding:12px;font-size:12px;color:#6366f1;font-family:monospace;line-height:1.5;">
-                        <a href="${safeLink}" style="color:#6366f1;text-decoration:none;" class="long-link">${safeLink}</a>
+                      <td class="long-link" style="background-color:#ffffff;border:1px dashed #fbbf24;border-radius:8px;padding:14px;font-size:13px;color:#d97706;font-family:monospace;line-height:1.5;">
+                        <a href="${safeLink}" style="color:#d97706;text-decoration:none;" class="long-link">${safeLink}</a>
                       </td>
                     </tr>
                   </table>
@@ -220,37 +227,38 @@ export default async function handler(req, res) {
               </tr>
             </table>
 
-            <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td height="32"></td></tr></table>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td height="40"></td></tr></table>
 
           </td>
         </tr>
 
         <!-- ===== FOOTER ===== -->
         <tr>
-          <td style="background-color:#1b1b3a;padding:40px;text-align:center;">
+          <td style="background-color:#12072b;padding:40px;text-align:center;">
 
-            <!-- Footer logo -->
-            <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin-bottom:16px;">
+            <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin-bottom:20px;">
               <tr>
-                <td width="32" height="32" align="center" valign="middle" style="background-color:#8b5cf6;border-radius:8px;font-size:14px;line-height:32px;">🎵</td>
-                <td width="10">&nbsp;</td>
-                <td style="color:#c7d2fe;font-size:15px;font-weight:800;letter-spacing:3px;vertical-align:middle;">PFVMUSIC</td>
+                <td width="36" height="36" align="center" valign="middle">
+                  <img src="https://pfvforms.vercel.app/Frame%203.png" width="36" height="36" alt="PFVMUSIC Icon" style="display:block; border-radius:8px; background-color:#8e44ad;" />
+                </td>
+                <td width="12">&nbsp;</td>
+                <td style="color:#ffffff;font-size:16px;font-weight:900;letter-spacing:4px;vertical-align:middle;">PFVMUSIC</td>
               </tr>
             </table>
 
-            <div style="color:#9ca3af;font-size:14px;line-height:1.6;margin-bottom:6px;">С уважением, Музыкальное издательство <span style="color:#c7d2fe;font-weight:700;">PFVMUSIC</span></div>
-            <div><a href="mailto:booking@pfvmusic.digital" style="color:#818cf8;font-size:13px;text-decoration:none;font-weight:600;">booking@pfvmusic.digital</a></div>
+            <div style="color:#e5e7eb;font-size:15px;line-height:1.6;margin-bottom:8px;">С уважением, Музыкальное издательство <span style="color:#a78bfa;font-weight:700;">PFVMUSIC</span></div>
+            <div><a href="mailto:booking@pfvmusic.digital" style="color:#a78bfa;font-size:14px;text-decoration:none;font-weight:700;">booking@pfvmusic.digital</a></div>
 
             <table width="100%" cellpadding="0" cellspacing="0" border="0">
-              <tr><td height="24"></td></tr>
-              <tr><td height="1" bgcolor="#252552" style="line-height:1px;font-size:1px;">&nbsp;</td></tr>
-              <tr><td height="24"></td></tr>
+              <tr><td height="32"></td></tr>
+              <tr><td height="1" bgcolor="#2a1154" style="line-height:1px;font-size:1px;">&nbsp;</td></tr>
+              <tr><td height="32"></td></tr>
             </table>
 
-            <div style="color:#6b7280;font-size:11px;line-height:1.6;margin:0 auto 16px;font-style:italic;">
+            <div style="color:#9ca3af;font-size:12px;line-height:1.6;margin:0 auto 16px;font-style:italic;max-width:480px;">
               Это письмо и все приложения к нему строго конфиденциальны и предназначены исключительно для указанного адресата. Если вы получили это письмо по ошибке, пожалуйста, немедленно уведомите отправителя и удалите сообщение.
             </div>
-            <div style="color:#4b5563;font-size:11px;font-weight:500;">&#169; 2026 PFVMUSIC. Все права защищены.</div>
+            <div style="color:#6b7280;font-size:12px;font-weight:500;">&#169; 2026 PFVMUSIC. Все права защищены.</div>
 
           </td>
         </tr>
