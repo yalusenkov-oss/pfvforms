@@ -38,7 +38,7 @@ const TARIFFS: TariffInfo[] = [
   {
     name: 'Базовый',
     subtitle: 'Старт для начинающих',
-    turnaround: '7 рабочих дней',
+    turnaround: '7+ дней',
     cardClass: 'border-purple-200 bg-white hover:border-purple-300',
     titleClass: 'text-purple-900',
     icon: 'music',
@@ -63,7 +63,7 @@ const TARIFFS: TariffInfo[] = [
   {
     name: 'Продвинутый',
     subtitle: 'Баланс цены и возможностей',
-    turnaround: '4 рабочих дня',
+    turnaround: '5 дней',
     cardClass: 'border-sky-200 bg-white hover:border-sky-300',
     titleClass: 'text-sky-900',
     icon: 'trending',
@@ -91,7 +91,7 @@ const TARIFFS: TariffInfo[] = [
   {
     name: 'Премиум',
     subtitle: 'Оптимальный выбор для развития',
-    turnaround: '2 рабочих дня',
+    turnaround: '3 дня',
     recommended: true,
     cardClass: 'border-emerald-300 bg-white hover:border-emerald-400 ring-2 ring-emerald-200 ring-offset-2',
     titleClass: 'text-emerald-900',
@@ -121,7 +121,7 @@ const TARIFFS: TariffInfo[] = [
   {
     name: 'Платинум',
     subtitle: 'Максимум без компромиссов',
-    turnaround: '1 рабочий день (до 24 часов в рабочие дни)',
+    turnaround: 'Индивидуально',
     cardClass: 'border-amber-300 bg-white hover:border-amber-400',
     titleClass: 'text-amber-900',
     icon: 'crown',

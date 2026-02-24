@@ -107,7 +107,7 @@ export function RadioGroup({
             role="button"
             tabIndex={0}
             onClick={() => onChange(option.label)}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onChange(option.label); }}}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onChange(option.label); } }}
             className={cn(
               'flex items-center gap-3 rounded-xl border px-4 py-3 cursor-pointer transition-all duration-200 text-sm group select-none',
               horizontal && 'flex-1 min-w-[120px] justify-center',
@@ -135,7 +135,7 @@ export function RadioGroup({
             role="button"
             tabIndex={0}
             onClick={() => onChange('__other__')}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onChange('__other__'); }}}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onChange('__other__'); } }}
             className={cn(
               'flex items-center gap-3 rounded-xl border px-4 py-3 cursor-pointer transition-all duration-200 text-sm group select-none',
               value === '__other__'
@@ -346,7 +346,7 @@ export function DatePicker({ label, required, hint, icon, className, ...props }:
         <input
           type="date"
           className={cn(
-            'w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm transition-all duration-200',
+            'w-full max-w-full box-border rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm transition-all duration-200',
             'placeholder:text-gray-400',
             'focus:border-purple-400 focus:outline-none focus:ring-3 focus:ring-purple-100',
             'hover:border-purple-300',
@@ -378,17 +378,17 @@ interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>
   placeholder?: string;
 }
 
-export function Select({ 
-  label, 
-  required, 
-  hint, 
-  icon, 
-  options, 
-  value, 
-  onChange, 
+export function Select({
+  label,
+  required,
+  hint,
+  icon,
+  options,
+  value,
+  onChange,
   placeholder,
   className,
-  ...props 
+  ...props
 }: SelectProps) {
   const normalizedOptions: SelectOption[] = options.map((o) =>
     typeof o === 'string' ? { value: o, label: o } : o

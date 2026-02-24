@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { Input, StepCard, InfoBox, Divider } from './UI';
-import { CreditCard, MessageCircle, Send, ExternalLink, Building2, Smartphone, Heart, Calculator, ReceiptText, MessageSquare, UserCheck, TicketPercent, CheckCircle2, XCircle } from 'lucide-react';
+import { CreditCard, MessageCircle, Send, ExternalLink, Building2, Heart, Calculator, ReceiptText, MessageSquare, UserCheck, TicketPercent, CheckCircle2, XCircle } from 'lucide-react';
 import { calcTotal, getTrackCount } from './StepOne';
 import { fetchPromoCodes, PromoCodeRecord } from '@/services/googleSheets';
 
@@ -236,14 +236,6 @@ export function StepFour({ data, onChange }: StepFourProps) {
             <BankCard name="Тинькофф" number="2200 7013 8560 0850" color="bg-yellow-500" emoji="💛" />
             <BankCard name="Альфа-Банк" number="2200 1523 7944 2612" color="bg-red-500" emoji="❤️" />
           </div>
-
-          <div className="mt-3 flex items-center gap-2 rounded-lg bg-blue-50 border border-blue-200/60 px-4 py-3">
-            <Smartphone className="w-4 h-4 text-blue-600 flex-shrink-0" />
-            <div className="text-xs">
-              <span className="text-blue-700">Оплата через СБП:</span>{' '}
-              <span className="font-bold text-blue-900 font-mono">+7 (995) 488-50-53</span>
-            </div>
-          </div>
         </div>
 
         <Divider label="Юридические лица" />
@@ -267,13 +259,13 @@ export function StepFour({ data, onChange }: StepFourProps) {
             </div>
           </div>
         </div>
-      </StepCard>
+      </StepCard >
 
       {/* ═══ Contacts & Extras ═══ */}
-      <StepCard
+      < StepCard
         title="Дополнительно"
         subtitle="Информация для обратной связи"
-        icon={<MessageSquare className="w-5 h-5" />}
+        icon={< MessageSquare className="w-5 h-5" />}
       >
         <Input label="Контакты для связи" required icon={<MessageSquare className="w-4 h-4" />}
           hint="Оставьте свой Telegram или VK для обратной связи."
@@ -284,13 +276,13 @@ export function StepFour({ data, onChange }: StepFourProps) {
           hint="Чтобы релиз попал в нужную картотеку, оставьте ссылки на профиль."
           value={data.artistProfileLinks || ''} onChange={(e) => onChange('artistProfileLinks', e.target.value)}
           placeholder="Ссылки на профили" />
-      </StepCard>
+      </StepCard >
 
       {/* ═══ After Submission ═══ */}
-      <StepCard
+      < StepCard
         title="После отправки"
         subtitle="Важная информация и контакты"
-        icon={<Send className="w-5 h-5" />}
+        icon={< Send className="w-5 h-5" />}
       >
         <InfoBox variant="purple">
           <div>
@@ -338,118 +330,120 @@ export function StepFour({ data, onChange }: StepFourProps) {
             Спасибо, что выбрали нас! Мы ценим ваше доверие 💜
           </p>
         </div>
-      </StepCard>
+      </StepCard >
 
       {/* ═══ TOTAL PRICE — at the very end ═══ */}
-      {hasSelection ? (
-        <div className="rounded-2xl border-2 border-purple-400 bg-gradient-to-br from-purple-50 via-white to-purple-50/30 p-6 md:p-8 shadow-xl shadow-purple-200/30 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-40 h-40 bg-purple-200/20 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-200/10 rounded-full translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+      {
+        hasSelection ? (
+          <div className="rounded-2xl border-2 border-purple-400 bg-gradient-to-br from-purple-50 via-white to-purple-50/30 p-6 md:p-8 shadow-xl shadow-purple-200/30 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-purple-200/20 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-200/10 rounded-full translate-y-1/2 -translate-x-1/2 pointer-events-none" />
 
-          <div className="flex items-center gap-3 mb-5 relative">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center shadow-lg shadow-purple-200">
-              <ReceiptText className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-extrabold text-gray-900">Итого к оплате</h2>
-              <p className="text-sm text-gray-500">Расчёт на основе выбранных параметров</p>
-            </div>
-          </div>
-
-          <div className="space-y-3 relative">
-            <div className="flex items-center justify-between text-sm bg-white/60 rounded-xl px-4 py-3 border border-purple-100">
+            <div className="flex items-center gap-3 mb-5 relative">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center shadow-lg shadow-purple-200">
+                <ReceiptText className="w-6 h-6 text-white" />
+              </div>
               <div>
-                <p className="text-gray-700 font-semibold">Тариф «{tariff}»</p>
-                <p className="text-xs text-gray-400">
-                  {releaseType} · {trackCount} {trackCount === 1 ? 'трек' : trackCount < 5 ? 'трека' : 'треков'}
-                </p>
+                <h2 className="text-xl font-extrabold text-gray-900">Итого к оплате</h2>
+                <p className="text-sm text-gray-500">Расчёт на основе выбранных параметров</p>
               </div>
-              <p className="font-bold text-gray-900 text-base">{base.toLocaleString('ru-RU')} ₽</p>
             </div>
 
-            {data.karaokeAddition === 'Да' && (
+            <div className="space-y-3 relative">
               <div className="flex items-center justify-between text-sm bg-white/60 rounded-xl px-4 py-3 border border-purple-100">
                 <div>
-                  <p className="text-gray-700 font-semibold">Караоке</p>
+                  <p className="text-gray-700 font-semibold">Тариф «{tariff}»</p>
                   <p className="text-xs text-gray-400">
-                    {KARAOKE_PRICES[tariff] || 0} ₽ × {trackCount} {trackCount === 1 ? 'трек' : trackCount < 5 ? 'трека' : 'треков'}
+                    {releaseType} · {trackCount} {trackCount === 1 ? 'трек' : trackCount < 5 ? 'трека' : 'треков'}
                   </p>
                 </div>
-                <p className="font-bold text-gray-900 text-base">
-                  {karaoke === 0 ? 'Бесплатно' : `${karaoke.toLocaleString('ru-RU')} ₽`}
-                </p>
+                <p className="font-bold text-gray-900 text-base">{base.toLocaleString('ru-RU')} ₽</p>
               </div>
-            )}
 
-            {data.promoApplied === 'yes' && (
-              <div className="flex items-center justify-between text-sm bg-white/60 rounded-xl px-4 py-3 border border-purple-100">
-                <div>
-                  <p className="text-gray-700 font-semibold">Промокод {data.promoCode}</p>
-                  <p className="text-xs text-gray-400">
-                    Скидка {data.promoDiscountType === 'percent' ? `${data.promoDiscountValue}%` : `${Number(data.promoDiscountValue || 0).toLocaleString('ru-RU')} ₽`}
+              {data.karaokeAddition === 'Да' && (
+                <div className="flex items-center justify-between text-sm bg-white/60 rounded-xl px-4 py-3 border border-purple-100">
+                  <div>
+                    <p className="text-gray-700 font-semibold">Караоке</p>
+                    <p className="text-xs text-gray-400">
+                      {KARAOKE_PRICES[tariff] || 0} ₽ × {trackCount} {trackCount === 1 ? 'трек' : trackCount < 5 ? 'трека' : 'треков'}
+                    </p>
+                  </div>
+                  <p className="font-bold text-gray-900 text-base">
+                    {karaoke === 0 ? 'Бесплатно' : `${karaoke.toLocaleString('ru-RU')} ₽`}
                   </p>
                 </div>
-                <p className="font-bold text-gray-900 text-base">
-                  -{(parseFloat(data.promoDiscountAmount || '0') || 0).toLocaleString('ru-RU')} ₽
+              )}
+
+              {data.promoApplied === 'yes' && (
+                <div className="flex items-center justify-between text-sm bg-white/60 rounded-xl px-4 py-3 border border-purple-100">
+                  <div>
+                    <p className="text-gray-700 font-semibold">Промокод {data.promoCode}</p>
+                    <p className="text-xs text-gray-400">
+                      Скидка {data.promoDiscountType === 'percent' ? `${data.promoDiscountValue}%` : `${Number(data.promoDiscountValue || 0).toLocaleString('ru-RU')} ₽`}
+                    </p>
+                  </div>
+                  <p className="font-bold text-gray-900 text-base">
+                    -{(parseFloat(data.promoDiscountAmount || '0') || 0).toLocaleString('ru-RU')} ₽
+                  </p>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between pt-3 border-t-2 border-purple-300/50">
+                <div className="flex items-center gap-2">
+                  <Calculator className="w-5 h-5 text-purple-600" />
+                  <p className="text-lg font-extrabold text-purple-800">Итого</p>
+                </div>
+                <p className="text-3xl font-extrabold bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">
+                  {totalAfterDiscount.toLocaleString('ru-RU')} ₽
                 </p>
               </div>
-            )}
 
-            <div className="flex items-center justify-between pt-3 border-t-2 border-purple-300/50">
-              <div className="flex items-center gap-2">
-                <Calculator className="w-5 h-5 text-purple-600" />
-                <p className="text-lg font-extrabold text-purple-800">Итого</p>
-              </div>
-              <p className="text-3xl font-extrabold bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">
-                {totalAfterDiscount.toLocaleString('ru-RU')} ₽
-              </p>
-            </div>
-
-            <div className="pt-4 mt-2 border-t border-purple-200/60">
-              <p className="text-sm font-semibold text-gray-800 mb-2">
-                Загрузите фото оплаты
-              </p>
-              <label className="flex flex-col gap-2">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePaymentProofChange}
-                  className="block w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200"
-                />
-                <span className="text-xs text-gray-500">
-                  Фото чека или подтверждения оплаты. Без файла отправка формы недоступна.
-                </span>
-              </label>
-              {paymentProofName && (
-                <div className="mt-2 text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-                  Загружен файл: <span className="font-semibold">{paymentProofName}</span>
-                </div>
-              )}
-              {paymentProofError && (
-                <div className="mt-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                  {paymentProofError}
-                </div>
-              )}
-              {data.paymentProof && (
-                <div className="mt-3">
-                  <img
-                    src={data.paymentProof}
-                    alt="Подтверждение оплаты"
-                    className="max-h-40 rounded-lg border border-purple-200/70 bg-white p-2"
+              <div className="pt-4 mt-2 border-t border-purple-200/60">
+                <p className="text-sm font-semibold text-gray-800 mb-2">
+                  Загрузите фото оплаты
+                </p>
+                <label className="flex flex-col gap-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePaymentProofChange}
+                    className="block w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200"
                   />
-                </div>
-              )}
+                  <span className="text-xs text-gray-500">
+                    Фото чека или подтверждения оплаты. Без файла отправка формы недоступна.
+                  </span>
+                </label>
+                {paymentProofName && (
+                  <div className="mt-2 text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                    Загружен файл: <span className="font-semibold">{paymentProofName}</span>
+                  </div>
+                )}
+                {paymentProofError && (
+                  <div className="mt-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                    {paymentProofError}
+                  </div>
+                )}
+                {data.paymentProof && (
+                  <div className="mt-3">
+                    <img
+                      src={data.paymentProof}
+                      alt="Подтверждение оплаты"
+                      className="max-h-40 rounded-lg border border-purple-200/70 bg-white p-2"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      ) : (
-        <InfoBox variant="warning">
-          <p className="text-sm font-medium">
-            Для расчёта итоговой стоимости вернитесь на шаг «Релиз» и выберите тариф и тип релиза.
-          </p>
-        </InfoBox>
-      )}
-    </div>
+        ) : (
+          <InfoBox variant="warning">
+            <p className="text-sm font-medium">
+              Для расчёта итоговой стоимости вернитесь на шаг «Релиз» и выберите тариф и тип релиза.
+            </p>
+          </InfoBox>
+        )
+      }
+    </div >
   );
 }
 
