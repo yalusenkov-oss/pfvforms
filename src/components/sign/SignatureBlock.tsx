@@ -63,7 +63,7 @@ export function SignatureBlock({
             )}
 
             {/* Download buttons */}
-            <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+            <div className="grid grid-cols-1 gap-2.5 sm:gap-3">
               <button
                 disabled={!isSigned}
                 onClick={() => onDownload?.('html')}
@@ -71,14 +71,6 @@ export function SignatureBlock({
               >
                 <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                 <span className="truncate">HTML</span>
-              </button>
-              <button
-                disabled={!isSigned}
-                onClick={() => onDownload?.('pdf')}
-                className="min-w-0 inline-flex items-center justify-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-xl text-[11px] sm:text-sm font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                <span className="truncate">PDF</span>
               </button>
             </div>
           </div>
