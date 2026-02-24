@@ -341,10 +341,44 @@ function saveDistribution(data) {
       ? data.lyricsAuthor
       : (authorsFromTracks.lyricists.length ? authorsFromTracks.lyricists.join(', ') : (data.fullName || ''));
 
+    // ── Автоматически генерируем ссылку на подписание ──────────────────────
+    const tariffName      = getTariffName(data.tariff);
+    const releaseTypeName = getReleaseTypeName(data.releaseType);
+    const signToken       = generateSignToken();
+    const signExpiresDays = 14;
+    const expiresAt       = new Date();
+    expiresAt.setDate(expiresAt.getDate() + signExpiresDays);
+    const signBaseUrl     = 'https://pfvm.ru';
+    const signUrl         = signBaseUrl + '/#sign?token=' + signToken;
+
+    // Генерируем HTML договора прямо здесь
+    const contractHtml = generateContractHTMLInGAS({
+      contractNumber:       contractNumber,
+      licensorName:         data.fullName || '',
+      passportSeriesNumber: data.passportNumber || '',
+      passportIssuedBy:     data.issuedBy || '',
+      passportIssueDate:    data.issueDate || '',
+      bankDetails:          data.bankDetails || '',
+      email:                data.email || '',
+      pseudonym:            data.mainArtist || '',
+      workTitle:            data.releaseName || '',
+      musicAuthor:          musicAuthorValue || '',
+      lyricsAuthor:         lyricsAuthorValue || '',
+      tariff:               tariffName,
+      percentage:           percentage,
+      releaseType:          releaseTypeName
+    });
+
+    // Встраиваем подпись лицензиата (ОР) в HTML и сохраняем на Drive
+    const htmlWithOwnerSig = embedOwnerSignatureInHtml(contractHtml);
+    const licensorName_    = data.fullName || 'Без имени';
+    const fileName_        = 'Договор №' + contractNumber + ' - ' + licensorName_;
+    const stored           = storeContractHtml(htmlWithOwnerSig, fileName_, '');
+
     const row = [
       new Date(data.timestamp || new Date()),
-      getTariffName(data.tariff),
-      getReleaseTypeName(data.releaseType),
+      tariffName,
+      releaseTypeName,
       data.trackCount || 0,
       data.releaseName || '',
       data.mainArtist || '',
@@ -373,23 +407,23 @@ function saveDistribution(data) {
       paymentProofUrl,
       contractNumber,
       percentage + '%',
-      '',
+      '',                              // contract_status
       musicAuthorValue || '',
       lyricsAuthorValue || '',
       collectLyricsFromTracks(tracksArray) || '',
-      '', // 35 document_status
-      '', // 36 telegram_status
-      '', // 37 sign_status
-      '', // 38 sign_token
-      '', // 39 sign_expires_at
-      '', // 40 sign_link
-      '', // 41 sign_doc_id
-      '', // 42 signed_url
-      '', // 43 signed_at
-      '', // 44 contract_html
-      '', // 45 sign_source
-      '', // 46 signed_pdf_id
-      data.platforms || '' // 47 platforms
+      '',                              // document_status
+      '',                              // telegram_status
+      'pending',                       // sign_status ← выставляем сразу
+      signToken,                       // sign_token
+      expiresAt.toISOString(),         // sign_expires_at
+      signUrl,                         // sign_link
+      '',                              // sign_doc_id
+      '',                              // signed_url
+      '',                              // signed_at
+      stored.value,                    // contract_html
+      'internal',                      // sign_source
+      '',                              // signed_pdf_id
+      data.platforms || ''             // platforms
     ];
 
     sheet.appendRow(row);
@@ -398,27 +432,45 @@ function saveDistribution(data) {
     if (lastRow % 2 === 0) {
       sheet.getRange(lastRow, 1, 1, row.length).setBackground('#F9F9F9');
     }
-    // number format removed to avoid type conflicts
 
     Logger.log('Distribution data saved successfully. Contract: ' + contractNumber);
+    Logger.log('Sign link auto-generated: ' + signUrl);
 
-    // Отправка уведомления в Telegram
+    // ── Отправка письма клиенту ─────────────────────────────────────────────
+    if (data.email) {
+      try {
+        sendSignLinkEmail({
+          email:          data.email,
+          name:           data.fullName || '',
+          contractNumber: contractNumber,
+          workTitle:      data.releaseName || '',
+          releaseType:    releaseTypeName,
+          signUrl:        signUrl,
+          expiresAt:      expiresAt
+        });
+        Logger.log('✅ Письмо со ссылкой на подписание отправлено на ' + data.email);
+      } catch (mailErr) {
+        Logger.log('❌ Ошибка отправки письма: ' + mailErr);
+      }
+    }
+
+    // ── Telegram-уведомление ────────────────────────────────────────────────
     const distCfg = getTelegramConfig('distribution');
     if (TELEGRAM_CONFIG.NOTIFY_DISTRIBUTION && distCfg.ENABLED && distCfg.BOT_TOKEN && distCfg.CHAT_ID) {
       sendDistributionNotification({
         contractNumber: contractNumber,
-        licensorName: data.fullName || '',
-        pseudonym: data.mainArtist || '',
-        tariff: getTariffName(data.tariff),
-        releaseType: getReleaseTypeName(data.releaseType),
-        releaseDate: data.releaseDate || '',
-        workTitle: data.releaseName || '',
-        musicAuthor: musicAuthorValue || '',
-        lyricsAuthor: lyricsAuthorValue || '',
-        platforms: data.platforms || '',
-        email: data.email || '',
-        contact: data.contactInfo || '',
-        sheetUrl: SpreadsheetApp.getActiveSpreadsheet().getUrl()
+        licensorName:   data.fullName || '',
+        pseudonym:      data.mainArtist || '',
+        tariff:         tariffName,
+        releaseType:    releaseTypeName,
+        releaseDate:    data.releaseDate || '',
+        workTitle:      data.releaseName || '',
+        musicAuthor:    musicAuthorValue || '',
+        lyricsAuthor:   lyricsAuthorValue || '',
+        platforms:      data.platforms || '',
+        email:          data.email || '',
+        contact:        data.contactInfo || '',
+        sheetUrl:       SpreadsheetApp.getActiveSpreadsheet().getUrl()
       });
     }
 
@@ -1505,6 +1557,449 @@ function repairTracksJson() {
     'Автопочинка',
     5
   );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ГЕНЕРАЦИЯ HTML ДОГОВОРА (полный шаблон, портированный из TypeScript)
+// ═══════════════════════════════════════════════════════════════════════════
+function formatDateRussianGAS(dateObj) {
+  const months = [
+    'января','февраля','марта','апреля','мая','июня',
+    'июля','августа','сентября','октября','ноября','декабря'
+  ];
+  const d = (dateObj instanceof Date) ? dateObj : new Date(dateObj || new Date());
+  const day   = String(d.getDate()).padStart(2, '0');
+  const month = months[d.getMonth()];
+  const year  = d.getFullYear();
+  return '«' + day + '» ' + month + ' ' + year + ' г.';
+}
+
+function generateContractHTMLInGAS(d) {
+  // d = { contractNumber, licensorName, passportSeriesNumber, passportIssuedBy,
+  //        passportIssueDate, bankDetails, email, pseudonym, workTitle,
+  //        musicAuthor, lyricsAuthor, tariff, percentage, releaseType }
+  const currentDate  = formatDateRussianGAS(new Date());
+  const futureDate   = formatDateRussianGAS(new Date(new Date().getFullYear() + 4, new Date().getMonth(), new Date().getDate()));
+  const contractNum  = d.contractNumber  || '';
+  const licName      = d.licensorName    || '';
+  const passNum      = d.passportSeriesNumber || '';
+  const passBy       = d.passportIssuedBy || '';
+  const passDate     = d.passportIssueDate || '';
+  const bankDet      = d.bankDetails     || '';
+  const email        = d.email           || '';
+  const pseudonym    = d.pseudonym       || '';
+  const workTitle    = d.workTitle       || '';
+  const musicAuthor  = d.musicAuthor     || '';
+  const lyricsAuthor = d.lyricsAuthor    || '';
+  const percentage   = d.percentage      || 55;
+
+  // Блок подписи лицензиата — маркер для подписи (клиент)
+  const licensorSigBlock  = '<div class="sig-line">{{signature_client}}</div>';
+  // Блок подписи лицензиата (ОР) — маркер, который мы потом заменим реальной подписью
+  const licenseeSigBlock  = '<div class="sig-line">{{signature_or}}</div>';
+
+  return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Лицензионный договор № ${contractNum}</title>
+<style>
+  @page { margin: 2cm; size: A4; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #000;
+    max-width: 210mm;
+    margin: 0 auto;
+    padding: 20mm;
+    background: #fff;
+  }
+  h1 { text-align: center; font-size: 16px; font-weight: bold; margin: 0 0 20px; }
+  h2 { text-align: center; font-size: 14px; font-weight: bold; margin: 30px 0 14px; text-transform: uppercase; }
+  .header-row { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 13px; }
+  p { margin: 6px 0; text-align: justify; }
+  .indent { text-indent: 1.5em; }
+  .section-title { font-weight: bold; text-align: center; margin: 24px 0 12px; font-size: 14px; text-transform: uppercase; }
+  .requisites { display: flex; justify-content: space-between; gap: 30px; margin-top: 24px; }
+  .requisites .col { width: 48%; }
+  .requisites .col-title { font-weight: bold; margin-bottom: 8px; font-size: 13px; }
+  .sig-line { border-bottom: 1px solid #000; width: 200px; margin-top: 40px; display: inline-block; }
+  .sig-image img { width: 95px; height: auto; margin-top: 12px; display: block; }
+  table.objects { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 11px; }
+  table.objects th, table.objects td { border: 1px solid #000; padding: 4px 6px; text-align: center; vertical-align: middle; }
+  table.objects th { background: #f0f0f0; font-weight: bold; }
+  .page-break { page-break-before: always; }
+  .center { text-align: center; }
+  hr { border: none; border-top: 1px solid #ccc; margin: 30px 0; }
+</style>
+</head>
+<body>
+
+<h1>ЛИЦЕНЗИОННЫЙ ДОГОВОР № ${contractNum}</h1>
+
+<div class="header-row">
+  <span>ГОРОД Санкт-Петербург</span>
+  <span>ДАТА ${currentDate}</span>
+</div>
+
+<p class="indent">Гражданин Российской Федерации <b>${licName}</b> (паспорт ${passNum}, выдан ${passBy}, дата выдачи ${passDate}), именуемый в дальнейшем «Лицензиар», с одной стороны, и Индивидуальный предприниматель Орехов Данила Александрович (ОГРНИП 324710000080681), именуемый в дальнейшем «Лицензиат», с другой стороны, совместно именуемые «Стороны», а по отдельности - «Сторона», заключили настоящий Лицензионный договор (далее - «Договор») о нижеследующем:</p>
+
+<div class="section-title">ОПРЕДЕЛЕНИЕ ТЕРМИНОВ</div>
+
+<p class="indent"><b>Объекты авторских и/или смежных прав или Объекты</b> - под Объектами авторских и/или смежных прав или Объектами в тексте настоящего Договора и/или соответствующих Приложениях и/или дополнениях к нему понимается произведение, исполнение, фонограмма. Перечень Объектов, право использования которых предоставляется по настоящему Договору, указывается в Приложениях к Договору.</p>
+<p class="indent"><b>Право использования</b> – исключительные авторские и/или смежные права на использование Объектов, предоставленные Лицензиату по настоящему Договору, на условиях исключительной лицензии в отношении всех предусмотренный действующим законодательством способов использования.</p>
+<p class="indent"><b>Обложка</b> – художественное оформление Объектов в виде фотографического произведения или произведения, полученное способами, аналогичными фотографии, произведения изобразительного искусства, дизайна, стопкадра видеозаписи и пр.</p>
+<p class="indent"><b>Территория</b> – территория всех стран мира.</p>
+<p class="indent"><b>Срок</b> – период времени, на который Лицензиар предоставляет Лицензиату Право использования Объектов. Срок исчисляется с даты заключения настоящего Договора и действует в течение срока действия Договора, указанного в п.8.1. Договора.</p>
+
+<div class="section-title">ПРЕДОСТАВЛЕНИЕ ЛИЦЕНЗИИ</div>
+
+<p class="indent">Лицензиар настоящим на Срок и на Территорию предоставляет Лицензиату на условиях исключительной лицензии Право использования указанных в Приложении №1 к настоящему Договору Объектов, а Лицензиат обязуется выплатить Лицензиару вознаграждение, установленное в Договоре, а также выполнять иные обязанности, возложенные на него настоящим Договором.</p>
+<p class="indent">За Лицензиаром не сохраняется право выдачи лицензий иным лицам на использование Объектов, передаваемых по настоящему Договору, на Территории и в течение Срока.</p>
+<p class="indent">Право использования Объектов включает в себя все способы использования, предусмотренные действующим законодательством в отношении всех форм Объектов, представленных как в оригинальной, так и в переработанной форме, в том числе в форме мобильного контента, в форме караоке и др., а также право на использование Объектов в составе сложного объекта, составных произведений и пр.</p>
+<p class="indent">Право использования Объектов, указанных в Приложении № 1 к Договору, считается предоставленным Лицензиату в момент подписания соответствующего Приложения с перечнем таких Объектов.</p>
+<p class="indent">Лицензиат вправе самостоятельно определять порядок, способы и условия использования Объектов в любом объеме.</p>
+<p class="indent">Лицензиар также предоставляет Лицензиату на условиях исключительной лицензии право использования на Территории и в течение Срока Обложек (при наличие) всеми возможными способами. Вознаграждение Лицензиара за предоставление права использования Обложек включено в вознаграждение за право использования соответствующих Объектов.</p>
+<p class="indent">Лицензиат обязуется соблюдать личные неимущественные права авторов, при этом Лицензиат вправе использовать Объекты без указания имен (псевдонимов) авторов, изготовителей фонограмм, исполнителей и иных правообладателей в случаях, если такое указание невозможно в связи с отсутствием технической возможности указания, и подобное использование не будет считаться автором нарушением его личных неимущественных прав.</p>
+<p class="indent">В случае, если Объекты не были обнародованы Лицензиаром до момента заключения настоящего Договора, Лицензиар дает Лицензиату согласие на обнародование, что означает осуществление действия, которое впервые делает Объекты доступными для всеобщего сведения путем их опубликования, публичного показа, публичного исполнения, сообщения в эфир или по кабелю, доведения до всеобщего сведения либо любым другим способом.</p>
+<p class="indent">Лицензиат вправе обнародовать Объекты самостоятельно, либо путем привлечения для обнародования Объектов третьих лиц.</p>
+<p class="indent">Лицензиар разрешает Лицензиату раздельное использование музыкального сопровождения (музыки), в том числе нот и стихотворного текста Произведений любыми способами и в любой форме, в том числе в форме бегущей строки и/или в форме самостоятельно напечатанного текста и пр.</p>
+<p class="indent">Лицензиар как обладатель исключительного права на Объекты уступает (передает) Лицензиату права требования (получения) выплаты вознаграждения в случае использования Объектов следующими способами:</p>
+<p>а) за публичное исполнение Произведений, сообщение Произведений в эфир, сообщение Произведений по кабелю (в т.ч. путем ретрансляции);</p>
+<p>б) за использование Исполнений и Фонограмм на Территории в случаях, когда закон допускает использование объектов смежных прав без согласия правообладателя, но с выплатой ему вознаграждения (п.1 ст.1326 ГК РФ);</p>
+<p>в) за свободное воспроизведение Фонограмм и аудиовизуальных произведений исключительно в личных целях (п.1 ст.1245 ГК РФ).</p>
+
+<div class="section-title">ФИНАНСОВЫЕ УСЛОВИЯ И ПОРЯДОК РАСЧЕТОВ</div>
+
+<p class="indent">За предоставление Права использования Объектов Лицензиат обязуется выплатить Лицензиару вознаграждение в размере и сроки, указанные в соответствующем дополнительном соглашении к Договору.</p>
+<p class="indent">Вознаграждение, указанное в п.3.1 настоящего Договора, является исчерпывающим вознаграждением за Право использования Объектов и Обложек в соответствии с настоящим Договором.</p>
+
+<div class="section-title">ГАРАНТИИ</div>
+
+<p class="indent">Лицензиар заявляет и гарантирует, что обладает всем необходимым объемом прав для заключения настоящего Договора и исполнения всех обязательств по нему, что ни сами Объекты, ни какая-либо их часть, не являются имитацией, копией или заимствованием другого объекта интеллектуальной собственности.</p>
+<p class="indent">Лицензиар обладает в полном объеме исключительным правом на переданные по настоящему Договору Объекты.</p>
+<p class="indent">На момент подписания настоящего Договора, не существует и не будет существовать в будущем никаких прав, обременений и требований третьих лиц в отношении Права использования Объектов.</p>
+<p class="indent">Заключение настоящего Договора и исполнение всех обязанностей по нему не противоречит никаким другим обязательствам, взятым на себя Лицензиаром.</p>
+
+<div class="section-title">ПРАВА И ОБЯЗАННОСТИ СТОРОН</div>
+
+<p class="indent">Лицензиат обязуется своевременно выплатить Лицензиару вознаграждение в соответствии со ст. 3 настоящего Договора.</p>
+<p class="indent">Лицензиат обязуется запрещать третьим лицам любое неправомерное использование Объектов, переданных по настоящему Договору.</p>
+<p class="indent">Лицензиар обязуется передать Лицензиату Объекты посредством сети Интернет.</p>
+<p class="indent">Лицензиат имеет право передавать полученные по настоящему Договору права любым третьим лицам (выдавать сублицензии) без согласования с Лицензиаром.</p>
+
+<div class="section-title">КОНФИДЕНЦИАЛЬНОСТЬ</div>
+
+<p class="indent">Стороны признают, что любая информация, передаваемая ими друг другу в рамках настоящего Договора, является конфиденциальной.</p>
+<p class="indent">Стороны не вправе разглашать эту информацию третьим сторонам без письменного согласия Стороны-владельца информации.</p>
+
+<div class="section-title">РАЗРЕШЕНИЕ СПОРОВ</div>
+
+<p class="indent">Стороны принимают меры к разрешению всех споров и разногласий путем переговоров на основе действующего законодательства РФ и обычаев делового оборота.</p>
+<p class="indent">В случае невозможности решения споров путем переговоров, Стороны вправе обратиться в компетентный судебный орган по месту нахождения Лицензиата.</p>
+
+<div class="section-title">СРОК ДЕЙСТВИЯ ДОГОВОРА И ПОРЯДОК ЕГО РАСТОРЖЕНИЯ</div>
+
+<p class="indent">Настоящий Договор вступает в силу с момента его подписания Сторонами, и действует по <b>${futureDate}</b>. Срок действия настоящего Договора считается автоматически продленным на каждый последующий календарный год при условии отсутствия уведомления об ином, направленного не менее чем за 30 (тридцать) календарных дней до истечения срока.</p>
+<p class="indent">Все изменения и дополнения к Договору действительны лишь если они совершены в письменной форме и подписаны Сторонами.</p>
+<p class="indent">Стороны договорились признавать факсимиле как надлежащую подпись. Стороны согласны на подписание настоящего договора и иных документов путем факсимиле.</p>
+
+<div class="section-title">РЕКВИЗИТЫ СТОРОН:</div>
+
+<div class="requisites">
+  <div class="col">
+    <div class="col-title">ЛИЦЕНЗИАР</div>
+    <p>ФИО:<br><b>${licName}</b></p>
+    <p>Серия и номер паспорта:<br>${passNum}</p>
+    <p>Выдан:<br>${passBy}</p>
+    <p>Дата выдачи:<br>${passDate}</p>
+    <p>Банковские реквизиты / номер карты:<br>${bankDet}</p>
+    <p>Электронная почта:<br>${email}</p>
+    <br><br>
+    ${licensorSigBlock}
+    <p>/ ${licName} /</p>
+  </div>
+  <div class="col">
+    <div class="col-title">ЛИЦЕНЗИАТ</div>
+    <p>Индивидуальный предприниматель<br><b>Орехов Данила Александрович</b><br>(ОГРНИП 324710000080681)</p>
+    <p>Дата рождения: 15.08.2006<br>Серия и номер паспорта: 7020 974645<br>Выдан: УМВД РОССИИ ПО ТУЛЬСКОЙ ОБЛАСТИ</p>
+    <p>Электронная почта: booking@pfvmusic.ru</p>
+    <p>Банковские реквизиты:<br>
+    Наименование: Индивидуальный предприниматель Орехов Данила Александрович<br>
+    ИНН: 711613056345<br>
+    Расчётный №40817810800054003979<br>
+    Название банка: АО "ТБанк"<br>
+    БИК: 044525974<br>
+    Город: Москва<br>
+    Корр. счёт: 30101810145250000974</p>
+    <br>
+    ${licenseeSigBlock}
+    <p>/ Орехов Данила Александрович /</p>
+  </div>
+</div>
+
+<!-- ======== ПРИЛОЖЕНИЕ №1 ======== -->
+
+<div class="page-break"></div>
+
+<h1>ПРИЛОЖЕНИЕ №1 к ЛИЦЕНЗИОННОМУ ДОГОВОРУ<br>№ ${contractNum} от ${currentDate}</h1>
+<h2>Акт приема-передачи Объектов</h2>
+
+<div class="header-row">
+  <span>Город Санкт-Петербург</span>
+  <span>Дата ${currentDate}</span>
+</div>
+
+<p class="indent">Гражданин Российской Федерации <b>${licName}</b> ((паспорт ${passNum}, выдан ${passBy}, дата выдачи ${passDate})(творческий псевдоним - <b>${pseudonym}</b>)), действующий от своего имени, именуемый в дальнейшем – «Лицензиар», с одной стороны, и Индивидуальный предприниматель Орехов Данила Александрович (ОГРНИП 324710000080681), именуемый в дальнейшем «Лицензиат», с другой стороны, заключили настоящий Акт о нижеследующем:</p>
+
+<p class="indent">В соответствии с условиями Договора Лицензиар предоставляет Лицензиату на условиях исключительной лицензии Право использования следующих Объектов:</p>
+
+<table class="objects">
+  <thead>
+    <tr>
+      <th>№</th>
+      <th>Название Произведения</th>
+      <th>Исполнитель</th>
+      <th>Автор слов</th>
+      <th>Автор музыки</th>
+      <th>Доля авторских прав</th>
+      <th>Доля смежных прав</th>
+      <th>Наименование лейбла Лицензиара</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>${workTitle}</td>
+      <td>${pseudonym}</td>
+      <td>${lyricsAuthor}</td>
+      <td>${musicAuthor}</td>
+      <td>100%</td>
+      <td>100%</td>
+      <td>PFVMUSIC</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Настоящий Акт удостоверяет факт передачи Лицензиаром Лицензиату Объектов посредством сети Интернет с электронного адреса Лицензиара <b>${email}</b> на электронный адрес Лицензиата booking@pfvmusic.ru</p>
+<p>2. Стороны претензий друг к другу не имеют.</p>
+<p>3. Настоящий Акт составлен в двух подлинных экземплярах, имеющих равную юридическую силу.</p>
+
+<div class="requisites" style="margin-top:40px;">
+  <div class="col">
+    <div class="col-title">ЛИЦЕНЗИАР:</div>
+    ${licensorSigBlock}
+    <p>/ ${licName} /</p>
+  </div>
+  <div class="col">
+    <div class="col-title">ЛИЦЕНЗИАТ:</div>
+    ${licenseeSigBlock}
+    <p>/ Орехов Данила Александрович /</p>
+  </div>
+</div>
+
+<!-- ======== ДОПОЛНИТЕЛЬНОЕ СОГЛАШЕНИЕ ======== -->
+
+<div class="page-break"></div>
+
+<h1>Дополнительное соглашение<br>к ЛИЦЕНЗИОННОМУ ДОГОВОРУ № ${contractNum} от ${currentDate}</h1>
+
+<p class="indent">Гражданин Российской Федерации <b>${licName}</b> ((паспорт ${passNum}, выдан ${passBy}, дата выдачи ${passDate})(творческий псевдоним - <b>${pseudonym}</b>)), действующий от своего имени, именуемый в дальнейшем – «Лицензиар», с одной стороны, и Индивидуальный предприниматель Орехов Данила Александрович (ОГРНИП 324710000080681), именуемый в дальнейшем «Лицензиат», с другой стороны, заключили настоящее дополнительное соглашение о нижеследующем:</p>
+
+<p class="indent">Лицензиат обязуется выплачивать Лицензиару вознаграждение в размере <b>${percentage}%</b> от денежных средств, полученных Лицензиатом от использования Объектов на условиях Договора.</p>
+<p class="indent">Стороны договорились, что вознаграждение, указанное в настоящем дополнительном соглашении к Договору, является исчерпывающим вознаграждением за все способы использования, указанные в Договоре.</p>
+<p class="indent">Вознаграждение выплачивается в рублях РФ путем перечисления денежных средств на банковский счет или электронный кошелек Лицензиара по запросу при условии достижения суммы роялти — 1000 рублей.</p>
+
+<div class="requisites" style="margin-top:40px;">
+  <div class="col">
+    <div class="col-title">ЛИЦЕНЗИАР:</div>
+    ${licensorSigBlock}
+    <p>/ ${licName} /</p>
+  </div>
+  <div class="col">
+    <div class="col-title">ЛИЦЕНЗИАТ:</div>
+    ${licenseeSigBlock}
+    <p>/ Орехов Данила Александрович /</p>
+  </div>
+</div>
+
+</body>
+</html>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ОТПРАВКА EMAIL КЛИЕНТУ С ССЫЛКОЙ НА ПОДПИСАНИЕ
+// ═══════════════════════════════════════════════════════════════════════════
+function sendSignLinkEmail(opts) {
+  // opts = { email, name, contractNumber, workTitle, releaseType, signUrl, expiresAt }
+  const recipientEmail = String(opts.email || '').trim();
+  if (!recipientEmail) {
+    Logger.log('sendSignLinkEmail: no email provided, skipping');
+    return;
+  }
+
+  const name           = opts.name           || 'Лицензиар';
+  const contractNumber = opts.contractNumber  || '';
+  const workTitle      = opts.workTitle       || '';
+  const releaseType    = opts.releaseType     || '';
+  const signUrl        = opts.signUrl         || '';
+  const expiresAt      = opts.expiresAt instanceof Date ? opts.expiresAt : new Date(opts.expiresAt || new Date());
+
+  const expiresStr = expiresAt.toLocaleDateString('ru-RU', {
+    day: '2-digit', month: 'long', year: 'numeric'
+  });
+
+  // ── Красивый HTML для письма ─────────────────────────────────────────────
+  const htmlBody = `<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PFVMUSIC — Договор готов к подписанию</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    body { background: #f0f2f5; min-height: 100vh; padding: 40px 16px; }
+    .email-wrapper { width: 100%; max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.08); }
+    .header { background: linear-gradient(145deg, #0e0e1a 0%, #1b1b3a 40%, #252552 70%, #1b1b3a 100%); padding: 52px 40px 48px; text-align: center; }
+    .logo-icon { width: 68px; height: 68px; border-radius: 18px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
+    .logo-title { color: #ffffff; font-size: 26px; font-weight: 900; letter-spacing: 5px; }
+    .logo-subtitle { color: rgba(165,180,252,0.5); font-size: 11px; font-weight: 600; letter-spacing: 4px; text-transform: uppercase; margin-top: 6px; }
+    .body { padding: 44px 44px 36px; }
+    .greeting { color: #111827; font-size: 22px; font-weight: 800; margin-bottom: 10px; }
+    .intro-text { color: #6b7280; font-size: 15px; line-height: 1.75; margin-bottom: 32px; }
+    .details-card { background: #fafbfd; border: 1px solid #eef0f4; border-radius: 16px; padding: 28px 30px; margin-bottom: 32px; }
+    .details-header { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid #eef0f4; }
+    .details-icon { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .details-title { font-size: 16px; font-weight: 700; color: #111827; }
+    .details-title-sub { font-size: 12px; color: #9ca3af; font-weight: 500; margin-top: 1px; }
+    .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-top: 1px solid #f0f1f5; }
+    .detail-row:first-of-type { border-top: none; }
+    .detail-label { color: #9ca3af; font-size: 13px; font-weight: 500; }
+    .detail-value { color: #1f2937; font-size: 14px; font-weight: 600; text-align: right; }
+    .detail-value.highlight { color: #6366f1; font-weight: 700; }
+    .badge { display: inline-block; background: #eef2ff; color: #6366f1; padding: 4px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; }
+    .cta-wrapper { text-align: center; margin-bottom: 36px; }
+    .cta-button { display: inline-block; background: linear-gradient(135deg, #6366f1 0%, #7c3aed 100%); color: #ffffff !important; text-decoration: none; padding: 18px 56px; border-radius: 14px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 12px rgba(99,102,241,0.25), 0 12px 32px rgba(99,102,241,0.2); }
+    .cta-hint { text-align: center; color: #b0b8c9; font-size: 12px; margin-top: 12px; font-weight: 500; }
+    .section-divider { height: 1px; background: linear-gradient(90deg, transparent, #e5e7eb, transparent); margin: 0 0 32px; }
+    .fallback-card { background: #fffdf5; border: 1px solid #fde68a; border-radius: 14px; padding: 22px 26px; margin-bottom: 8px; }
+    .fallback-title { color: #92400e; font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+    .fallback-text { color: #a16207; font-size: 13px; line-height: 1.65; margin-bottom: 14px; }
+    .fallback-url { background: #fefce8; border: 1px dashed #fbbf24; border-radius: 10px; padding: 12px 16px; font-size: 12px; color: #6366f1; word-break: break-all; font-family: monospace; line-height: 1.6; }
+    .footer { background: linear-gradient(145deg, #0e0e1a, #1b1b3a); padding: 40px 44px; text-align: center; }
+    .footer-logo-text { color: #c7d2fe; font-size: 15px; font-weight: 800; letter-spacing: 3px; }
+    .footer-regards { color: #9ca3af; font-size: 14px; line-height: 1.6; margin: 16px 0 6px; }
+    .footer-regards strong { color: #c7d2fe; }
+    .footer-email { color: #818cf8; font-size: 13px; text-decoration: none; font-weight: 600; }
+    .footer-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 24px 0; }
+    .footer-disclaimer { color: #4b5563; font-size: 11px; line-height: 1.8; max-width: 460px; margin: 0 auto 16px; }
+    .footer-copy { color: #374151; font-size: 11px; font-weight: 500; }
+  </style>
+</head>
+<body>
+  <div class="email-wrapper">
+    <div class="header">
+      <div class="logo-icon">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+          <path d="M9 18V5l12-2v13" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="6" cy="18" r="3" stroke="white" stroke-width="2.2"/>
+          <circle cx="18" cy="16" r="3" stroke="white" stroke-width="2.2"/>
+        </svg>
+      </div>
+      <div class="logo-title">PFVMUSIC</div>
+      <div class="logo-subtitle">Издательство</div>
+    </div>
+
+    <div class="body">
+      <h1 class="greeting">Здравствуйте, ${name}!</h1>
+      <p class="intro-text">
+        Ваш договор успешно сгенерирован и готов к подписанию.<br>
+        Пожалуйста, ознакомьтесь с деталями ниже и подтвердите документ, перейдя по ссылке.
+      </p>
+
+      <div class="details-card">
+        <div class="details-header">
+          <div class="details-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div>
+            <div class="details-title">Детали договора</div>
+            <div class="details-title-sub">Автоматически сгенерированный документ</div>
+          </div>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">№ Договора</span>
+          <span class="detail-value highlight">${contractNumber}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Произведение</span>
+          <span class="detail-value">«${workTitle}»</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Тип релиза</span>
+          <span class="detail-value"><span class="badge">${releaseType}</span></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Ссылка действительна до</span>
+          <span class="detail-value">${expiresStr}</span>
+        </div>
+      </div>
+
+      <div class="cta-wrapper">
+        <a href="${signUrl}" class="cta-button">✍️ Подписать договор</a>
+        <p class="cta-hint">Ссылка действительна 14 дней · Откройте в любом браузере</p>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <div class="fallback-card">
+        <div class="fallback-title">⚠️ Кнопка не работает?</div>
+        <p class="fallback-text">
+          Некоторые почтовые клиенты блокируют интерактивные элементы. Скопируйте адрес ниже и вставьте в строку браузера:
+        </p>
+        <div class="fallback-url">${signUrl}</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="footer-logo-text">PFVMUSIC</div>
+      <p class="footer-regards">
+        С уважением, Музыкальное издательство <strong>PFVMUSIC</strong>
+      </p>
+      <a href="mailto:booking@pfvmusic.ru" class="footer-email">booking@pfvmusic.ru</a>
+      <div class="footer-divider"></div>
+      <p class="footer-disclaimer">
+        Это письмо и все приложения к нему строго конфиденциальны и предназначены исключительно для указанного адресата.
+      </p>
+      <p class="footer-copy">© 2026 PFVMUSIC. Все права защищены.</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  // Текстовая версия для клиентов без HTML
+  const plainBody =
+    'Здравствуйте, ' + name + '!\n\n' +
+    'Ваш договор PFVMUSIC готов к подписанию.\n\n' +
+    '№ Договора: ' + contractNumber + '\n' +
+    'Произведение: ' + workTitle + '\n' +
+    'Тип релиза: ' + releaseType + '\n\n' +
+    'Ссылка для подписания:\n' + signUrl + '\n\n' +
+    'Ссылка действительна до: ' + expiresStr + '\n\n' +
+    'С уважением,\nPFVMUSIC | booking@pfvmusic.ru';
+
+  MailApp.sendEmail({
+    to:       recipientEmail,
+    subject:  '✍️ PFVMUSIC — Ваш договор готов к подписанию (№ ' + contractNumber + ')',
+    body:     plainBody,
+    htmlBody: htmlBody,
+    name:     'PFVMUSIC'
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
