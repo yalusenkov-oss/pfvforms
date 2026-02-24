@@ -112,14 +112,14 @@ export function SignatureCanvas({ onSignatureChange }: SignatureCanvasProps) {
   }, [onSignatureChange]);
 
   return (
-    <div className="space-y-3 w-full">
+    <div className="space-y-2 sm:space-y-3 w-full">
       <div className="relative">
         <canvas
           ref={canvasRef}
           width={600}
           height={200}
           className="w-full border-2 border-dashed border-purple-200 rounded-xl bg-white cursor-crosshair touch-none"
-          style={{ maxHeight: '120px' }}
+          style={{ maxHeight: '108px' }}
           onMouseDown={startDrawing}
           onMouseMove={draw}
           onMouseUp={stopDrawing}
@@ -130,16 +130,16 @@ export function SignatureCanvas({ onSignatureChange }: SignatureCanvasProps) {
         />
         {showPlaceholder && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <p className="text-gray-400 text-sm font-medium">Нарисуйте подпись здесь</p>
+            <p className="text-gray-400 text-xs sm:text-sm font-medium">Нарисуйте подпись здесь</p>
           </div>
         )}
       </div>
       <div className="flex justify-center">
         <button
           onClick={clearCanvas}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-500 bg-transparent hover:bg-gray-100/50 transition-colors"
+          className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-xs font-medium text-gray-400 hover:text-gray-500 bg-transparent hover:bg-gray-100/50 transition-colors"
         >
-          <Trash2 className="w-3.5 h-3.5" />
+          <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
           Очистить
         </button>
       </div>
