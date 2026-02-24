@@ -7,8 +7,9 @@ interface SignatureCanvasProps {
 
 export function SignatureCanvas({ onSignatureChange }: SignatureCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [hasDrawn, setHasDrawn] = useState(false);
+  const isDrawing = useRef(false);
+  const hasDrawn = useRef(false);
+  const [showPlaceholder, setShowPlaceholder] = useState(true);
 
   const getCanvasCoords = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current;
@@ -17,17 +18,31 @@ export function SignatureCanvas({ onSignatureChange }: SignatureCanvasProps) {
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
 
+    let clientX, clientY;
     if ('touches' in e) {
       const touch = e.touches[0] || e.changedTouches[0];
-      return {
-        x: (touch.clientX - rect.left) * scaleX,
-        y: (touch.clientY - rect.top) * scaleY,
-      };
+      clientX = touch.clientX;
+      clientY = touch.clientY;
+    } else {
+      clientX = (e as React.MouseEvent).clientX;
+      clientY = (e as React.MouseEvent).clientY;
     }
-    return {
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY,
-    };
+
+    // Workaround for CSS zoom coordinate bugs on mobile
+    let cssZoom = 1;
+    let el: HTMLElement | null = canvas;
+    while (el) {
+      const z = window.getComputedStyle(el).zoom;
+      if (z && z !== 'normal' && !isNaN(Number(z))) {
+        cssZoom *= parseFloat(z);
+      }
+      el = el.parentElement;
+    }
+
+    const x = (clientX / cssZoom - rect.left / cssZoom) * scaleX;
+    const y = (clientY / cssZoom - rect.top / cssZoom) * scaleY;
+
+    return { x, y };
   }, []);
 
   useEffect(() => {
@@ -37,43 +52,52 @@ export function SignatureCanvas({ onSignatureChange }: SignatureCanvasProps) {
     if (!ctx) return;
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }, []);
+
+  const setupContext = (ctx: CanvasRenderingContext2D) => {
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.strokeStyle = '#1e1b4b';
     ctx.lineWidth = 2.5;
-  }, []);
+  };
 
   const startDrawing = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault();
+    // Only prevent default on touch to avoid scrolling, let mouse events pass if needed, but safe to prevent here too
+    if (e.cancelable) e.preventDefault();
+
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     if (!ctx) return;
+    setupContext(ctx);
+
     const { x, y } = getCanvasCoords(e);
     ctx.beginPath();
     ctx.moveTo(x, y);
-    setIsDrawing(true);
+    isDrawing.current = true;
+    setShowPlaceholder(false);
   }, [getCanvasCoords]);
 
   const draw = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault();
-    if (!isDrawing) return;
+    if (e.cancelable) e.preventDefault();
+    if (!isDrawing.current) return;
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     if (!ctx) return;
+
     const { x, y } = getCanvasCoords(e);
     ctx.lineTo(x, y);
     ctx.stroke();
-    setHasDrawn(true);
-  }, [isDrawing, getCanvasCoords]);
+    hasDrawn.current = true;
+  }, [getCanvasCoords]);
 
   const stopDrawing = useCallback(() => {
-    if (!isDrawing) return;
-    setIsDrawing(false);
+    if (!isDrawing.current) return;
+    isDrawing.current = false;
     const canvas = canvasRef.current;
-    if (canvas && hasDrawn) {
+    if (canvas && hasDrawn.current) {
       onSignatureChange(canvas.toDataURL('image/png'));
     }
-  }, [isDrawing, hasDrawn, onSignatureChange]);
+  }, [onSignatureChange]);
 
   const clearCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -81,11 +105,9 @@ export function SignatureCanvas({ onSignatureChange }: SignatureCanvasProps) {
     if (!ctx || !canvas) return;
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = '#1e1b4b';
-    ctx.lineWidth = 2.5;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    setHasDrawn(false);
+    hasDrawn.current = false;
+    isDrawing.current = false;
+    setShowPlaceholder(true);
     onSignatureChange(null);
   }, [onSignatureChange]);
 
@@ -106,7 +128,7 @@ export function SignatureCanvas({ onSignatureChange }: SignatureCanvasProps) {
           onTouchMove={draw}
           onTouchEnd={stopDrawing}
         />
-        {!hasDrawn && (
+        {showPlaceholder && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <p className="text-gray-400 text-sm font-medium">Нарисуйте подпись здесь</p>
           </div>
