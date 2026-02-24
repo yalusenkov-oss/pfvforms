@@ -1394,7 +1394,7 @@ export function App() {
     }
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50/80 via-white to-amber-50/40 mobile-zoom-80">
+      <div className="min-h-screen bg-gradient-to-br from-amber-50/80 via-white to-amber-50/40 mobile-zoom-70">
         <Header onBack={goHome} />
 
         {/* Hero */}
@@ -1529,7 +1529,7 @@ export function App() {
   const progressPercent = ((currentStep - 1) / 3) * 100;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50/80 via-white to-purple-50/40 mobile-zoom-80">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50/80 via-white to-purple-50/40 mobile-zoom-70">
       <Header onBack={goHome} />
 
       {/* Hero */}

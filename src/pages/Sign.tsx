@@ -8,6 +8,25 @@ import { InfoBlock } from '@/components/sign/InfoBlock';
 import { Footer } from '@/components/sign/Footer';
 
 // ════════════════════════════════════════════════════════════════
+// Utility to handle signature markers in HTML
+// ════════════════════════════════════════════════════════════════
+const MARKERS_REGEX = /\{\{(?:<[^>]*>|&[^;]+;|\s)*(?:signature_client|signature_licensor)(?:_[123])?(?:<[^>]*>|&[^;]+;|\s)*\}\}/g;
+const FALLBACK_REGEX1 = /\{\{\s*signature_client\s*\}\}/g;
+const FALLBACK_REGEX2 = /\{\{\s*signature_licensor\s*\}\}/g;
+
+const cleanMarkersFromHtml = (html: string, isSigned: boolean): string => {
+  let result = String(html);
+  const replacement = isSigned
+    ? '<span style="color:#16a34a; font-weight:bold; font-size:12px; font-family:sans-serif;">Подписано электронно</span>'
+    : '<span style="opacity:0;">$&</span>'; // Hide markers but keep them in DOM just in case
+
+  result = result.replace(MARKERS_REGEX, replacement);
+  result = result.replace(FALLBACK_REGEX1, replacement);
+  result = result.replace(FALLBACK_REGEX2, replacement);
+  return result;
+};
+
+// ════════════════════════════════════════════════════════════════
 // Google Apps Script URL resolution (same pattern as main app)
 // ════════════════════════════════════════════════════════════════
 let _cachedScriptUrl: string | null = null;
@@ -96,11 +115,8 @@ export default function SignPage() {
 
       if (!data?.success) throw new Error(data?.error || 'Договор не найден');
 
+      let loadedHtml = data.contractHtml || '';
       setContractNumber(data.contractNumber || 'N/A');
-      setContractHtml(data.contractHtml || '');
-      setLicensorName(data.licensorName || 'Автор');
-      setWorkTitle(data.workTitle || 'Произведение');
-      setReleaseType(data.releaseType || 'Релиз');
 
       // If already signed on server
       if (data.status === 'signed') {
@@ -111,7 +127,17 @@ export default function SignPage() {
           dUrl = `https://drive.google.com/uc?export=download&id=${data.signedPdfId}`;
         }
         setDownloadUrl(dUrl);
+        // Clean markers or replace with "Подписано электронно" text
+        loadedHtml = cleanMarkersFromHtml(loadedHtml, true);
+      } else {
+        // Clean markers so they are invisible to the user before signing
+        loadedHtml = cleanMarkersFromHtml(loadedHtml, false);
       }
+
+      setContractHtml(loadedHtml);
+      setLicensorName(data.licensorName || 'Автор');
+      setWorkTitle(data.workTitle || 'Произведение');
+      setReleaseType(data.releaseType || 'Релиз');
     } catch (err: any) {
       setError(err?.message || 'Ошибка при загрузке договора');
     } finally {
@@ -151,16 +177,13 @@ export default function SignPage() {
 
   // ═══ Handlers matching the design component interface ═══
   const injectSignatureLocally = (html: string, dataUrl: string) => {
-    const imgTag = `<img src="${dataUrl}" style="height:60px;width:auto;" />`;
+    const imgTag = `<img src="${dataUrl}" style="height:60px;width:auto;mix-blend-mode:multiply;" />`;
     let result = String(html);
 
-    // Replace all possible client/licensor signature markers, even with inner tags or entities
-    const regex = /\{\{(?:<[^>]*>|&[^;]+;|\s)*(?:signature_client|signature_licensor)(?:_[123])?(?:<[^>]*>|&[^;]+;|\s)*\}\}/g;
-    result = result.replace(regex, imgTag);
-
-    // Fallback simple replacement just in case
-    result = result.replace(/\{\{\s*signature_client\s*\}\}/g, imgTag);
-    result = result.replace(/\{\{\s*signature_licensor\s*\}\}/g, imgTag);
+    // If markers were pre-cleaned as invisible spans, this regex won't match them anymore
+    // But we need to replace either the raw marker OR the invisible span we injected
+    const regexAny = /(?:<span style="opacity:0;">)?\{\{(?:<[^>]*>|&[^;]+;|\s)*(?:signature_client|signature_licensor)(?:_[123])?(?:<[^>]*>|&[^;]+;|\s)*\}\}(?:<\/span>)?/g;
+    result = result.replace(regexAny, imgTag);
 
     return result;
   };
@@ -217,7 +240,7 @@ export default function SignPage() {
 
   // ═══ RENDER ═══
   return (
-    <div className="min-h-screen bg-[#fafafc] flex flex-col font-sans mobile-zoom-80">
+    <div className="min-h-screen bg-[#fafafc] flex flex-col font-sans mobile-zoom-70">
       <Header />
 
       <main className="flex-1 w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 xl:px-12">
