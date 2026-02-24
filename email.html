@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PFVMUSIC — Договор готов к подписанию</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background: #f0f2f5;
+            min-height: 100vh;
+            padding: 40px 16px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .email-wrapper {
+            width: 100%;
+            max-width: 620px;
+            background: #ffffff;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow:
+                0 1px 3px rgba(0,0,0,0.04),
+                0 8px 32px rgba(0,0,0,0.06),
+                0 24px 60px rgba(0,0,0,0.04);
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            background: linear-gradient(145deg, #0e0e1a 0%, #1b1b3a 40%, #252552 70%, #1b1b3a 100%);
+            padding: 52px 40px 48px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -100px;
+            left: -100px;
+            width: 350px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -80px;
+            right: -60px;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .logo-icon {
+            width: 68px;
+            height: 68px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            position: relative;
+            box-shadow: 0 8px 28px rgba(99,102,241,0.35), 0 0 0 1px rgba(255,255,255,0.08) inset;
+        }
+
+        .logo-title {
+            color: #ffffff;
+            font-size: 26px;
+            font-weight: 900;
+            letter-spacing: 5px;
+            position: relative;
+        }
+
+        .logo-subtitle {
+            color: rgba(165,180,252,0.5);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-top: 6px;
+            position: relative;
+        }
+
+        /* ===== BODY ===== */
+        .body {
+            padding: 44px 44px 36px;
+        }
+
+        .greeting {
+            color: #111827;
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+
+        .intro-text {
+            color: #6b7280;
+            font-size: 15px;
+            line-height: 1.75;
+            margin-bottom: 32px;
+        }
+
+        /* Details card */
+        .details-card {
+            background: #fafbfd;
+            border: 1px solid #eef0f4;
+            border-radius: 16px;
+            padding: 28px 30px;
+            margin-bottom: 32px;
+        }
+
+        .details-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 22px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid #eef0f4;
+        }
+
+        .details-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(99,102,241,0.2);
+        }
+
+        .details-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .details-title-sub {
+            font-size: 12px;
+            color: #9ca3af;
+            font-weight: 500;
+            margin-top: 1px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 0;
+        }
+
+        .detail-row + .detail-row {
+            border-top: 1px solid #f0f1f5;
+        }
+
+        .detail-label {
+            color: #9ca3af;
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .detail-label-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #d1d5db;
+            flex-shrink: 0;
+        }
+
+        .detail-value {
+            color: #1f2937;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .detail-value.highlight {
+            color: #6366f1;
+            font-weight: 700;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #eef2ff;
+            color: #6366f1;
+            padding: 4px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+
+        /* CTA */
+        .cta-wrapper {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+
+        .cta-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #6366f1 0%, #7c3aed 100%);
+            color: #ffffff;
+            text-decoration: none;
+            padding: 18px 56px;
+            border-radius: 14px;
+            font-weight: 700;
+            font-size: 16px;
+            letter-spacing: 0.3px;
+            box-shadow:
+                0 4px 12px rgba(99,102,241,0.25),
+                0 12px 32px rgba(99,102,241,0.2);
+            transition: all 0.2s ease;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow:
+                0 6px 16px rgba(99,102,241,0.3),
+                0 16px 40px rgba(99,102,241,0.25);
+        }
+
+        .cta-hint {
+            text-align: center;
+            color: #b0b8c9;
+            font-size: 12px;
+            margin-top: 12px;
+            font-weight: 500;
+        }
+
+        /* Divider */
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #e5e7eb, transparent);
+            margin: 0 0 32px;
+        }
+
+        /* Support */
+        .support-card {
+            background: linear-gradient(135deg, #f0f7ff 0%, #f5f3ff 100%);
+            border: 1px solid #e0e7ff;
+            border-radius: 14px;
+            padding: 22px 26px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .support-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(59,130,246,0.2);
+        }
+
+        .support-title {
+            color: #1f2937;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+
+        .support-text {
+            color: #6b7280;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .support-link {
+            color: #6366f1;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        /* Fallback */
+        .fallback-card {
+            background: #fffdf5;
+            border: 1px solid #fde68a;
+            border-radius: 14px;
+            padding: 22px 26px;
+            margin-bottom: 8px;
+        }
+
+        .fallback-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .fallback-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: #fef3c7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .fallback-title {
+            color: #92400e;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .fallback-text {
+            color: #a16207;
+            font-size: 13px;
+            line-height: 1.65;
+            margin-bottom: 14px;
+        }
+
+        .fallback-url {
+            background: #fefce8;
+            border: 1px dashed #fbbf24;
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 12px;
+            color: #6366f1;
+            word-break: break-all;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            line-height: 1.6;
+            font-weight: 500;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            background: linear-gradient(145deg, #0e0e1a, #1b1b3a);
+            padding: 40px 44px;
+            text-align: center;
+        }
+
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .footer-logo-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .footer-logo-text {
+            color: #c7d2fe;
+            font-size: 15px;
+            font-weight: 800;
+            letter-spacing: 3px;
+        }
+
+        .footer-regards {
+            color: #9ca3af;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 6px;
+        }
+
+        .footer-regards strong {
+            color: #c7d2fe;
+        }
+
+        .footer-email {
+            color: #818cf8;
+            font-size: 13px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .footer-divider {
+            height: 1px;
+            background: rgba(255,255,255,0.06);
+            margin: 24px 0;
+        }
+
+        .footer-disclaimer {
+            color: #4b5563;
+            font-size: 11px;
+            line-height: 1.8;
+            max-width: 460px;
+            margin: 0 auto 16px;
+        }
+
+        .footer-copy {
+            color: #374151;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            body { padding: 0; }
+            .email-wrapper { border-radius: 0; }
+            .header { padding: 40px 24px 36px; }
+            .body { padding: 32px 24px 28px; }
+            .details-card { padding: 22px 20px; }
+            .cta-button { padding: 16px 40px; font-size: 15px; }
+            .footer { padding: 32px 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-wrapper">
+
+        <!-- ===== HEADER ===== -->
+        <div class="header">
+            <div class="logo-icon">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+                    <path d="M9 18V5l12-2v13" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="6" cy="18" r="3" stroke="white" stroke-width="2.2"/>
+                    <circle cx="18" cy="16" r="3" stroke="white" stroke-width="2.2"/>
+                </svg>
+            </div>
+            <div class="logo-title">PFVMUSIC</div>
+            <div class="logo-subtitle">Издательство</div>
+        </div>
+
+        <!-- ===== BODY ===== -->
+        <div class="body">
+
+            <!-- Greeting -->
+            <h1 class="greeting">Здравствуйте, Алексей!</h1>
+            <p class="intro-text">
+                Ваш договор успешно сгенерирован и готов к подписанию.<br>
+                Пожалуйста, ознакомьтесь с деталями ниже и подтвердите документ, перейдя по ссылке.
+            </p>
+
+            <!-- Contract Details -->
+            <div class="details-card">
+                <div class="details-header">
+                    <div class="details-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="details-title">Детали договора</div>
+                        <div class="details-title-sub">Автоматически сгенерированный документ</div>
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <span class="detail-label">
+                        <span class="detail-label-dot"></span>
+                        № Договора
+                    </span>
+                    <span class="detail-value highlight">PFV-2026-001847</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">
+                        <span class="detail-label-dot"></span>
+                        Произведение
+                    </span>
+                    <span class="detail-value">«Ночной город»</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">
+                        <span class="detail-label-dot"></span>
+                        Тип релиза
+                    </span>
+                    <span class="detail-value">
+                        <span class="badge">Сингл</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- CTA Button -->
+            <div class="cta-wrapper">
+                <a href="https://pfvmusic.digital/sign/PFV-2026-001847" class="cta-button">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 113 3L12 15l-4 1 1-4 9.5-9.5z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Подписать договор
+                </a>
+                <p class="cta-hint">Ссылка действительна 14 дней</p>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Support -->
+            <div class="support-card">
+                <div class="support-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="support-title">Есть вопросы по дистрибуции?</div>
+                    <div class="support-text">Напишите нам в Telegram: <a href="https://t.me/pfvmusic_support" class="support-link">@pfvmusic_support</a></div>
+                </div>
+            </div>
+
+            <!-- Fallback -->
+            <div class="fallback-card">
+                <div class="fallback-header">
+                    <div class="fallback-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <line x1="12" y1="9" x2="12" y2="13" stroke="#d97706" stroke-width="2" stroke-linecap="round"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17" stroke="#d97706" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <div class="fallback-title">Кнопка не работает?</div>
+                </div>
+                <p class="fallback-text">
+                    Некоторые почтовые клиенты блокируют интерактивные элементы. Скопируйте адрес ниже и вставьте в строку браузера:
+                </p>
+                <div class="fallback-url">https://pfvmusic.digital/sign/PFV-2026-001847</div>
+            </div>
+        </div>
+
+        <!-- ===== FOOTER ===== -->
+        <div class="footer">
+            <div class="footer-logo">
+                <div class="footer-logo-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M9 18V5l12-2v13" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="6" cy="18" r="3" stroke="white" stroke-width="2.2"/>
+                        <circle cx="18" cy="16" r="3" stroke="white" stroke-width="2.2"/>
+                    </svg>
+                </div>
+                <span class="footer-logo-text">PFVMUSIC</span>
+            </div>
+
+            <p class="footer-regards">
+                С уважением, Музыкальное издательство <strong>PFVMUSIC</strong>
+            </p>
+            <a href="mailto:support@pfvmusic.digital" class="footer-email">support@pfvmusic.digital</a>
+
+            <div class="footer-divider"></div>
+
+            <p class="footer-disclaimer">
+                Это письмо и все приложения к нему строго конфиденциальны и предназначены исключительно для указанного адресата. Если вы получили это письмо по ошибке, пожалуйста, немедленно уведомите отправителя и удалите сообщение.
+            </p>
+
+            <p class="footer-copy">© 2026 PFVMUSIC. Все права защищены.</p>
+        </div>
+
+    </div>
+</body>
+</html>

@@ -93,6 +93,8 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
           email: data.email,
           name: data.fullName,
           contractNumber: data.contractNumber,
+          workTitle: data.releaseName || '',
+          releaseType: data.releaseType || '',
           signLink: data.signLink
         })
       });

@@ -102,6 +102,8 @@ export function ContractGenerator({ data, onBack, onUpdateContractNumber }: Cont
           email: contractData.email,
           name: contractData.licensorName,
           contractNumber: contractData.contractNumber,
+          workTitle: contractData.workTitle || '',
+          releaseType: contractData.releaseType || '',
           signLink: link
         })
       });
