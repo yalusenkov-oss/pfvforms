@@ -23,6 +23,7 @@ import {
 } from '../services/contractGenerator';
 import { createSignLink, updateSheetRow } from '../services/googleSheetsAdmin';
 import { cn } from '../utils/cn';
+import { copyToClipboard } from '../utils/clipboard';
 
 interface ContractGeneratorProps {
   data: DistributionData;
@@ -43,8 +44,9 @@ function DataField({
 }) {
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(value);
+  const handleCopy = async () => {
+    const copiedOk = await copyToClipboard(value);
+    if (!copiedOk) return;
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -147,8 +149,9 @@ export function ContractGenerator({ data, onBack, onUpdateContractNumber }: Cont
     setIsEditing(false);
   };
 
-  const handleCopyText = () => {
-    navigator.clipboard.writeText(contractText);
+  const handleCopyText = async () => {
+    const copiedOk = await copyToClipboard(contractText);
+    if (!copiedOk) return;
     setTextCopied(true);
     setTimeout(() => setTextCopied(false), 2500);
   };
@@ -243,9 +246,13 @@ export function ContractGenerator({ data, onBack, onUpdateContractNumber }: Cont
     }
   };
 
-  const handleCopySignLink = () => {
+  const handleCopySignLink = async () => {
     if (!signLink) return;
-    navigator.clipboard.writeText(signLink);
+    const copiedOk = await copyToClipboard(signLink);
+    if (!copiedOk) {
+      window.prompt('Скопируйте ссылку вручную:', signLink);
+      return;
+    }
     setSignCopied(true);
     setTimeout(() => setSignCopied(false), 2000);
   };

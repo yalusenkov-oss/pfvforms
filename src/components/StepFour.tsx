@@ -4,6 +4,7 @@ import { Input, StepCard, InfoBox, Divider } from './UI';
 import { CreditCard, MessageCircle, Send, ExternalLink, Building2, Heart, Calculator, ReceiptText, MessageSquare, UserCheck, TicketPercent, CheckCircle2, XCircle } from 'lucide-react';
 import { calcTotal, getTrackCount } from './StepOne';
 import { fetchPromoCodes, PromoCodeRecord } from '@/services/googleSheets';
+import { copyToClipboard } from '@/utils/clipboard';
 
 interface StepFourProps {
   data: Record<string, string>;
@@ -448,8 +449,8 @@ export function StepFour({ data, onChange }: StepFourProps) {
 }
 
 function BankCard({ name, number, color, emoji }: { name: string; number: string; color: string; emoji: string }) {
-  const handleCopy = () => {
-    navigator.clipboard?.writeText(number.replace(/\s/g, ''));
+  const handleCopy = async () => {
+    await copyToClipboard(number.replace(/\s/g, ''));
   };
 
   return (

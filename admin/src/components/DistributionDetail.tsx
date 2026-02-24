@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { DistributionData, TARIFF_LABELS, RELEASE_TYPE_LABELS, STATUS_LABELS, STATUS_COLORS, PRICES, KARAOKE_PRICES } from '../types';
 import { cn } from '../utils/cn';
 import { createSignLink } from '../services/googleSheetsAdmin';
+import { copyToClipboard } from '../utils/clipboard';
 
 interface DistributionDetailProps {
   data: DistributionData;
@@ -17,8 +18,9 @@ const ALL_STATUSES: DistributionData['status'][] = ['new', 'in_progress', 'paid'
 function InfoRow({ label, value, mono, link }: { label: string; value: string; mono?: boolean; link?: boolean }) {
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(value);
+  const handleCopy = async () => {
+    const copiedOk = await copyToClipboard(value);
+    if (!copiedOk) return;
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ArrowLeft, Megaphone, ChevronDown, Copy, Check, ExternalLink } from 'lucide-react';
 import { PromoData, DetailedPromoData, WeeklyPromoData, STATUS_LABELS, STATUS_COLORS } from '../types';
 import { cn } from '../utils/cn';
+import { copyToClipboard } from '../utils/clipboard';
 
 interface PromoDetailProps {
   data: PromoData;
@@ -14,8 +15,9 @@ const ALL_STATUSES: PromoData['status'][] = ['new', 'in_progress', 'done', 'reje
 function InfoRow({ label, value, link }: { label: string; value: string; link?: boolean }) {
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(value);
+  const handleCopy = async () => {
+    const copiedOk = await copyToClipboard(value);
+    if (!copiedOk) return;
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };

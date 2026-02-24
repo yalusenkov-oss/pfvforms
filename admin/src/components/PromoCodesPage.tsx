@@ -17,6 +17,7 @@ import {
 import { PromoCode, TARIFF_LABELS, RELEASE_TYPE_LABELS } from '../types';
 import { fetchPromoCodes, upsertPromoCode, deletePromoCodeRemote, updateSheetRow } from '../services/googleSheetsAdmin';
 import { cn } from '../utils/cn';
+import { copyToClipboard } from '../utils/clipboard';
 
 function generatePromoId(): string {
   return 'PC-' + Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -55,8 +56,9 @@ const emptyForm: PromoFormData = {
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
-  const handleCopy = () => {
-    navigator.clipboard.writeText(text);
+  const handleCopy = async () => {
+    const copiedOk = await copyToClipboard(text);
+    if (!copiedOk) return;
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };

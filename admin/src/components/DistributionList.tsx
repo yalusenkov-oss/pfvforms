@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Search, Filter, Disc3, Trash2, Eye, ChevronDown, FileText, Copy, Check } from 'lucide-react';
 import { DistributionData, TARIFF_LABELS, RELEASE_TYPE_LABELS, STATUS_LABELS, STATUS_COLORS } from '../types';
 import { cn } from '../utils/cn';
+import { copyToClipboard } from '../utils/clipboard';
 
 interface DistributionListProps {
   distributions: DistributionData[];
@@ -48,9 +49,13 @@ export function DistributionList({ distributions, onView, onDelete, onStatusChan
     }
 
     if (link) {
-      navigator.clipboard.writeText(link);
-      setCopiedId(d.id);
-      setTimeout(() => setCopiedId(null), 2000);
+      const copied = await copyToClipboard(link);
+      if (copied) {
+        setCopiedId(d.id);
+        setTimeout(() => setCopiedId(null), 2000);
+      } else {
+        window.prompt('Скопируйте ссылку вручную:', link);
+      }
     }
   };
 

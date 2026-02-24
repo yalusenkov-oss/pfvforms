@@ -254,7 +254,20 @@ export default function SignPage() {
       }
 
       if (pdfUrl) {
-        window.open(pdfUrl, '_blank');
+        try {
+          const win = window.open(pdfUrl, '_blank', 'noopener,noreferrer');
+          if (!win) {
+            const a = document.createElement('a');
+            a.href = pdfUrl;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }
+        } catch {
+          window.location.href = pdfUrl;
+        }
       } else {
         alert('Пожалуйста, подождите пару секунд, PDF-документ генерируется...');
       }
