@@ -119,7 +119,7 @@ export function SignatureCanvas({ onSignatureChange }: SignatureCanvasProps) {
           width={600}
           height={200}
           className="w-full border-2 border-dashed border-purple-200 rounded-xl bg-white cursor-crosshair touch-none"
-          style={{ maxHeight: '108px' }}
+          style={{ maxHeight: '92px' }}
           onMouseDown={startDrawing}
           onMouseMove={draw}
           onMouseUp={stopDrawing}

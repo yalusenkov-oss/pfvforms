@@ -243,7 +243,7 @@ export default function SignPage() {
     <div className="min-h-screen bg-[#fafafc] flex flex-col font-sans">
       <Header />
 
-      <main className="flex-1 w-full mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-8 xl:px-12">
+      <main className="flex-1 w-full mx-auto px-2.5 sm:px-6 lg:px-8 py-4 sm:py-8 xl:px-12">
         {/* Loading */}
         {loading && (
           <div className="flex flex-col items-center justify-center gap-4 py-20">
@@ -275,7 +275,7 @@ export default function SignPage() {
         {!loading && !error && contractHtml && (
           <>
             {/* Contract Info — full width */}
-            <div className="animate-fade-in-up mb-4 sm:mb-6" style={{ animationDelay: '0.1s' }}>
+            <div className="animate-fade-in-up mb-3 sm:mb-6" style={{ animationDelay: '0.1s' }}>
               <ContractInfo
                 contractNumber={contractNumber}
                 trackName={workTitle}
@@ -285,7 +285,7 @@ export default function SignPage() {
             </div>
 
             {/* Two-column layout on desktop */}
-            <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(360px,420px)] gap-4 sm:gap-6 items-start">
+            <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(360px,420px)] gap-3 sm:gap-6 items-start">
               {/* Left column: Contract Document */}
               <div className="min-w-0 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
                 <ContractDocument htmlContent={contractHtml} />

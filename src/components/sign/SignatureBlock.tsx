@@ -41,20 +41,20 @@ export function SignatureBlock({
       {showOverlay && <SigningOverlay onComplete={handleOverlayDone} />}
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-xl shadow-purple-100/20 overflow-hidden">
-        <div className="px-4 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-purple-50 via-purple-50/60 to-transparent border-b border-gray-100">
+        <div className="px-3 sm:px-8 py-2.5 sm:py-4 bg-gradient-to-r from-purple-50 via-purple-50/60 to-transparent border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <span className="text-base sm:text-lg">✍️</span>
-            <h2 className="text-base sm:text-lg font-extrabold text-gray-900">Подписание договора</h2>
+            <span className="text-sm sm:text-lg">✍️</span>
+            <h2 className="text-sm sm:text-lg font-extrabold text-gray-900">Подписание договора</h2>
           </div>
         </div>
 
-        <div className="p-4 sm:p-8 space-y-4 sm:space-y-5">
+        <div className="p-3 sm:p-8 space-y-3 sm:space-y-5">
           {/* Status & Download */}
           <div className="space-y-3">
             {/* Signature status */}
             {isSigned ? (
-              <div className="flex items-start gap-3 p-4 rounded-xl bg-green-50 border border-green-200">
-                <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 shrink-0" />
+              <div className="flex items-start gap-2.5 p-3 sm:p-4 rounded-xl bg-green-50 border border-green-200">
+                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 mt-0.5 shrink-0" />
                 <div>
                   <p className="text-xs sm:text-sm font-bold text-green-800">✅ Подписано</p>
                   <p className="text-xs text-green-600 mt-0.5">{signedDate}</p>
@@ -67,8 +67,8 @@ export function SignatureBlock({
                 </div>
               </div>
             ) : (
-              <div className="flex items-start gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200">
-                <Circle className="w-5 h-5 text-gray-400 mt-0.5 shrink-0" />
+              <div className="flex items-start gap-2.5 p-3 sm:p-4 rounded-xl bg-gray-50 border border-gray-200">
+                <Circle className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 mt-0.5 shrink-0" />
                 <div>
                   <p className="text-xs sm:text-sm font-bold text-gray-600">○ Не подписано</p>
                   <p className="text-xs text-gray-400 mt-0.5">Ожидает вашей подписи</p>
@@ -77,11 +77,11 @@ export function SignatureBlock({
             )}
 
             {/* Download buttons */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
               <button
                 disabled={!isSigned}
                 onClick={() => onDownload?.('html')}
-                className="min-w-0 inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="min-w-0 inline-flex items-center justify-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-xl text-[11px] sm:text-sm font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                 <span className="truncate">HTML</span>
@@ -89,7 +89,7 @@ export function SignatureBlock({
               <button
                 disabled={!isSigned}
                 onClick={() => onDownload?.('pdf')}
-                className="min-w-0 inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="min-w-0 inline-flex items-center justify-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-xl text-[11px] sm:text-sm font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                 <span className="truncate">PDF</span>
@@ -108,7 +108,7 @@ export function SignatureBlock({
           {isSigned ? (
             <button
               onClick={() => onDownload?.('pdf')}
-              className="w-full py-3 sm:py-4 rounded-xl text-sm sm:text-base font-bold text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg shadow-green-200/50 transition-all duration-200 flex items-center justify-center gap-2"
+              className="w-full py-2.5 sm:py-4 rounded-xl text-xs sm:text-base font-bold text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg shadow-green-200/50 transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-2"
             >
               <Download className="w-5 h-5" />
               Скачать договор
@@ -117,7 +117,7 @@ export function SignatureBlock({
             <button
               onClick={handleSign}
               disabled={!signatureData}
-              className="w-full py-3 sm:py-4 rounded-xl text-sm sm:text-base font-bold text-white bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 shadow-lg shadow-purple-200/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-purple-600 disabled:hover:to-purple-700 flex items-center justify-center gap-2"
+              className="w-full py-2.5 sm:py-4 rounded-xl text-xs sm:text-base font-bold text-white bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 shadow-lg shadow-purple-200/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-purple-600 disabled:hover:to-purple-700 flex items-center justify-center gap-1.5 sm:gap-2"
             >
               🖊️ Подписать договор
             </button>
