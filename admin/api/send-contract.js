@@ -64,14 +64,6 @@ export default async function handler(req, res) {
         <!-- ===== HEADER ===== -->
         <tr>
           <td style="background-color:#12072b; background-image:linear-gradient(135deg, #12072b 0%, #2a1154 100%); padding:50px 40px; text-align:center;">
-            <!-- Logo image -->
-            <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 20px;">
-              <tr>
-                <td align="center" valign="middle">
-                  <img src="https://pfvforms.vercel.app/Frame%203.png" width="64" height="64" alt="PFVMUSIC Logo" style="display:block; border:none; outline:none; text-decoration:none; border-radius:16px; background-color:#8e44ad;" />
-                </td>
-              </tr>
-            </table>
             <div style="color:#ffffff;font-size:26px;font-weight:900;letter-spacing:4px;text-transform:uppercase;">PFVMUSIC</div>
             <div style="color:#b29ee6;font-size:11px;font-weight:600;letter-spacing:5px;text-transform:uppercase;margin-top:8px;">Издательство</div>
           </td>
@@ -99,7 +91,7 @@ export default async function handler(req, res) {
                       <td width="48" valign="middle">
                         <table cellpadding="0" cellspacing="0" border="0">
                           <tr>
-                            <td width="48" height="48" align="center" valign="middle" style="background-color:#7c3aed;color:#ffffff;font-size:22px;border-radius:12px;line-height:48px;">📄</td>
+                            <td width="48" height="48" align="center" valign="middle" style="background-color:#7c3aed;color:#ffffff;font-size:22px;border-radius:12px;">📄</td>
                           </tr>
                         </table>
                       </td>
@@ -193,7 +185,7 @@ export default async function handler(req, res) {
                       <td width="48" valign="middle">
                         <table cellpadding="0" cellspacing="0" border="0">
                           <tr>
-                            <td width="48" height="48" align="center" valign="middle" style="background-color:#a855f7;color:#ffffff;font-size:22px;border-radius:12px;line-height:48px;">💬</td>
+                            <td width="48" height="48" align="center" valign="middle" style="background-color:#a855f7;color:#ffffff;font-size:22px;border-radius:12px;">💬</td>
                           </tr>
                         </table>
                       </td>
@@ -236,17 +228,9 @@ export default async function handler(req, res) {
         <tr>
           <td style="background-color:#12072b;padding:40px;text-align:center;">
 
-            <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin-bottom:20px;">
-              <tr>
-                <td width="36" height="36" align="center" valign="middle">
-                  <img src="https://pfvforms.vercel.app/Frame%203.png" width="36" height="36" alt="PFVMUSIC Icon" style="display:block; border-radius:8px; background-color:#8e44ad;" />
-                </td>
-                <td width="12">&nbsp;</td>
-                <td style="color:#ffffff;font-size:16px;font-weight:900;letter-spacing:4px;vertical-align:middle;">PFVMUSIC</td>
-              </tr>
-            </table>
+            <div style="color:#ffffff;font-size:18px;font-weight:900;letter-spacing:4px;text-transform:uppercase;margin-bottom:20px;">PFVMUSIC</div>
 
-            <div style="color:#e5e7eb;font-size:15px;line-height:1.6;margin-bottom:8px;">С уважением, Музыкальное издательство <span style="color:#a78bfa;font-weight:700;">PFVMUSIC</span></div>
+            <div style="color:#e5e7eb;font-size:15px;line-height:1.6;margin-bottom:8px;">С уважением,&#8203; Музыкальное издательство <span style="color:#a78bfa;font-weight:700;">PFVMUSIC</span><span style="display:none;opacity:0;color:transparent;font-size:0;max-height:0;line-height:0;mso-hide:all;">${Date.now()}</span></div>
             <div><a href="mailto:booking@pfvmusic.digital" style="color:#a78bfa;font-size:14px;text-decoration:none;font-weight:700;">booking@pfvmusic.digital</a></div>
 
             <table width="100%" cellpadding="0" cellspacing="0" border="0">
