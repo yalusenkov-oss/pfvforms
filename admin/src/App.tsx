@@ -23,6 +23,7 @@ import {
   logout,
 } from './store';
 import { fetchSheetRows, updateSheetRow, deleteSheetRow, createSignLink } from './services/googleSheetsAdmin';
+import { extractContractData, generateContractHTML } from './services/contractGenerator';
 
 type View =
   | { type: 'dashboard' }
@@ -357,8 +358,28 @@ export function App() {
                 return `ЛД-${yy}${mm}${dd}-${seq}`;
               })();
 
+              const contractData = { ...extractContractData(dist), contractNumber: contractNum };
+              const signableContractHTML = generateContractHTML(contractData, { useSignatureMarkers: true });
+              let signPreviewHTML = signableContractHTML;
+              signPreviewHTML = signPreviewHTML.replace(/\{\{\s*signature_or\s*\}\}/g, '<img src="/signature.png" alt="signature" style="height:60px;width:auto;" />');
+              signPreviewHTML = signPreviewHTML.replace(/\{\{\s*signature_client\s*\}\}/g, '');
+
               try {
-                const res = await createSignLink(contractNum, dist.rowIndex);
+                if (dist.rowIndex) {
+                  try {
+                    await updateSheetRow('distribution', dist.rowIndex, {
+                      contract_html: signableContractHTML,
+                      sign_source: 'internal',
+                    });
+                  } catch {
+                    // ignore
+                  }
+                }
+                const res = await createSignLink(contractNum, dist.rowIndex, {
+                  contractHtml: signPreviewHTML,
+                  signSource: 'internal',
+                  forceRegenerate: !!dist.signLink
+                });
                 if (res?.signUrl) {
                   // Save to distribution data
                   setDistributions(prev => prev.map(d => d.id === id
