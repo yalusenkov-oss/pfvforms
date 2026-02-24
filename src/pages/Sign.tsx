@@ -218,11 +218,43 @@ export default function SignPage() {
     setSignatureData(data);
   }, []);
 
+  const resolveLatestDownloadUrl = useCallback(async (): Promise<string> => {
+    if (!token) return '';
+    const scriptUrl = await getScriptUrl();
+    if (!scriptUrl) return '';
+
+    try {
+      const url = `${scriptUrl}?action=sign_get&token=${encodeURIComponent(token)}`;
+      const res = await fetch(url, { redirect: 'follow' });
+      const text = await res.text();
+      let data: any;
+      try { data = JSON.parse(text); } catch { data = {}; }
+
+      let freshUrl = data?.downloadUrl || data?.signedUrl || '';
+      if (data?.signedPdfId) {
+        freshUrl = `https://drive.google.com/uc?export=download&id=${data.signedPdfId}`;
+      }
+
+      if (freshUrl) {
+        setDownloadUrl(freshUrl);
+      }
+
+      return freshUrl;
+    } catch {
+      return '';
+    }
+  }, [token]);
+
   // ═══ Download handler ═══
-  const handleDownload = useCallback((type: 'pdf' | 'html' = 'pdf') => {
+  const handleDownload = useCallback(async (type: 'pdf' | 'html' = 'pdf') => {
     if (type === 'pdf') {
-      if (downloadUrl) {
-        window.open(downloadUrl, '_blank');
+      let pdfUrl = downloadUrl;
+      if (!pdfUrl) {
+        pdfUrl = await resolveLatestDownloadUrl();
+      }
+
+      if (pdfUrl) {
+        window.open(pdfUrl, '_blank');
       } else {
         alert('Пожалуйста, подождите пару секунд, PDF-документ генерируется...');
       }
@@ -238,7 +270,7 @@ export default function SignPage() {
     a.download = `Договор_${contractNumber}.html`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [downloadUrl, contractHtml, contractNumber]);
+  }, [downloadUrl, contractHtml, contractNumber, resolveLatestDownloadUrl]);
 
   // ═══ RENDER ═══
   return (
