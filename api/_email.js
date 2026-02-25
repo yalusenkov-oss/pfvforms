@@ -35,6 +35,8 @@ function buildHtml({ safeName, safeContract, safeWork, safeRelease, safeLink }) 
     .outer { width:100%; background:#f3f4f6; padding:34px 12px; box-sizing:border-box; }
     .card { max-width:600px; width:100%; margin:0 auto; background:#ffffff; border:1px solid #e5e7eb; border-radius:18px; overflow:hidden; box-shadow:0 8px 30px rgba(0,0,0,0.06); }
     .hero { background:#12072b; background-image:linear-gradient(135deg, #12072b 0%, #2a1154 100%); padding:40px 34px; text-align:center; }
+    .logo { margin:0 auto 14px; }
+    .logo img { display:block; margin:0 auto; width:86px; height:auto; border:0; }
     .brand { color:#ffffff; font-size:28px; font-weight:900; letter-spacing:4px; text-transform:uppercase; }
     .subtitle { color:#c8b4f4; font-size:11px; letter-spacing:5px; text-transform:uppercase; font-weight:700; margin-top:8px; }
     .section { padding:34px; }
@@ -56,9 +58,9 @@ function buildHtml({ safeName, safeContract, safeWork, safeRelease, safeLink }) 
     .support-title { color:#111827; font-size:15px; font-weight:700; margin-bottom:5px; }
     .support-text { color:#4b5563; font-size:14px; }
     .warning { border:1px solid #fde68a; background:#fef3c7; border-radius:14px; padding:20px; }
-    .warning-title { color:#b45309; font-size:15px; font-weight:700; margin-bottom:8px; }
-    .warning-text { color:#92400e; font-size:14px; margin-bottom:12px; }
-    .linkbox { border:1px dashed #fbbf24; border-radius:8px; background:#ffffff; padding:12px; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:13px; color:#d97706; word-break:break-all; }
+    .warning-title { color:#b45309; font-size:14px; font-weight:700; margin-bottom:6px; }
+    .warning-text { color:#92400e; font-size:12px; margin-bottom:10px; line-height:1.4; }
+    .linkbox { border:1px dashed #fbbf24; border-radius:8px; background:#ffffff; padding:10px; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:12px; color:#d97706; word-break:break-all; line-height:1.35; }
     .footer { background:#12072b; padding:34px; text-align:center; }
     .footer-brand { color:#ffffff; font-size:18px; font-weight:900; letter-spacing:4px; text-transform:uppercase; margin-bottom:14px; }
     .footer-main { color:#e5e7eb; font-size:15px; line-height:1.6; margin-bottom:8px; }
@@ -73,6 +75,9 @@ function buildHtml({ safeName, safeContract, safeWork, safeRelease, safeLink }) 
     <table role="presentation" class="card" cellpadding="0" cellspacing="0">
       <tr>
         <td class="hero">
+          <div class="logo">
+            <img src="https://www.pfvmusic.digital/Frame%203.png" alt="PFVMUSIC logo" />
+          </div>
           <div class="brand">PFVMUSIC</div>
           <div class="subtitle">ИЗДАТЕЛЬСТВО</div>
         </td>
