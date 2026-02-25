@@ -127,15 +127,46 @@ export default async function handler(req, res) {
     // After successful GAS response, send contract email via Yandex SMTP
     let emailSent = false;
     let emailError = '';
+    const isDistribution = cleanPayload.formType === 'distribution' && cleanPayload.email;
     try {
       const gasJson = text ? JSON.parse(text) : null;
-      if (gasJson && gasJson.success && gasJson.emailData) {
-        const ed = gasJson.emailData;
-        if (ed.email && ed.signLink) {
-          await sendContractEmail(ed);
-          emailSent = true;
-          console.log('Contract email sent to', ed.email);
+      let emailData = gasJson?.success ? gasJson.emailData : null;
+
+      // Fallback: if GAS didn't return emailData (old GAS version),
+      // fetch the latest distribution row to get signLink & contractNumber
+      if (!emailData && isDistribution && gasJson?.success) {
+        console.log('No emailData in GAS response, fetching latest row...');
+        try {
+          const listUrl = `${scriptUrl}?action=list&sheet=distributions&limit=1`;
+          const listRes = await fetch(listUrl, { redirect: 'follow' });
+          const listText = await listRes.text();
+          const listJson = JSON.parse(listText);
+          const rows = listJson?.rows;
+          if (Array.isArray(rows) && rows.length > 0) {
+            const last = rows[rows.length - 1];
+            const signLink = last.sign_link || last.signLink || '';
+            const contractNumber = last.contract_number || last.contractNumber || '';
+            if (signLink) {
+              emailData = {
+                email: cleanPayload.email,
+                name: cleanPayload.fullName || '',
+                contractNumber,
+                signLink,
+                workTitle: cleanPayload.releaseName || '',
+                releaseType: last.release_type || last.releaseType || cleanPayload.releaseType || ''
+              };
+              console.log('Fallback emailData constructed from latest row');
+            }
+          }
+        } catch (fallbackErr) {
+          console.error('Fallback row fetch failed:', fallbackErr);
         }
+      }
+
+      if (emailData?.email && emailData?.signLink) {
+        await sendContractEmail(emailData);
+        emailSent = true;
+        console.log('Contract email sent to', emailData.email);
       }
     } catch (emailErr) {
       emailError = String(emailErr.message || emailErr);
