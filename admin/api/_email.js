@@ -31,132 +31,128 @@ function buildHtml({ safeName, safeContract, safeWork, safeRelease, safeLink }) 
     <meta name="x-apple-disable-message-reformatting" />
     <title>PFVMUSIC — Договор готов к подписанию</title>
     <style type="text/css">
-      body { margin:0; padding:0; background:#0b0b10; }
+      body { margin:0; padding:0; background:#f4f3ff; }
       table { border-collapse:collapse; }
       img { border:0; outline:none; text-decoration:none; }
       a { text-decoration:none; }
       @media (max-width:600px) {
         .container { width:100% !important; }
         .px { padding-left:16px !important; padding-right:16px !important; }
-        .btn { width:100% !important; }
+        .btn { width:100% !important; display:block !important; text-align:center !important; }
       }
     </style>
   </head>
   <body>
-    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#0b0b10;">
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f4f3ff;">
       <tr>
-        <td align="center" style="padding:28px 12px;">
+        <td align="center" style="padding:32px 12px;">
           <table class="container" width="600" cellpadding="0" cellspacing="0" role="presentation" style="width:600px;max-width:600px;">
 
+            <!-- Header -->
             <tr>
-              <td class="px" style="padding:0 24px 14px 24px;">
+              <td style="background:#6d28d9;border-radius:16px 16px 0 0;padding:28px 32px;">
                 <table width="100%" role="presentation">
                   <tr>
-                    <td align="left" style="font-family:Arial,Helvetica,sans-serif;">
-                      <div style="font-size:18px;font-weight:800;letter-spacing:0.6px;color:#ffffff;">PFVMUSIC</div>
-                      <div style="margin-top:4px;font-size:12px;letter-spacing:1.6px;color:#b6b6c9;">ИЗДАТЕЛЬСТВО</div>
+                    <td style="font-family:Arial,Helvetica,sans-serif;">
+                      <div style="font-size:20px;font-weight:900;letter-spacing:2px;color:#ffffff;">PFVMUSIC</div>
+                      <div style="font-size:11px;letter-spacing:2.5px;color:#c4b5fd;margin-top:3px;">ИЗДАТЕЛЬСТВО</div>
                     </td>
                     <td align="right" style="font-family:Arial,Helvetica,sans-serif;">
-                      <div style="display:inline-block;padding:6px 10px;border:1px solid #2a2a3a;border-radius:999px;font-size:12px;color:#cfd0e6;">DOC</div>
+                      <div style="display:inline-block;padding:5px 12px;border:1px solid rgba(255,255,255,0.25);border-radius:999px;font-size:11px;font-weight:700;color:#ede9fe;letter-spacing:1px;">DOC</div>
                     </td>
                   </tr>
                 </table>
               </td>
             </tr>
 
+            <!-- Body card -->
             <tr>
-              <td class="px" style="padding:0 24px;">
-                <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#121220;border:1px solid #23233a;border-radius:16px;">
-                  <tr>
-                    <td style="padding:22px 20px;">
+              <td style="background:#ffffff;padding:32px 32px 0;border-left:1px solid #e9e5ff;border-right:1px solid #e9e5ff;">
 
-                      <div style="font-family:Arial,Helvetica,sans-serif;color:#ffffff;font-size:20px;font-weight:700;line-height:1.3;">
-                        Здравствуйте, ${safeName}!
-                      </div>
-                      <div style="font-family:Arial,Helvetica,sans-serif;color:#cfd0e6;font-size:14px;line-height:1.6;margin-top:10px;">
-                        Ваш договор успешно сгенерирован и готов к подписанию.<br />
-                        Пожалуйста, ознакомьтесь с деталями ниже и подтвердите документ.
-                      </div>
-
-                      <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-top:16px;background:#0f0f1a;border:1px solid #23233a;border-radius:12px;">
-                        <tr>
-                          <td style="padding:16px 14px;">
-                            <div style="font-family:Arial,Helvetica,sans-serif;color:#ffffff;font-size:14px;font-weight:700;">Детали договора</div>
-                            <div style="font-family:Arial,Helvetica,sans-serif;color:#9ea0bf;font-size:12px;margin-top:4px;">Автоматически сгенерировано</div>
-                            <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-top:12px;">
-                              <tr>
-                                <td style="padding:10px 0;border-top:1px solid #23233a;font-family:Arial,Helvetica,sans-serif;color:#9ea0bf;font-size:12px;">№ Договора</td>
-                                <td align="right" style="padding:10px 0;border-top:1px solid #23233a;font-family:Arial,Helvetica,sans-serif;color:#ffffff;font-size:12px;font-weight:700;">${safeContract}</td>
-                              </tr>
-                              <tr>
-                                <td style="padding:10px 0;border-top:1px solid #23233a;font-family:Arial,Helvetica,sans-serif;color:#9ea0bf;font-size:12px;">Произведение</td>
-                                <td align="right" style="padding:10px 0;border-top:1px solid #23233a;font-family:Arial,Helvetica,sans-serif;color:#ffffff;font-size:12px;font-weight:700;">«${safeWork}»</td>
-                              </tr>
-                              <tr>
-                                <td style="padding:10px 0;border-top:1px solid #23233a;font-family:Arial,Helvetica,sans-serif;color:#9ea0bf;font-size:12px;">Тип релиза</td>
-                                <td align="right" style="padding:10px 0;border-top:1px solid #23233a;font-family:Arial,Helvetica,sans-serif;color:#ffffff;font-size:12px;font-weight:700;">${safeRelease}</td>
-                              </tr>
-                            </table>
-                          </td>
-                        </tr>
-                      </table>
-
-                      <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-top:18px;">
-                        <tr>
-                          <td align="left">
-                            <a class="btn" href="${safeLink}" target="_blank"
-                               style="display:inline-block;padding:12px 20px;border-radius:12px;background:#6d5efc;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;">
-                              Подписать договор
-                            </a>
-                          </td>
-                        </tr>
-                      </table>
-
-                      <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-top:18px;">
-                        <tr>
-                          <td style="padding-top:14px;border-top:1px solid #23233a;">
-                            <div style="font-family:Arial,Helvetica,sans-serif;color:#ffffff;font-size:14px;font-weight:700;">Вопросы по дистрибуции?</div>
-                            <div style="margin-top:6px;font-family:Arial,Helvetica,sans-serif;color:#cfd0e6;font-size:13px;line-height:1.6;">
-                              Поддержка: <span style="color:#ffffff;font-weight:700;">@pfvmusic_support</span>
-                            </div>
-                            <div style="margin-top:12px;font-family:Arial,Helvetica,sans-serif;color:#9ea0bf;font-size:12px;line-height:1.6;">
-                              Если кнопка не работает, скопируйте адрес и вставьте в браузер:
-                            </div>
-                            <div style="margin-top:8px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;">
-                              <a href="${safeLink}" target="_blank" style="color:#9ad1ff;word-break:break-all;">${safeLink}</a>
-                            </div>
-                          </td>
-                        </tr>
-                      </table>
-
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-
-            <tr>
-              <td class="px" style="padding:18px 24px 0 24px;">
-                <div style="font-family:Arial,Helvetica,sans-serif;color:#b6b6c9;font-size:12px;line-height:1.6;">
-                  <strong style="color:#ffffff;">PFVMUSIC</strong><br />
-                  С уважением, Музыкальное издательство PFVMUSIC<br />
-                  <a href="mailto:support@pfvmusic.digital" style="color:#9ad1ff;">support@pfvmusic.digital</a>
+                <div style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:800;color:#1e1b4b;line-height:1.3;">
+                  Здравствуйте, ${safeName}!
                 </div>
+                <div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#6b7280;line-height:1.6;margin-top:10px;">
+                  Ваш договор успешно сгенерирован и готов к подписанию.<br />
+                  Пожалуйста, ознакомьтесь с деталями ниже и подтвердите документ.
+                </div>
+
+                <!-- Details block -->
+                <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-top:20px;background:#faf9ff;border:1px solid #ede9ff;border-radius:12px;">
+                  <tr>
+                    <td style="padding:18px 16px;">
+                      <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;color:#4c1d95;text-transform:uppercase;letter-spacing:0.8px;">Детали договора</div>
+                      <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-top:12px;">
+                        <tr>
+                          <td style="padding:9px 0;border-top:1px solid #ede9ff;font-family:Arial,Helvetica,sans-serif;color:#6b7280;font-size:13px;">№ Договора</td>
+                          <td align="right" style="padding:9px 0;border-top:1px solid #ede9ff;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;color:#6d28d9;">${safeContract}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding:9px 0;border-top:1px solid #ede9ff;font-family:Arial,Helvetica,sans-serif;color:#6b7280;font-size:13px;">Произведение</td>
+                          <td align="right" style="padding:9px 0;border-top:1px solid #ede9ff;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;color:#1e1b4b;">«${safeWork}»</td>
+                        </tr>
+                        <tr>
+                          <td style="padding:9px 0;border-top:1px solid #ede9ff;font-family:Arial,Helvetica,sans-serif;color:#6b7280;font-size:13px;">Тип релиза</td>
+                          <td align="right" style="padding:9px 0;border-top:1px solid #ede9ff;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;color:#1e1b4b;">${safeRelease}</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- CTA button -->
+                <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-top:24px;">
+                  <tr>
+                    <td>
+                      <a class="btn" href="${safeLink}" target="_blank"
+                         style="display:inline-block;padding:14px 28px;border-radius:12px;background:#7c3aed;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;">
+                        Подписать договор
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Support -->
+                <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-top:24px;">
+                  <tr>
+                    <td style="padding-top:20px;border-top:1px solid #ede9ff;">
+                      <div style="font-family:Arial,Helvetica,sans-serif;color:#1e1b4b;font-size:14px;font-weight:700;">Вопросы по дистрибуции?</div>
+                      <div style="margin-top:5px;font-family:Arial,Helvetica,sans-serif;color:#6b7280;font-size:13px;line-height:1.6;">
+                        Поддержка: <a href="https://t.me/pfvmusic_support" style="color:#7c3aed;font-weight:700;">@pfvmusic_support</a>
+                      </div>
+                      <div style="margin-top:14px;font-family:Arial,Helvetica,sans-serif;color:#9ca3af;font-size:12px;line-height:1.5;">
+                        Если кнопка не работает, скопируйте адрес и вставьте в браузер:
+                      </div>
+                      <div style="margin-top:6px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;word-break:break-all;">
+                        <a href="${safeLink}" target="_blank" style="color:#7c3aed;">${safeLink}</a>
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+
+                <table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr><td style="height:32px;"></td></tr></table>
               </td>
             </tr>
+
+            <!-- Footer -->
             <tr>
-              <td class="px" style="padding:14px 24px 0 24px;">
-                <div style="font-family:Arial,Helvetica,sans-serif;color:#7f80a3;font-size:11px;line-height:1.6;">
-                  Это письмо строго конфиденциально и предназначено исключительно для указанного адресата.
+              <td style="background:#6d28d9;border-radius:0 0 16px 16px;padding:24px 32px;">
+                <div style="font-family:Arial,Helvetica,sans-serif;color:#ede9fe;font-size:13px;line-height:1.6;">
+                  <strong style="color:#ffffff;font-size:15px;letter-spacing:1px;">PFVMUSIC</strong><br />
+                  С уважением, Музыкальное издательство PFVMUSIC<br />
+                  <a href="mailto:support@pfvmusic.digital" style="color:#c4b5fd;">support@pfvmusic.digital</a>
+                </div>
+                <div style="margin-top:16px;font-family:Arial,Helvetica,sans-serif;color:#a78bfa;font-size:11px;line-height:1.6;">
+                  Это письмо конфиденциально и предназначено исключительно для указанного адресата.
                   Если вы получили его по ошибке — немедленно уведомите отправителя и удалите сообщение.
                 </div>
-                <div style="margin-top:10px;font-family:Arial,Helvetica,sans-serif;color:#7f80a3;font-size:11px;">
+                <div style="margin-top:8px;font-family:Arial,Helvetica,sans-serif;color:#a78bfa;font-size:11px;">
                   © 2026 PFVMUSIC. Все права защищены.
                 </div>
               </td>
             </tr>
-            <tr><td style="height:18px;"></td></tr>
 
+            <tr><td style="height:20px;"></td></tr>
           </table>
         </td>
       </tr>
