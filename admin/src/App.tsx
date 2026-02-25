@@ -142,8 +142,7 @@ export function App() {
   };
 
   const refresh = useCallback(() => {
-    setDistributions(getDistributions());
-    setPromos(getPromos());
+    // Only used as fallback if remote load hasn't happened yet
   }, []);
 
   useEffect(() => {
@@ -204,6 +203,8 @@ export function App() {
         return d;
       });
       setDistributions(finalMapped as DistributionData[]);
+      // Sync localStorage with fresh remote data so cache is always up-to-date
+      try { localStorage.setItem('pfvmusic_distributions', JSON.stringify(finalMapped)); } catch {}
 
       const promoRows = await fetchSheetRows('promos');
       const promoCount = Array.isArray(promoRows) ? promoRows.length : 0;
@@ -234,6 +235,7 @@ export function App() {
         return p;
       });
       setPromos(finalMappedPromos as PromoData[]);
+      try { localStorage.setItem('pfvmusic_promos', JSON.stringify(finalMappedPromos)); } catch {}
 
       setRemoteInfo({ loaded: true, source: 'remote', distCount, promoCount });
     } catch (e: any) {
@@ -393,11 +395,14 @@ export function App() {
                   forceRegenerate: !!dist.signLink
                 });
                 if (res?.signUrl) {
-                  // Save to distribution data
-                  setDistributions(prev => prev.map(d => d.id === id
-                    ? { ...d, signLink: res.signUrl!, contractNumber: contractNum }
-                    : d
-                  ));
+                  setDistributions(prev => {
+                    const updated = prev.map(d => d.id === id
+                      ? { ...d, signLink: res.signUrl!, contractNumber: contractNum }
+                      : d
+                    );
+                    try { localStorage.setItem('pfvmusic_distributions', JSON.stringify(updated)); } catch {}
+                    return updated;
+                  });
                   if (!dist.contractNumber) {
                     updateDistributionContractNumber(id, contractNum);
                   }
