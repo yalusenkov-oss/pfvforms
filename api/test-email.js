@@ -7,15 +7,16 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const smtpUser = process.env.SMTP_USER;
-  const smtpPass = process.env.SMTP_PASS;
+  const smtpUser = process.env.SMTP_USER || 'noreply@pfvmusic.digital';
+  const smtpPass = process.env.SMTP_PASS || 'fsvyjzrabtslbfef';
 
   // GET = diagnostics only (no email sent)
   if (req.method === 'GET') {
     return res.status(200).json({
-      smtp_user_set: !!smtpUser,
+      smtp_user_set: !!process.env.SMTP_USER,
       smtp_user: smtpUser ? smtpUser.replace(/(.{3}).*(@.*)/, '$1***$2') : null,
-      smtp_pass_set: !!smtpPass,
+      smtp_pass_set: !!process.env.SMTP_PASS,
+      smtp_pass_fallback: !process.env.SMTP_PASS,
       smtp_host: 'smtp.yandex.ru',
       smtp_port: 465,
       note: 'POST to this endpoint to send a test email',
@@ -38,9 +39,9 @@ export default async function handler(req, res) {
   if (!smtpUser || !smtpPass) {
     return res.status(500).json({
       success: false,
-      error: 'SMTP_USER or SMTP_PASS not set in Vercel Environment Variables',
-      smtp_user_set: !!smtpUser,
-      smtp_pass_set: !!smtpPass
+      error: 'SMTP credentials not available',
+      smtp_user_set: !!process.env.SMTP_USER,
+      smtp_pass_set: !!process.env.SMTP_PASS
     });
   }
 
