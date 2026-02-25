@@ -1416,7 +1416,6 @@ export function App() {
               <div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Отправляем заявку</h3>
                 <p className="text-gray-500 text-sm max-w-xs leading-relaxed">
-                  Сохраняем данные и отправляем уведомление.<br />
                   Подождите <span className="font-semibold text-amber-600">несколько секунд</span>.
                 </p>
                 <p className="text-xs text-gray-400 mt-2">Не закрывайте страницу</p>
