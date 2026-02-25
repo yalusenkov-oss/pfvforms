@@ -225,7 +225,15 @@ export function App() {
         submittedAt: p.timestamp || p.submittedAt || new Date().toISOString(),
         status: p.status || 'new',
       }));
-      setPromos(mappedPromos as PromoData[]);
+      // Apply local status overrides on top of remote promo data (same as distributions)
+      const promoOverrides = getStatusOverrides();
+      const finalMappedPromos = mappedPromos.map((p: any) => {
+        if (promoOverrides[p.id]) {
+          return { ...p, status: promoOverrides[p.id] };
+        }
+        return p;
+      });
+      setPromos(finalMappedPromos as PromoData[]);
 
       setRemoteInfo({ loaded: true, source: 'remote', distCount, promoCount });
     } catch (e: any) {
@@ -287,8 +295,15 @@ export function App() {
 
   const handlePromoStatusChange = (id: string, status: PromoData['status']) => {
     updatePromoStatus(id, status);
-    // Update local state directly
     setPromos(prev => prev.map(p => p.id === id ? { ...p, status } : p));
+    // Persist override in localStorage so it survives page reload
+    saveStatusOverride(id, status);
+
+    // Try to update remote in background (fire-and-forget)
+    const current = promos.find(p => p.id === id);
+    if (current?.rowIndex) {
+      updateSheetRow('promos', current.rowIndex, { status }).catch(() => { /* ignore */ });
+    }
   };
 
   const handleDistDelete = async (id: string) => {
