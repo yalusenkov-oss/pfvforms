@@ -32,5 +32,9 @@ export default defineConfig(({ command, mode }) => {
     define: {
       'import.meta.env': JSON.stringify(clientEnv),
     },
+    esbuild: {
+      // Strip all console.* and debugger statements from production build
+      drop: command === 'build' ? ['console', 'debugger'] : [],
+    },
   };
 });
