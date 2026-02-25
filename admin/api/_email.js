@@ -38,7 +38,7 @@ function buildHtml({ safeName, safeContract, safeWork, safeRelease, safeLink }) 
       @media (max-width:600px) {
         .container { width:100% !important; }
         .px { padding-left:16px !important; padding-right:16px !important; }
-        .btn { width:100% !important; display:block !important; text-align:center !important; }
+        .btn { width:100% !important; display:block !important; text-align:center !important; box-sizing:border-box !important; }
       }
     </style>
   </head>
@@ -105,7 +105,7 @@ function buildHtml({ safeName, safeContract, safeWork, safeRelease, safeLink }) 
                   <tr>
                     <td>
                       <a class="btn" href="${safeLink}" target="_blank"
-                         style="display:inline-block;padding:14px 28px;border-radius:12px;background:#7c3aed;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;">
+                         style="display:inline-block;padding:14px 28px;border-radius:12px;background:#7c3aed;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;max-width:100%;box-sizing:border-box;text-align:center;">
                         Подписать договор
                       </a>
                     </td>
