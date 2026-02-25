@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Ticket,
   Plus,
@@ -13,11 +13,16 @@ import {
   Filter,
   Percent,
   DollarSign,
+  RefreshCw,
 } from 'lucide-react';
 import { PromoCode, TARIFF_LABELS, RELEASE_TYPE_LABELS } from '../types';
 import { fetchPromoCodes, upsertPromoCode, deletePromoCodeRemote, updateSheetRow } from '../services/googleSheetsAdmin';
 import { cn } from '../utils/cn';
 import { copyToClipboard } from '../utils/clipboard';
+
+// Module-level cache — survives component unmount/remount (tab switching)
+let _codesCache: PromoCode[] = [];
+let _cacheLoaded = false;
 
 function generatePromoId(): string {
   return 'PC-' + Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -70,7 +75,10 @@ function CopyButton({ text }: { text: string }) {
 }
 
 export function PromoCodesPage() {
-  const [codes, setCodes] = useState<PromoCode[]>([]);
+  // Init from cache so data is instant on re-visit
+  const [codes, setCodes] = useState<PromoCode[]>(_codesCache);
+  const [loading, setLoading] = useState(!_cacheLoaded);
+  const [syncing, setSyncing] = useState(false);
   const [search, setSearch] = useState('');
   const [filterActive, setFilterActive] = useState<string>('all');
   const [showFilters, setShowFilters] = useState(false);
@@ -78,41 +86,66 @@ export function PromoCodesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<PromoFormData>(emptyForm);
   const [formErrors, setFormErrors] = useState<string[]>([]);
+  const fetchingRef = useRef(false);
 
-  const refresh = async () => {
+  const mapRows = (rows: any[]): PromoCode[] =>
+    rows.map((r: any) => {
+      const toArray = (v: any) => {
+        if (!v) return [];
+        if (Array.isArray(v)) return v;
+        return String(v).split(',').map((s: string) => s.trim()).filter(Boolean);
+      };
+      const toBool = (v: any) => v === true || v === 'true' || v === '1' || v === 'Да' || v === 'yes';
+      const toNum = (v: any) => typeof v === 'number' ? v : parseFloat(String(v).replace(/[^\d.-]/g, '')) || 0;
+      return {
+        id: String(r.id || r.ID || ''),
+        code: String(r.code || r.promo_code || '').toUpperCase(),
+        discountType: (r.discountType || r.discount_type || 'percent') as 'percent' | 'fixed',
+        discountValue: toNum(r.discountValue ?? r.discount_value),
+        applicableTariffs: toArray(r.applicableTariffs || r.applicable_tariffs),
+        applicableReleaseTypes: toArray(r.applicableReleaseTypes || r.applicable_release_types),
+        maxUses: toNum(r.maxUses ?? r.max_uses),
+        currentUses: toNum(r.currentUses ?? r.current_uses),
+        isActive: toBool(r.isActive ?? r.is_active),
+        validFrom: String(r.validFrom || r.valid_from || ''),
+        validUntil: String(r.validUntil || r.valid_until || ''),
+        createdAt: String(r.createdAt || r.created_at || ''),
+        description: String(r.description || ''),
+        rowIndex: r._row || r.rowIndex || r.row || undefined,
+      } as PromoCode;
+    }).filter(c => c.id || c.code);
+
+  // Fetch from server and update cache; silent=true means don't show spinner
+  const fetchRemote = async (silent = false) => {
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
+    if (!silent) setLoading(true);
+    else setSyncing(true);
     try {
       const rows = await fetchPromoCodes();
-      const mapped = (Array.isArray(rows) ? rows : []).map((r: any) => {
-        const toArray = (v: any) => {
-          if (!v) return [];
-          if (Array.isArray(v)) return v;
-          return String(v).split(',').map(s => s.trim()).filter(Boolean);
-        };
-        const toBool = (v: any) => v === true || v === 'true' || v === '1' || v === 'Да' || v === 'yes';
-        const toNum = (v: any) => typeof v === 'number' ? v : parseFloat(String(v).replace(/[^\d.-]/g, '')) || 0;
-        return {
-          id: String(r.id || r.ID || ''),
-          code: String(r.code || r.promo_code || '').toUpperCase(),
-          discountType: (r.discountType || r.discount_type || 'percent') as 'percent' | 'fixed',
-          discountValue: toNum(r.discountValue ?? r.discount_value),
-          applicableTariffs: toArray(r.applicableTariffs || r.applicable_tariffs),
-          applicableReleaseTypes: toArray(r.applicableReleaseTypes || r.applicable_release_types),
-          maxUses: toNum(r.maxUses ?? r.max_uses),
-          currentUses: toNum(r.currentUses ?? r.current_uses),
-          isActive: toBool(r.isActive ?? r.is_active),
-          validFrom: String(r.validFrom || r.valid_from || ''),
-          validUntil: String(r.validUntil || r.valid_until || ''),
-          createdAt: String(r.createdAt || r.created_at || ''),
-          description: String(r.description || ''),
-          rowIndex: r._row || r.rowIndex || r.row || undefined,
-        } as PromoCode;
-      }).filter(c => c.id || c.code);
+      const mapped = mapRows(Array.isArray(rows) ? rows : []);
+      _codesCache = mapped;
+      _cacheLoaded = true;
       setCodes(mapped);
     } catch {
-      setCodes([]);
+      // keep existing data on error
+    } finally {
+      setLoading(false);
+      setSyncing(false);
+      fetchingRef.current = false;
     }
   };
-  useEffect(() => { refresh(); }, []);
+
+  useEffect(() => {
+    if (!_cacheLoaded) {
+      // First visit — load with spinner
+      fetchRemote(false);
+    } else {
+      // Re-visit — show cached data instantly, refresh silently in background
+      fetchRemote(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const filtered = codes.filter(c => {
     const matchSearch =
@@ -150,24 +183,35 @@ export function PromoCodesPage() {
     setShowForm(true);
   };
 
-  const handleToggle = async (id: string) => {
+  const handleToggle = (id: string) => {
     const item = codes.find(c => c.id === id);
     if (!item) return;
-    if (item.rowIndex) {
-      await updateSheetRow('promocodes', item.rowIndex, { is_active: !item.isActive });
-      await refresh();
-      return;
-    }
-    // fallback: update by id via upsert
-    await upsertPromoCode({ id, isActive: !item.isActive });
-    await refresh();
+    // Optimistic update — instant UI change
+    const updated = codes.map(c => c.id === id ? { ...c, isActive: !c.isActive } : c);
+    setCodes(updated);
+    _codesCache = updated;
+    // Sync to server in background
+    const sync = item.rowIndex
+      ? updateSheetRow('promocodes', item.rowIndex, { is_active: !item.isActive })
+      : upsertPromoCode({ id, isActive: !item.isActive });
+    sync.catch(() => {
+      // Rollback on error
+      setCodes(codes);
+      _codesCache = codes;
+    });
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Удалить промокод?')) {
-      await deletePromoCodeRemote(id);
-      await refresh();
-    }
+  const handleDelete = (id: string) => {
+    if (!confirm('Удалить промокод?')) return;
+    // Optimistic update — remove instantly
+    const updated = codes.filter(c => c.id !== id);
+    setCodes(updated);
+    _codesCache = updated;
+    deletePromoCodeRemote(id).catch(() => {
+      // Rollback on error
+      setCodes(codes);
+      _codesCache = codes;
+    });
   };
 
   const validateForm = (): string[] => {
@@ -200,7 +244,7 @@ export function PromoCodesPage() {
     }
 
     if (editingId) {
-      await upsertPromoCode({
+      const payload = {
         id: editingId,
         code: form.code.trim().toUpperCase(),
         discountType: form.discountType,
@@ -211,7 +255,12 @@ export function PromoCodesPage() {
         validFrom: form.validFrom,
         validUntil: form.validUntil,
         description: form.description.trim(),
-      });
+      };
+      // Optimistic update for edit
+      const updated = codes.map(c => c.id === editingId ? { ...c, ...payload } : c);
+      setCodes(updated);
+      _codesCache = updated;
+      upsertPromoCode(payload).catch(() => fetchRemote(true));
     } else {
       const newCode: PromoCode = {
         id: generatePromoId(),
@@ -228,13 +277,16 @@ export function PromoCodesPage() {
         createdAt: new Date().toISOString(),
         description: form.description.trim(),
       };
-      await upsertPromoCode(newCode);
+      // Optimistic add — show immediately at top
+      const updated = [newCode, ...codes];
+      setCodes(updated);
+      _codesCache = updated;
+      upsertPromoCode(newCode).catch(() => fetchRemote(true));
     }
 
     setShowForm(false);
     setEditingId(null);
     setForm(emptyForm);
-    await refresh();
   };
 
   const toggleTariff = (tariff: 'basic' | 'advanced' | 'premium' | 'platinum') => {
@@ -255,6 +307,21 @@ export function PromoCodesPage() {
     }));
   };
 
+  if (loading) {
+    return (
+      <div className="space-y-5 animate-fade-in">
+        <div className="flex items-center gap-3">
+          <Ticket size={24} className="text-primary-400" />
+          <h2 className="text-2xl font-bold text-white">Промокоды</h2>
+        </div>
+        <div className="flex flex-col items-center justify-center py-24 gap-4">
+          <RefreshCw size={32} className="text-primary-400 animate-spin" />
+          <p className="text-dark-400 text-sm">Загрузка промокодов...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5 animate-fade-in">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -263,16 +330,30 @@ export function PromoCodesPage() {
             <Ticket size={24} className="text-primary-400" />
             Промокоды
           </h2>
-          <p className="text-dark-400 mt-1">Управление промокодами и скидками · Всего: {codes.length}</p>
+          <p className="text-dark-400 mt-1 flex items-center gap-2">
+            Управление промокодами и скидками · Всего: {codes.length}
+            {syncing && <RefreshCw size={12} className="text-dark-500 animate-spin" />}
+          </p>
         </div>
-        <button
-          type="button"
-          onClick={handleCreate}
-          className="px-4 py-2.5 rounded-lg bg-primary-600 text-white text-sm font-medium hover:bg-primary-500 transition-colors flex items-center gap-2 shadow-lg shadow-primary-600/20"
-        >
-          <Plus size={16} />
-          Создать промокод
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => fetchRemote(false)}
+            disabled={syncing}
+            className="p-2 rounded-lg bg-dark-800 border border-dark-700 text-dark-400 hover:text-white hover:border-dark-600 transition-colors disabled:opacity-50"
+            title="Обновить"
+          >
+            <RefreshCw size={16} className={syncing ? 'animate-spin' : ''} />
+          </button>
+          <button
+            type="button"
+            onClick={handleCreate}
+            className="px-4 py-2.5 rounded-lg bg-primary-600 text-white text-sm font-medium hover:bg-primary-500 transition-colors flex items-center gap-2 shadow-lg shadow-primary-600/20"
+          >
+            <Plus size={16} />
+            Создать промокод
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
