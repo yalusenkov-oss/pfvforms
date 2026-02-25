@@ -1633,7 +1633,7 @@ export function App() {
             <div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">Отправляем данные</h3>
               <p className="text-gray-500 text-sm max-w-xs leading-relaxed">
-                Загружаем файлы и сохраняем заявку.<br />
+                Загружаем файлы, сохраняем заявку и создаём ссылку на подписание договора.<br />
                 Это может занять до <span className="font-semibold text-purple-600">30–60 секунд</span>.
               </p>
               <p className="text-xs text-purple-500 font-medium mt-2">Формируем ссылку на подписание договора…</p>

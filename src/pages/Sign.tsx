@@ -196,7 +196,7 @@ export default function SignPage() {
     return result;
   };
 
-  // Applies signature locally and marks as signed (called after overlay closes)
+  // Applies signature locally, marks as signed, then reloads HTML from server for 2-signature version
   const handleSign = useCallback((resolvedDownloadUrl: string) => {
     const now = new Date();
     const formatted = now.toLocaleString('ru-RU', {
@@ -206,12 +206,36 @@ export default function SignPage() {
     setIsSigned(true);
     setSignedDate(formatted);
     if (resolvedDownloadUrl) setDownloadUrl(resolvedDownloadUrl);
+
+    // Immediately show with local injection (1 visible signature) for instant feedback
     const sigData = signatureDataRef.current || signatureData;
     if (sigData) {
       setContractHtml(prev => injectSignatureLocally(prev, sigData));
       setContractVersion(v => v + 1);
     }
-  }, [signatureData]);
+
+    // Then reload from server to get the version with BOTH signatures
+    if (token) {
+      getScriptUrl().then(scriptUrl => {
+        if (!scriptUrl) return;
+        fetch(`${scriptUrl}?action=sign_get&token=${encodeURIComponent(token)}`, { redirect: 'follow' })
+          .then(r => r.text())
+          .then(text => {
+            let data: any;
+            try { data = JSON.parse(text); } catch { return; }
+            if (data?.success && data?.contractHtml) {
+              const signedHtml = cleanMarkersFromHtml(data.contractHtml, true);
+              setContractHtml(signedHtml);
+              setContractVersion(v => v + 1);
+              // Also update downloadUrl if server returned a fresher one
+              const freshUrl = data.downloadUrl || data.signedUrl || '';
+              if (freshUrl) setDownloadUrl(freshUrl);
+            }
+          })
+          .catch(() => {});
+      });
+    }
+  }, [signatureData, token]);
 
   // Called when user clicks "Подписать договор":
   // 1. Show overlay immediately
