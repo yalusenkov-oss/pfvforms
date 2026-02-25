@@ -86,26 +86,7 @@ export default async function handler(req, res) {
     });
   }
 
-  // If simple=true, send a plain-text email to isolate spam issues from HTML content
-  if (body.simple) {
-    try {
-      const transporter = nodemailer.createTransport({
-        host: 'smtp.yandex.ru', port: 465, secure: true,
-        auth: { user: smtpUser, pass: smtpPass }
-      });
-      const info = await transporter.sendMail({
-        from: `PFVMUSIC <${smtpUser}>`,
-        to,
-        subject: `PFVMUSIC — Договор ${contractNumber}`,
-        text: `Здравствуйте, ${name}!\n\nВаш договор ${contractNumber} готов к подписанию.\nПроизведение: ${workTitle}\nТип релиза: ${releaseType}\n\nСсылка для подписания:\n${signLink}\n\nС уважением,\nPFVMUSIC`
-      });
-      return res.status(200).json({ success: true, mode: 'simple_text', messageId: info.messageId, sentTo: to });
-    } catch (e) {
-      return res.status(500).json({ success: false, mode: 'simple_text', error: String(e.message || e) });
-    }
-  }
-
-  // Send actual email using the full HTML template
+  const strategy = body.simple ? 'simple_then_html' : 'html_then_simple';
   try {
     const info = await sendContractEmail({
       email: to,
@@ -113,11 +94,14 @@ export default async function handler(req, res) {
       contractNumber,
       signLink,
       workTitle,
-      releaseType
+      releaseType,
+      strategy
     });
     return res.status(200).json({
       success: true,
       messageId: info.messageId,
+      usedMode: info.usedMode,
+      strategy,
       sentTo: to,
       from: smtpUser,
       contractNumber,
