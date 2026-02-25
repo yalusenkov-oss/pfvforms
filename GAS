@@ -461,6 +461,23 @@ function saveDistribution(data) {
       }
     }
 
+    // ── Telegram-уведомление: договор создан и отправлен ──────────────────────
+    const docCfgDist = getTelegramConfig('document');
+    if (TELEGRAM_CONFIG.NOTIFY_DOC_GENERATED && docCfgDist.ENABLED && docCfgDist.BOT_TOKEN && docCfgDist.CHAT_ID) {
+      try {
+        sendDocumentGeneratedNotification({
+          contractNumber: contractNumber,
+          licensorName:   data.fullName || '',
+          pseudonym:      data.mainArtist || '',
+          workTitle:      data.releaseName || '',
+          docUrl:         signUrl
+        });
+        Logger.log('✅ Telegram: уведомление о договоре отправлено');
+      } catch (tgErr) {
+        Logger.log('❌ Telegram document error: ' + tgErr);
+      }
+    }
+
     // ── Email-данные возвращаем в ответе — Vercel отправит через Yandex SMTP ──
     if (data.email) {
       Logger.log('📧 Email-данные переданы Vercel для отправки через Yandex SMTP');
@@ -2720,6 +2737,33 @@ function submitSignature(data) {
     
     const contractStatusCol = getOrCreateColumn(sheet, 'contract_status');
     sheet.getRange(r + 1, contractStatusCol).setValue('signed');
+
+    // ── Telegram: договор подписан ────────────────────────────────────────────
+    const signedDocCfg = getTelegramConfig('document');
+    if (signedDocCfg.ENABLED && signedDocCfg.BOT_TOKEN && signedDocCfg.CHAT_ID) {
+      try {
+        const escMd = (t) => t ? String(t).replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&') : '';
+        const escUrl = (u) => u ? String(u).replace(/\)/g, '\\)') : '';
+        const workTitleVal = row[headers.indexOf('work_title')] || '';
+        const licensorVal = licensorName;
+        const pseudonymIdx = headers.indexOf('pseudonym');
+        const pseudonymVal = pseudonymIdx >= 0 ? (row[pseudonymIdx] || '') : '';
+        const msg = [
+          "\\#договор ✅ *Договор подписан*\\!",
+          "",
+          `▸ №: ${escMd(contractNumber)}`,
+          `▸ Лицензиар: ${escMd(licensorVal)}`,
+          `▸ Псевдоним: ${escMd(pseudonymVal)}`,
+          `▸ Произведение: ${escMd(workTitleVal)}`,
+          "",
+          `📄 [Открыть подписанный договор](${escUrl(signedUrl)})`
+        ].join("\n");
+        sendToTelegramAPI(msg, signedDocCfg);
+        Logger.log('✅ Telegram: уведомление о подписании отправлено');
+      } catch (tgErr) {
+        Logger.log('❌ Telegram signed notification error: ' + tgErr);
+      }
+    }
 
     return { success: true, signedUrl, downloadUrl };
   }
