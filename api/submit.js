@@ -125,15 +125,21 @@ export default async function handler(req, res) {
     const text = await response.text();
     console.log('[submit] GAS response status:', response.status, '| body length:', text.length);
 
+    // Parse GAS response once
+    let gasJson = null;
+    try { gasJson = text ? JSON.parse(text) : null; } catch {}
+
     // After successful GAS response, send contract email via Yandex SMTP
     let emailSent = false;
     let emailError = '';
     const isDistribution = cleanPayload.formType === 'distribution' && cleanPayload.email;
-    try {
-      let gasJson = null;
-      try { gasJson = text ? JSON.parse(text) : null; } catch {}
-      console.log('[submit] gasJson.success:', gasJson?.success, '| has emailData:', !!gasJson?.emailData);
 
+    console.log('[submit] gasJson parsed:', gasJson !== null, '| success:', gasJson?.success, '| has emailData:', !!(gasJson?.emailData));
+    if (gasJson?.emailData) {
+      console.log('[submit] emailData keys:', Object.keys(gasJson.emailData), '| email:', gasJson.emailData.email, '| signLink:', gasJson.emailData.signLink ? 'present' : 'missing');
+    }
+
+    try {
       let emailData = (gasJson?.success && gasJson?.emailData) ? gasJson.emailData : null;
 
       // Fallback: if GAS didn't return emailData (old/undeployed GAS version),
@@ -141,7 +147,6 @@ export default async function handler(req, res) {
       if (!emailData && isDistribution && gasJson?.success) {
         console.log('[submit] No emailData in GAS response — running fallback: searching by email...');
         try {
-          // Fetch last 10 rows to safely handle concurrent submissions
           const listUrl = `${scriptUrl}?action=list&sheet=distributions&limit=10`;
           const listRes = await fetch(listUrl, { redirect: 'follow' });
           const listText = await listRes.text();
@@ -150,7 +155,6 @@ export default async function handler(req, res) {
           const rows = listJson?.rows;
           console.log('[submit] Fallback fetched rows count:', Array.isArray(rows) ? rows.length : 'none');
           if (Array.isArray(rows) && rows.length > 0) {
-            // Find the most recent row matching this email that has a signLink
             const match = [...rows].reverse().find(r => {
               const rowEmail = r.email || r.Email || '';
               const rowLink = r.signLink || r.sign_link || '';
@@ -181,26 +185,39 @@ export default async function handler(req, res) {
         emailSent = true;
         console.log('[submit] ✅ Email sent to', emailData.email);
       } else {
-        console.log('[submit] ⚠️ No emailData available — email not sent');
+        console.log('[submit] ⚠️ No emailData available — email not sent. emailData:', JSON.stringify(emailData));
       }
     } catch (emailErr) {
       emailError = String(emailErr.message || emailErr);
-      console.error('[submit] Email send error:', emailError);
+      console.error('[submit] ❌ Email send error:', emailError);
     }
 
-    // Always return valid JSON
-    try {
-      const parsed = JSON.parse(text);
-      parsed.emailSent = emailSent;
-      if (emailError) parsed.emailError = emailError;
-      delete parsed.emailData;
-      res.status(response.status).json(parsed);
-    } catch {
+    // Always return valid JSON with diagnostics
+    const diag = {
+      emailSent,
+      emailError: emailError || undefined,
+      _debug: {
+        gasStatus: response.status,
+        gasBodyLen: text ? text.length : 0,
+        gasParsed: gasJson !== null,
+        gasSuccess: gasJson?.success,
+        gasHasEmailData: !!(gasJson?.emailData),
+        gasEmailDataKeys: gasJson?.emailData ? Object.keys(gasJson.emailData) : null,
+        isDistribution,
+        gasBodyPreview: text ? text.substring(0, 400) : ''
+      }
+    };
+    console.log('[submit] final diagnostics:', JSON.stringify(diag));
+
+    if (gasJson) {
+      const result = { ...gasJson, ...diag };
+      delete result.emailData;
+      res.status(response.status).json(result);
+    } else {
       res.status(response.status).json({
         success: response.ok,
         message: text ? text.substring(0, 500) : 'Empty GAS response',
-        emailSent,
-        emailError: emailError || undefined
+        ...diag
       });
     }
   } catch (err) {
