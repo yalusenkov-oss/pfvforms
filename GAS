@@ -3040,7 +3040,6 @@ function testTelegramPromo() {
 // Диагностика Telegram — запустите эту функцию в редакторе GAS для проверки
 // ═══════════════════════════════════════════════════════════════════════════
 function diagnoseTelegram() {
-  const ui = SpreadsheetApp.getUi();
   const lines = [];
 
   const configs = [
@@ -3071,21 +3070,21 @@ function diagnoseTelegram() {
       );
       const getMeData = JSON.parse(getMeResp.getContentText());
       if (getMeData.ok) {
-        lines.push('Bot: @' + getMeData.result.username + ' ✅');
+        lines.push('Bot: @' + getMeData.result.username + ' OK');
       } else {
-        lines.push('Bot: ОШИБКА — ' + getMeData.description + ' ❌');
+        lines.push('Bot: ОШИБКА — ' + getMeData.description);
         lines.push('');
         continue;
       }
     } catch (e) {
-      lines.push('Bot: запрос упал — ' + e.message + ' ❌');
+      lines.push('Bot: запрос упал — ' + e.message);
       lines.push('');
       continue;
     }
 
     // Send a test ping message
     try {
-      const testMsg = '🔔 Тест PFVMUSIC [' + entry.name + '] — ' + new Date().toLocaleString('ru-RU');
+      const testMsg = 'Тест PFVMUSIC [' + entry.name + '] — ' + new Date().toLocaleString('ru-RU');
       const candidates = buildTelegramChatCandidates(String(cfg.CHAT_ID));
       let sent = false;
       for (const chatId of candidates) {
@@ -3099,21 +3098,32 @@ function diagnoseTelegram() {
         );
         const respData = JSON.parse(resp.getContentText());
         if (respData.ok) {
-          lines.push('Отправка → chatId ' + chatId + ': ✅ OK');
+          lines.push('Отправка chatId ' + chatId + ': OK');
           sent = true;
           break;
         } else {
-          lines.push('Отправка → chatId ' + chatId + ': ❌ ' + respData.description);
+          lines.push('Отправка chatId ' + chatId + ': ОШИБКА ' + respData.description);
         }
       }
-      if (!sent) lines.push('Не удалось отправить ни в один из chatId ❌');
+      if (!sent) lines.push('Не удалось отправить ни в один chatId');
     } catch (e) {
-      lines.push('Ошибка отправки: ' + e.message + ' ❌');
+      lines.push('Ошибка отправки: ' + e.message);
     }
     lines.push('');
   }
 
   const report = lines.join('\n');
-  Logger.log(report);
-  ui.alert('Диагностика Telegram', report, ui.ButtonSet.OK);
+  Logger.log('=== ДИАГНОСТИКА TELEGRAM ===\n' + report);
+
+  // Toast works only when run from the spreadsheet, not from the script editor —
+  // results are always available in the Logs panel (Ctrl+Enter / View > Logs)
+  try {
+    SpreadsheetApp.getActiveSpreadsheet().toast(
+      'Готово! Откройте Журналы выполнения чтобы увидеть результат.',
+      'Диагностика Telegram',
+      10
+    );
+  } catch (e) {
+    // Running from script editor — results are in the execution log
+  }
 }
