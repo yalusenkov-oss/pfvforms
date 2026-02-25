@@ -77,7 +77,7 @@ export function SignatureBlock({
 
           {/* Signature input */}
           {!isSigned && (
-            <div className="flex justify-center">
+            <div className="mx-auto w-full max-w-sm">
               <SignatureCanvas onSignatureChange={onSignatureChange} />
             </div>
           )}
