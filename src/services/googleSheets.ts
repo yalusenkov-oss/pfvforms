@@ -398,8 +398,12 @@ export async function submitToGoogleSheets(
 
   const isProd = typeof window !== 'undefined' && !/localhost|127\\.0\\.0\\.1/.test(window.location.hostname);
 
-  // Функция-обёртка для fetch с обработкой времени ожидания
-  const fetchWithTimeout = (url: string, opts: RequestInit = {}, timeout = 10000) => {
+  const isTestEnv = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test';
+
+  // Таймаут: GAS может работать 30-60 сек (запись + Telegram + Drive + email)
+  const TIMEOUT_MS = isTestEnv ? 500 : 120000;
+
+  const fetchWithTimeout = (url: string, opts: RequestInit = {}, timeout = TIMEOUT_MS) => {
     return new Promise<Response>((resolve, reject) => {
       const timer = setTimeout(() => reject(new Error('Request timed out')), timeout);
       fetch(url, opts)
@@ -414,20 +418,14 @@ export async function submitToGoogleSheets(
     });
   };
 
-  // Попробуем отправить с небольшим числом ретраев (экспоненциальный бэкофф)
-  const isTestEnv = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test';
-  const maxRetries = isTestEnv ? 1 : 2;
-  let attempt = 0;
-  let lastErr: any = null;
-
-  while (attempt <= maxRetries) {
-    try {
+  // Без ретраев — GAS не идемпотентен (повторные попытки дублируют строки и письма)
+  try {
       if (isProd) {
         const res = await fetchWithTimeout('/api/submit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(preparedData),
-        }, isTestEnv ? 500 : 12000);
+        });
         const text = await res.text();
         if (DEBUG_LOGGING) {
           console.log('[DEBUG] /api/submit status', res.status, 'body', text);
@@ -496,20 +494,12 @@ export async function submitToGoogleSheets(
       return { success: true, message: 'Данные успешно отправлены' };
 
     } catch (err) {
-      lastErr = err;
-      attempt += 1;
-      // Ждём перед ретраем (экспоненциальный бэкофф)
-      const waitMs = isTestEnv ? 1 : 500 * Math.pow(2, attempt);
-      // eslint-disable-next-line no-await-in-loop
-      await new Promise((r) => setTimeout(r, waitMs));
+      console.error('Error submitting to Google Sheets:', err);
+      return {
+        success: false,
+        message: err instanceof Error ? err.message : 'Ошибка отправки данных',
+      };
     }
-  }
-
-  console.error('Error submitting to Google Sheets (all retries):', lastErr);
-  return {
-    success: false,
-    message: lastErr instanceof Error ? lastErr.message : 'Ошибка отправки данных (retries exhausted)',
-  };
 }
 
 // Экспорт для использования в компонентах
