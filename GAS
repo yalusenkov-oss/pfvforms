@@ -2116,13 +2116,47 @@ function sendSignLinkEmail(opts) {
     'Ссылка действительна до: ' + expiresStr + '\n\n' +
     'С уважением,\nPFVMUSIC | support@pfvmusic.digital';
 
-  MailApp.sendEmail({
-    to:       recipientEmail,
-    subject:  '✍️ PFVMUSIC — Ваш договор готов к подписанию (№ ' + contractNumber + ')',
-    body:     plainBody,
-    htmlBody: htmlBody,
-    name:     'PFVMUSIC'
-  });
+  // Отправляем через Vercel API (Yandex SMTP, от noreply@pfvmusic.digital)
+  const apiUrl = 'https://pfvmusic.digital/api/send-contract';
+  try {
+    const payload = JSON.stringify({
+      email:          recipientEmail,
+      name:           name,
+      contractNumber: contractNumber,
+      signLink:       signUrl,
+      workTitle:      workTitle,
+      releaseType:    releaseType
+    });
+    const response = UrlFetchApp.fetch(apiUrl, {
+      method:             'post',
+      contentType:        'application/json',
+      payload:            payload,
+      muteHttpExceptions: true
+    });
+    const code = response.getResponseCode();
+    const body = response.getContentText();
+    if (code >= 200 && code < 300) {
+      Logger.log('✅ Письмо отправлено через Yandex SMTP: ' + body);
+    } else {
+      Logger.log('⚠️ API вернул ' + code + ': ' + body + ' — fallback на MailApp');
+      MailApp.sendEmail({
+        to:       recipientEmail,
+        subject:  '✍️ PFVMUSIC — Ваш договор готов к подписанию (№ ' + contractNumber + ')',
+        body:     plainBody,
+        htmlBody: htmlBody,
+        name:     'PFVMUSIC'
+      });
+    }
+  } catch (e) {
+    Logger.log('⚠️ UrlFetchApp упал (' + e.message + ') — fallback на MailApp');
+    MailApp.sendEmail({
+      to:       recipientEmail,
+      subject:  '✍️ PFVMUSIC — Ваш договор готов к подписанию (№ ' + contractNumber + ')',
+      body:     plainBody,
+      htmlBody: htmlBody,
+      name:     'PFVMUSIC'
+    });
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
