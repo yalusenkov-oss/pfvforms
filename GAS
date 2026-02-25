@@ -205,7 +205,7 @@ function doPost(e) {
     } else if (data.formType === 'promo_code') {
       savePromoCode(data);
     } else if (data.formType === 'distribution') {
-      saveDistribution(data);
+      result = saveDistribution(data);
     } else if (data.formType === 'promo') {
       savePromo(data);
     } else {
@@ -461,22 +461,9 @@ function saveDistribution(data) {
       }
     }
 
-    // ── Отправка письма клиенту ─────────────────────────────────────────────
+    // ── Email-данные возвращаем в ответе — Vercel отправит через Yandex SMTP ──
     if (data.email) {
-      try {
-        sendSignLinkEmail({
-          email:          data.email,
-          name:           data.fullName || '',
-          contractNumber: contractNumber,
-          workTitle:      data.releaseName || '',
-          releaseType:    releaseTypeName,
-          signUrl:        signUrl,
-          expiresAt:      expiresAt
-        });
-        Logger.log('✅ Письмо со ссылкой на подписание отправлено на ' + data.email);
-      } catch (mailErr) {
-        Logger.log('❌ Ошибка отправки письма: ' + mailErr);
-      }
+      Logger.log('📧 Email-данные переданы Vercel для отправки через Yandex SMTP');
     }
 
     // ── Загрузка скриншота оплаты на Drive (медленная операция — после уведомлений) ──
@@ -485,7 +472,6 @@ function saveDistribution(data) {
         const proofFile = storePaymentProof(data.paymentProof, contractNumber, data.fullName || '');
         if (proofFile) {
           const proofUrl = proofFile.getUrl();
-          // Обновляем ячейку payment_proof_url в только что добавленной строке
           const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
           const proofColIdx = headers.indexOf('payment_proof_url');
           if (proofColIdx >= 0) {
@@ -497,6 +483,20 @@ function saveDistribution(data) {
         Logger.log('saveDistribution paymentProof error: ' + e);
       }
     }
+
+    return {
+      success: true,
+      message: 'Данные успешно сохранены',
+      formType: 'distribution',
+      emailData: data.email ? {
+        email:          data.email,
+        name:           data.fullName || '',
+        contractNumber: contractNumber,
+        signLink:       signUrl,
+        workTitle:      data.releaseName || '',
+        releaseType:    releaseTypeName
+      } : null
+    };
 
   } catch (error) {
     Logger.log('saveDistribution error: ' + error.toString());
@@ -2466,26 +2466,7 @@ function createSignLink(data) {
       expiresStr = expiresDate.toISOString();
     } catch(e) {}
 
-    let emailSent = false;
-    let emailError = '';
     const recipientEmail = row[idx.email] || '';
-    if (recipientEmail) {
-      try {
-        sendSignLinkEmail({
-          email: recipientEmail,
-          name: row[idx.licensorName] || '',
-          contractNumber: contractNumber,
-          workTitle: row[idx.workTitle] || '',
-          releaseType: row[idx.releaseType] || '',
-          signUrl: existingLink,
-          expiresAt: expiresDate
-        });
-        emailSent = true;
-      } catch (e) {
-        emailError = String(e);
-        Logger.log('createSignLink existing: sendSignLinkEmail error: ' + e);
-      }
-    }
     
     return {
       success: true,
@@ -2493,8 +2474,14 @@ function createSignLink(data) {
       expiresAt: expiresStr,
       contractNumber: contractNumber,
       message: 'Ссылка уже была сгенерирована ранее, возвращаем старую.',
-      emailSent: emailSent,
-      emailError: emailError
+      emailData: recipientEmail ? {
+        email:          recipientEmail,
+        name:           row[idx.licensorName] || '',
+        contractNumber: contractNumber,
+        signLink:       existingLink,
+        workTitle:      row[idx.workTitle] || '',
+        releaseType:    row[idx.releaseType] || ''
+      } : null
     };
   }
 
@@ -2575,27 +2562,7 @@ function createSignLink(data) {
   sheet.getRange(rowIndex, signCols.signedAt).setValue('');
   sheet.getRange(rowIndex, extraCols.signedPdfId).setValue('');
 
-  let emailSent = false;
-  let emailError = '';
   const recipientEmail = row[idx.email] || '';
-  if (recipientEmail) {
-    try {
-      sendSignLinkEmail({
-        email: recipientEmail,
-        name: row[idx.licensorName] || '',
-        contractNumber: contractNumber,
-        workTitle: row[idx.workTitle] || '',
-        releaseType: row[idx.releaseType] || '',
-        signUrl: signUrl,
-        expiresAt: expiresAt
-      });
-      emailSent = true;
-      Logger.log('✅ createSignLink: email sent to ' + recipientEmail);
-    } catch (e) {
-      emailError = String(e);
-      Logger.log('❌ createSignLink: sendSignLinkEmail error: ' + e);
-    }
-  }
 
   // Отправка ссылки на подписание в Telegram
   const docCfg = getTelegramConfig('document');
@@ -2630,8 +2597,14 @@ function createSignLink(data) {
     success: true,
     signUrl,
     expiresAt: expiresAt.toISOString(),
-    emailSent: emailSent,
-    emailError: emailError,
+    emailData: recipientEmail ? {
+      email:          recipientEmail,
+      name:           row[idx.licensorName] || '',
+      contractNumber: contractNumber,
+      signLink:       signUrl,
+      workTitle:      row[idx.workTitle] || '',
+      releaseType:    row[idx.releaseType] || ''
+    } : null,
     docUrl: '',
     previewUrl: '',
     pdfUrl: ''

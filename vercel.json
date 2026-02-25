@@ -3,6 +3,9 @@
         "api/submit.js": {
             "maxDuration": 60
         },
+        "api/sign.js": {
+            "maxDuration": 60
+        },
         "api/send-contract.js": {
             "maxDuration": 30
         }

@@ -1,4 +1,12 @@
 {
+    "functions": {
+        "api/sign.js": {
+            "maxDuration": 60
+        },
+        "api/send-contract.js": {
+            "maxDuration": 30
+        }
+    },
     "rewrites": [
         {
             "source": "/api/:path*",

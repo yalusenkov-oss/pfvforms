@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { sendContractEmail } from '../../api/_email.js';
 
 const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxV8xHP0O09Q7KqMWmsApHOiSw9oNMDb6JKonoVnOBwbL95-v9duxnNZLca55yQJQk7OQ/exec';
 
@@ -123,6 +124,38 @@ export default async function handler(req, res) {
     });
 
     const text = await response.text();
+
+    // After sign_create, send contract email via Yandex SMTP
+    let emailSent = false;
+    let emailError = '';
+    if (action === 'create') {
+      try {
+        const gasJson = text ? JSON.parse(text) : null;
+        if (gasJson && gasJson.success && gasJson.emailData) {
+          const ed = gasJson.emailData;
+          if (ed.email && ed.signLink) {
+            await sendContractEmail(ed);
+            emailSent = true;
+            console.log('Contract email sent to', ed.email);
+          }
+        }
+      } catch (emailErr) {
+        emailError = String(emailErr.message || emailErr);
+        console.error('Email send error (non-fatal):', emailError);
+      }
+    }
+
+    if (action === 'create') {
+      try {
+        const parsed = JSON.parse(text);
+        parsed.emailSent = emailSent;
+        if (emailError) parsed.emailError = emailError;
+        delete parsed.emailData;
+        res.status(response.status).json(parsed);
+        return;
+      } catch { /* fall through */ }
+    }
+
     res.status(response.status).send(text);
   } catch (err) {
     res.status(500).json({ success: false, error: String(err) });
