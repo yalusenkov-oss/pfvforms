@@ -23,6 +23,21 @@ export async function sendContractEmail({ email, name, contractNumber, signLink,
   const safeWork = esc(workTitle || '—');
   const safeRelease = esc(releaseType || '—');
   const safeLink = String(signLink).replace(/"/g, '%22');
+  const text = [
+    `Здравствуйте, ${name || 'уважаемый автор'}!`,
+    '',
+    'Ваш договор готов к подписанию.',
+    `Номер договора: ${contractNumber || 'Б/Н'}`,
+    `Произведение: ${workTitle || '—'}`,
+    `Тип релиза: ${releaseType || '—'}`,
+    '',
+    'Ссылка для подписания:',
+    String(signLink || ''),
+    '',
+    'Если у вас есть вопросы, ответьте на это письмо или напишите на support@pfvmusic.digital.',
+    '',
+    'PFVMUSIC'
+  ].join('\n');
 
   const html = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="ru">
@@ -69,7 +84,7 @@ export async function sendContractEmail({ email, name, contractNumber, signLink,
                       <td width="48" valign="middle">
                         <table cellpadding="0" cellspacing="0" border="0">
                           <tr>
-                            <td width="48" height="48" align="center" valign="middle" style="background-color:#7c3aed;color:#ffffff;font-size:22px;border-radius:12px;">📄</td>
+                            <td width="48" height="48" align="center" valign="middle" style="background-color:#7c3aed;color:#ffffff;font-size:11px;font-weight:700;border-radius:12px;">DOC</td>
                           </tr>
                         </table>
                       </td>
@@ -138,7 +153,7 @@ export async function sendContractEmail({ email, name, contractNumber, signLink,
                   <table cellpadding="0" cellspacing="0" border="0" bgcolor="#7c3aed" style="background-image:linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); border-radius:14px;">
                     <tr>
                       <td align="center" valign="middle" style="padding:18px 44px;">
-                        <a href="${safeLink}" style="color:#ffffff;text-decoration:none;font-weight:bold;font-size:18px;">✍️ Подписать договор</a>
+                        <a href="${safeLink}" style="color:#ffffff;text-decoration:none;font-weight:bold;font-size:18px;">Подписать договор</a>
                       </td>
                     </tr>
                   </table>
@@ -156,14 +171,14 @@ export async function sendContractEmail({ email, name, contractNumber, signLink,
                       <td width="48" valign="middle">
                         <table cellpadding="0" cellspacing="0" border="0">
                           <tr>
-                            <td width="48" height="48" align="center" valign="middle" style="background-color:#a855f7;color:#ffffff;font-size:22px;border-radius:12px;">💬</td>
+                            <td width="48" height="48" align="center" valign="middle" style="background-color:#a855f7;color:#ffffff;font-size:10px;font-weight:700;border-radius:12px;">INFO</td>
                           </tr>
                         </table>
                       </td>
                       <td width="16">&nbsp;</td>
                       <td valign="middle">
                         <div style="color:#111827;font-size:15px;font-weight:700;margin-bottom:4px;">Вопросы по дистрибуции?</div>
-                        <div style="color:#4b5563;font-size:14px;">Поддержка в Telegram: <a href="https://t.me/pfvmusic_support" style="color:#9333ea;font-weight:bold;text-decoration:none;">@pfvmusic_support</a></div>
+                        <div style="color:#4b5563;font-size:14px;">Поддержка: @pfvmusic_support</div>
                       </td>
                     </tr>
                   </table>
@@ -176,12 +191,12 @@ export async function sendContractEmail({ email, name, contractNumber, signLink,
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#fef3c7;border:1px solid #fde68a;border-radius:14px;">
               <tr>
                 <td style="padding:22px;">
-                  <div style="color:#b45309;font-size:15px;font-weight:700;margin-bottom:8px;">⚠️ Кнопка не работает?</div>
+                  <div style="color:#b45309;font-size:15px;font-weight:700;margin-bottom:8px;">Если кнопка не работает</div>
                   <div style="color:#92400e;font-size:14px;line-height:1.5;margin-bottom:14px;">Скопируйте этот адрес и вставьте в строку браузера:</div>
                   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="table-layout:fixed;">
                     <tr>
                       <td class="long-link" style="background-color:#ffffff;border:1px dashed #fbbf24;border-radius:8px;padding:14px;font-size:13px;color:#d97706;font-family:monospace;line-height:1.5;">
-                        <a href="${safeLink}" style="color:#d97706;text-decoration:none;" class="long-link">${safeLink}</a>
+                        ${safeLink}
                       </td>
                     </tr>
                   </table>
@@ -200,7 +215,7 @@ export async function sendContractEmail({ email, name, contractNumber, signLink,
             <div style="color:#ffffff;font-size:18px;font-weight:900;letter-spacing:4px;text-transform:uppercase;margin-bottom:20px;">PFVMUSIC</div>
 
             <div style="color:#e5e7eb;font-size:15px;line-height:1.6;margin-bottom:8px;">С уважением, Музыкальное издательство <span style="color:#a78bfa;font-weight:700;">PFVMUSIC</span></div>
-            <div><a href="mailto:support@pfvmusic.digital" style="color:#a78bfa;font-size:14px;text-decoration:none;font-weight:700;">support@pfvmusic.digital</a></div>
+            <div style="color:#a78bfa;font-size:14px;font-weight:700;">support@pfvmusic.digital</div>
 
             <table width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr><td height="32"></td></tr>
@@ -228,7 +243,8 @@ export async function sendContractEmail({ email, name, contractNumber, signLink,
   const info = await transporter.sendMail({
     from: `PFVMUSIC <${smtpUser}>`,
     to: String(email).trim(),
-    subject: `PFVMUSIC — Ваш договор готов к подписанию (${safeContract})`,
+    subject: `PFVMUSIC: договор готов к подписанию (${safeContract})`,
+    text,
     html,
   });
 

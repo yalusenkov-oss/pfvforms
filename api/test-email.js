@@ -7,8 +7,8 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const smtpUser = process.env.SMTP_USER || 'noreply@pfvmusic.digital';
-  const smtpPass = process.env.SMTP_PASS || 'fsvyjzrabtslbfef';
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
 
   // GET = diagnostics only (no email sent)
   if (req.method === 'GET') {
@@ -16,7 +16,6 @@ export default async function handler(req, res) {
       smtp_user_set: !!process.env.SMTP_USER,
       smtp_user: smtpUser ? smtpUser.replace(/(.{3}).*(@.*)/, '$1***$2') : null,
       smtp_pass_set: !!process.env.SMTP_PASS,
-      smtp_pass_fallback: !process.env.SMTP_PASS,
       smtp_host: 'smtp.yandex.ru',
       smtp_port: 465,
       note: 'POST to this endpoint to send a test email',
