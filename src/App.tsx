@@ -1529,8 +1529,11 @@ export function App() {
             <p className="text-gray-600 mb-2 leading-relaxed">
               Спасибо за отправку релиза на дистрибуцию!
             </p>
+            <p className="text-gray-700 text-sm mb-1 font-semibold">
+              Договор отправлен на вашу электронную почту.
+            </p>
             <p className="text-gray-500 text-sm mb-6">
-              Мы свяжемся с вами в ближайшее время для подтверждения данных.
+              Если письмо не пришло — проверьте папку «Спам».
             </p>
             <div className="inline-flex items-center gap-2 rounded-lg bg-purple-50 px-4 py-2 text-sm text-purple-700 font-medium mb-6">
               <Send className="w-4 h-4" />
