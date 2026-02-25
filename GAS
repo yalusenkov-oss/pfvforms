@@ -88,7 +88,7 @@ function setupDistributionSheet(sheet) {
     'base_price', 'karaoke_price', 'total_price', 'payment_proof_url', 'contract_number', 'percentage',
     'contract_status', 'music_author', 'lyrics_author', 'lyrics_texts', 'document_status', 'telegram_status',
     'sign_status', 'sign_token', 'sign_expires_at', 'sign_link', 'sign_doc_id', 'signed_url', 'signed_at',
-    'contract_html', 'sign_source', 'signed_pdf_id', 'platforms'
+    'contract_html', 'sign_source', 'signed_pdf_id', 'platforms', 'tg_contract_msg_id'
   ];
 
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
@@ -202,6 +202,8 @@ function doPost(e) {
       result = getSignData(data);
     } else if (data.action === 'sign_submit') {
       result = submitSignature(data);
+    } else if (data.action === 'update_contract_tg_status') {
+      result = updateContractTgStatus(data);
     } else if (data.formType === 'promo_code') {
       savePromoCode(data);
     } else if (data.formType === 'distribution') {
@@ -465,7 +467,7 @@ function saveDistribution(data) {
     const docCfgDist = getTelegramConfig('document');
     if (TELEGRAM_CONFIG.NOTIFY_DOC_GENERATED && docCfgDist.ENABLED && docCfgDist.BOT_TOKEN && docCfgDist.CHAT_ID) {
       try {
-        sendDocumentGeneratedNotification({
+        const tgMsgId = sendDocumentGeneratedNotification({
           contractNumber: contractNumber,
           licensorName:   data.fullName || '',
           pseudonym:      data.mainArtist || '',
@@ -473,6 +475,11 @@ function saveDistribution(data) {
           docUrl:         signUrl
         });
         Logger.log('✅ Telegram: уведомление о договоре отправлено');
+        if (tgMsgId) {
+          const tgMsgIdCol = getOrCreateColumn(sheet, 'tg_contract_msg_id');
+          sheet.getRange(lastRow, tgMsgIdCol).setValue(tgMsgId);
+          Logger.log('✅ Сохранён tg_contract_msg_id: ' + tgMsgId);
+        }
       } catch (tgErr) {
         Logger.log('❌ Telegram document error: ' + tgErr);
       }
@@ -819,8 +826,10 @@ function sendDocumentGeneratedNotification(data) {
     }
 
     Logger.log("✅ Уведомление о документе отправлено");
+    return result.result ? result.result.message_id : null;
   } catch (error) {
     Logger.log("🚨 Ошибка отправки Telegram: " + error.message);
+    return null;
   }
 }
 
@@ -990,6 +999,51 @@ function sendToTelegramAPI(message, cfg) {
   }
 
   throw new Error(`Telegram API: ${lastError || "Не удалось отправить сообщение"}`);
+}
+
+// Редактирует существующее Telegram-сообщение по message_id
+function editTelegramMessage(messageId, newText, cfg) {
+  if (!messageId || !cfg.BOT_TOKEN || !cfg.CHAT_ID) return false;
+  const url = `https://api.telegram.org/bot${cfg.BOT_TOKEN}/editMessageText`;
+  const baseChatId = String(cfg.CHAT_ID || '').trim();
+  if (!baseChatId) return false;
+  const chatIdsToTry = buildTelegramChatCandidates(baseChatId);
+
+  for (const chatId of chatIdsToTry) {
+    for (const parseMode of ['MarkdownV2', null]) {
+      try {
+        const payload = {
+          chat_id: chatId,
+          message_id: Number(messageId),
+          text: parseMode === null ? stripMarkdown(newText) : newText,
+          disable_web_page_preview: true
+        };
+        if (parseMode) payload.parse_mode = parseMode;
+        if (shouldAttachThread(chatId, cfg.THREAD_ID)) {
+          payload.message_thread_id = Number(cfg.THREAD_ID);
+        }
+        const response = UrlFetchApp.fetch(url, {
+          method: 'post',
+          contentType: 'application/json',
+          payload: JSON.stringify(payload),
+          muteHttpExceptions: true
+        });
+        const data = JSON.parse(response.getContentText());
+        if (data.ok) return true;
+        const desc = data.description || '';
+        if (desc.indexOf('parse') !== -1 || desc.indexOf("can't parse") !== -1 ||
+            desc.indexOf("Can't parse") !== -1 || desc.indexOf('parse entities') !== -1) {
+          continue; // try plain text
+        }
+        Logger.log('editTelegramMessage error: ' + desc);
+        break;
+      } catch (e) {
+        Logger.log('editTelegramMessage exception: ' + e.message);
+        break;
+      }
+    }
+  }
+  return false;
 }
 
 // Убирает MarkdownV2-разметку для отправки plain text fallback
@@ -2652,6 +2706,69 @@ function getSignData(data) {
   return { success: false, error: 'Token not found' };
 }
 
+function updateContractTgStatus(data) {
+  const contractNumber = String(data.contractNumber || '').trim();
+  if (!contractNumber) return { success: false, error: 'Missing contractNumber' };
+
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(DISTRIBUTION_SHEET_NAME);
+  if (!sheet) return { success: false, error: 'Sheet not found' };
+
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const contractNumberIdx = headers.indexOf('contract_number');
+  const tgMsgIdIdx = headers.indexOf('tg_contract_msg_id');
+  const licensorNameIdx = headers.indexOf('licensor_name');
+  const pseudonymIdx = headers.indexOf('pseudonym');
+  const workTitleIdx = headers.indexOf('work_title');
+  const signLinkIdx = headers.indexOf('sign_link');
+
+  if (contractNumberIdx < 0) return { success: false, error: 'contract_number column not found' };
+
+  const dataRange = sheet.getDataRange().getValues();
+  for (let r = 1; r < dataRange.length; r++) {
+    const row = dataRange[r];
+    if (String(row[contractNumberIdx]) !== contractNumber) continue;
+
+    const msgId = tgMsgIdIdx >= 0 ? row[tgMsgIdIdx] : null;
+    if (!msgId) return { success: false, error: 'No tg_contract_msg_id for this contract' };
+
+    const cfg = getTelegramConfig('document');
+    if (!cfg.ENABLED || !cfg.BOT_TOKEN || !cfg.CHAT_ID) return { success: false, error: 'Telegram not configured' };
+
+    const esc = (t) => t ? String(t).replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&') : '';
+    const escUrl = (u) => u ? String(u).replace(/\)/g, '\\)') : '';
+
+    const licensorName = licensorNameIdx >= 0 ? (row[licensorNameIdx] || '') : '';
+    const pseudonym = pseudonymIdx >= 0 ? (row[pseudonymIdx] || '') : '';
+    const workTitle = workTitleIdx >= 0 ? (row[workTitleIdx] || '') : '';
+    const signLink = signLinkIdx >= 0 ? (row[signLinkIdx] || '') : '';
+
+    let newText;
+    if (data.status === 'email_failed') {
+      const errShort = String(data.emailError || 'неизвестная ошибка').substring(0, 120);
+      newText = [
+        "\\#договор 📋 *Договор создан*\\!",
+        "",
+        `▸ №: ${esc(contractNumber)}`,
+        `▸ Лицензиар: ${esc(licensorName)}`,
+        `▸ Псевдоним: ${esc(pseudonym)}`,
+        `▸ Произведение: ${esc(workTitle)}`,
+        "",
+        signLink ? `📝 [Ссылка на подписание](${escUrl(signLink)})` : '',
+        "",
+        `⚠️ Email не доставлен: ${esc(errShort)}`
+      ].filter(l => l !== '').join("\n");
+    } else {
+      return { success: false, error: 'Unknown status: ' + data.status };
+    }
+
+    const edited = editTelegramMessage(msgId, newText, cfg);
+    Logger.log(edited ? '✅ TG message edited (email_failed)' : '⚠️ TG message edit failed');
+    return { success: edited };
+  }
+
+  return { success: false, error: 'Contract not found: ' + contractNumber };
+}
+
 function submitSignature(data) {
   const token = String(data.token || '').trim();
   if (!token) return { success: false, error: 'Missing token' };
@@ -2701,7 +2818,7 @@ function submitSignature(data) {
     const contractStatusCol = getOrCreateColumn(sheet, 'contract_status');
     sheet.getRange(r + 1, contractStatusCol).setValue('signed');
 
-    // ── Telegram: договор подписан ────────────────────────────────────────────
+    // ── Telegram: договор подписан — редактируем исходное сообщение ─────────
     const signedDocCfg = getTelegramConfig('document');
     if (signedDocCfg.ENABLED && signedDocCfg.BOT_TOKEN && signedDocCfg.CHAT_ID) {
       try {
@@ -2709,8 +2826,8 @@ function submitSignature(data) {
         const escUrl = (u) => u ? String(u).replace(/\)/g, '\\)') : '';
         const workTitleVal = row[headers.indexOf('work_title')] || '';
         const licensorVal = licensorName;
-        const pseudonymIdx = headers.indexOf('pseudonym');
-        const pseudonymVal = pseudonymIdx >= 0 ? (row[pseudonymIdx] || '') : '';
+        const pseudonymHeaderIdx = headers.indexOf('pseudonym');
+        const pseudonymVal = pseudonymHeaderIdx >= 0 ? (row[pseudonymHeaderIdx] || '') : '';
         const msg = [
           "\\#договор ✅ *Договор подписан*\\!",
           "",
@@ -2721,8 +2838,23 @@ function submitSignature(data) {
           "",
           `📄 [Открыть подписанный договор](${escUrl(signedUrl)})`
         ].join("\n");
-        sendToTelegramAPI(msg, signedDocCfg);
-        Logger.log('✅ Telegram: уведомление о подписании отправлено');
+
+        const tgMsgIdHeaderIdx = headers.indexOf('tg_contract_msg_id');
+        const tgMsgId = tgMsgIdHeaderIdx >= 0 ? row[tgMsgIdHeaderIdx] : null;
+
+        if (tgMsgId) {
+          const edited = editTelegramMessage(tgMsgId, msg, signedDocCfg);
+          if (edited) {
+            Logger.log('✅ Telegram: сообщение отредактировано — договор подписан');
+          } else {
+            // Редактирование не удалось — отправляем новое
+            sendToTelegramAPI(msg, signedDocCfg);
+            Logger.log('✅ Telegram: отправлено новое сообщение о подписании (edit failed)');
+          }
+        } else {
+          sendToTelegramAPI(msg, signedDocCfg);
+          Logger.log('✅ Telegram: уведомление о подписании отправлено (нет msg_id)');
+        }
       } catch (tgErr) {
         Logger.log('❌ Telegram signed notification error: ' + tgErr);
       }

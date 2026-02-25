@@ -195,43 +195,28 @@ export default async function handler(req, res) {
     // Resolve signLink from emailData or gasJson for passing to frontend
     const resolvedSignLink = gasJson?.emailData?.signLink || '';
 
-    // Telegram notification if email failed to send
+    // Update existing Telegram contract message if email failed
     if (isDistribution && !emailSent && gasJson?.success) {
       try {
-        const tgToken = '7725833130:AAEr7if331GMDGHMudemMmXo4ezro9W5lio';
-        const tgChatId = '-1002584625468';
-        const tgThreadId = 600;
-        const esc = (t) => t ? String(t).replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&') : '';
-        const contractNumber = gasJson?.emailData?.contractNumber || '—';
-        const recipientEmail = gasJson?.emailData?.email || cleanPayload.email || '—';
-        const workTitle = gasJson?.emailData?.workTitle || cleanPayload.releaseName || '—';
-        const signLink = resolvedSignLink || '—';
+        const contractNumber = gasJson?.emailData?.contractNumber || '';
         const errShort = emailError ? emailError.substring(0, 120) : 'нет emailData';
-        const msg = [
-          `\\#договор ⚠️ *Email не отправлен*`,
-          ``,
-          `▸ №: ${esc(contractNumber)}`,
-          `▸ Произведение: ${esc(workTitle)}`,
-          `▸ Email клиента: ${esc(recipientEmail)}`,
-          `▸ Причина: ${esc(errShort)}`,
-          resolvedSignLink ? `📝 [Ссылка на подписание](${signLink.replace(/\)/g, '\\)')})` : ''
-        ].filter(Boolean).join('\n');
-
-        const tgUrl = `https://api.telegram.org/bot${tgToken}/sendMessage`;
-        await fetch(tgUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: tgChatId,
-            message_thread_id: tgThreadId,
-            text: msg,
-            parse_mode: 'MarkdownV2',
-            disable_web_page_preview: true
-          })
-        });
-        console.log('[submit] Telegram: email failure notification sent');
+        const gasScriptUrl = getScriptUrl();
+        if (gasScriptUrl && contractNumber) {
+          // Fire-and-forget: edit the existing TG message via GAS
+          fetch(gasScriptUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'update_contract_tg_status',
+              contractNumber,
+              status: 'email_failed',
+              emailError: errShort
+            })
+          }).catch(e => console.error('[submit] GAS update_contract_tg_status failed:', e.message));
+          console.log('[submit] GAS update_contract_tg_status called for contract:', contractNumber);
+        }
       } catch (tgErr) {
-        console.error('[submit] Telegram notification failed:', tgErr.message);
+        console.error('[submit] update_contract_tg_status error:', tgErr.message);
       }
     }
 
