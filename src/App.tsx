@@ -311,6 +311,8 @@ export function App() {
   const [agreed, setAgreed] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submittedSignLink, setSubmittedSignLink] = useState('');
+  const [submittedEmailSent, setSubmittedEmailSent] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   // Promo form state
@@ -393,6 +395,8 @@ export function App() {
     try {
       const result = await submitToGoogleSheets('distribution', normalized);
       if (result.success) {
+        setSubmittedSignLink(result.signLink || '');
+        setSubmittedEmailSent(!!result.emailSent);
         setSubmitted(true);
         // useLayoutEffect will scroll to top synchronously after the success screen mounts
       } else {
@@ -446,6 +450,8 @@ export function App() {
 
   const resetDistribution = () => {
     setSubmitted(false);
+    setSubmittedSignLink('');
+    setSubmittedEmailSent(false);
     setCurrentStep(1);
     setFormData({});
     setAgreed(false);
@@ -1515,42 +1521,91 @@ export function App() {
     return <SignPage />;
   }
 
-  // ═══ DISTRIBUTION PAGE ═══
+  // ═══ SUCCESS SCREEN ═══
   if (submitted) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50/30">
         <Header onBack={goHome} />
-        <div className="mx-auto max-w-2xl px-4 py-20">
-          <div className="rounded-2xl border border-emerald-200 bg-white p-10 text-center shadow-xl shadow-emerald-100/20">
-            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100">
-              <CheckCircle2 className="h-10 w-10 text-emerald-600" />
+        <div className="mx-auto max-w-2xl px-4 py-16">
+
+          {/* Main card */}
+          <div className="rounded-2xl border border-emerald-200 bg-white p-8 shadow-xl shadow-emerald-100/20">
+
+            {/* Icon + title */}
+            <div className="flex flex-col items-center text-center mb-6">
+              <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100">
+                <CheckCircle2 className="h-10 w-10 text-emerald-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Заявка принята!</h2>
+              <p className="text-gray-500 text-sm leading-relaxed">
+                Данные сохранены. Для начала обработки релиза необходимо подписать договор.
+              </p>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Форма успешно отправлена!</h2>
-            <p className="text-gray-600 mb-2 leading-relaxed">
-              Спасибо за отправку релиза на дистрибуцию!
-            </p>
-            <p className="text-gray-700 text-sm mb-1 font-semibold">
-              Договор отправлен на вашу электронную почту.
-            </p>
-            <p className="text-gray-500 text-sm mb-6">
-              Если письмо не пришло — проверьте папку «Спам».
-            </p>
-            <div className="inline-flex items-center gap-2 rounded-lg bg-purple-50 px-4 py-2 text-sm text-purple-700 font-medium mb-6">
-              <Send className="w-4 h-4" />
-              Не забудьте связаться с нами в Telegram или VK
+
+            {/* Warning: must sign */}
+            <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4">
+              <span className="mt-0.5 text-amber-500 text-xl leading-none">⚠️</span>
+              <p className="text-sm font-semibold text-amber-800 leading-snug">
+                Без подписания договора релиз не будет принят в обработку.
+              </p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+
+            {/* Sign link block */}
+            <div className="mb-6 rounded-xl border border-purple-200 bg-purple-50 p-5">
+              <p className="text-sm font-semibold text-purple-900 mb-3">Ссылка для подписания договора:</p>
+
+              {submittedSignLink ? (
+                <>
+                  <a
+                    href={submittedSignLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full text-center rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-purple-200 hover:from-purple-700 hover:to-purple-800 transition-all active:scale-[0.98] mb-3"
+                  >
+                    ✍️ Подписать договор
+                  </a>
+                  <p className="text-xs text-purple-600 break-all text-center">{submittedSignLink}</p>
+                </>
+              ) : (
+                /* Skeleton — ссылка ещё формируется */
+                <div className="space-y-2 animate-pulse">
+                  <div className="h-11 rounded-xl bg-purple-200/60" />
+                  <div className="h-3 w-3/4 mx-auto rounded bg-purple-200/40" />
+                </div>
+              )}
+            </div>
+
+            {/* Email notice */}
+            <div className={`mb-6 flex items-start gap-3 rounded-xl border px-4 py-3 ${submittedEmailSent ? 'border-blue-200 bg-blue-50' : 'border-gray-200 bg-gray-50'}`}>
+              <span className="mt-0.5 text-lg leading-none">{submittedEmailSent ? '📧' : '📋'}</span>
+              <div>
+                {submittedEmailSent ? (
+                  <>
+                    <p className="text-sm font-semibold text-blue-800">Договор также отправлен вам на почту.</p>
+                    <p className="text-xs text-blue-600 mt-0.5">Если письмо не пришло — проверьте папку «Спам».</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-semibold text-gray-700">Воспользуйтесь ссылкой выше для подписания.</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Отправка на почту временно недоступна, но ссылка действительна.</p>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex flex-col sm:flex-row gap-3">
               <button
                 type="button"
                 onClick={resetDistribution}
-                className="rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-200 hover:from-purple-700 hover:to-purple-800 transition-all active:scale-[0.98]"
+                className="flex-1 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-200 hover:from-purple-700 hover:to-purple-800 transition-all active:scale-[0.98]"
               >
                 Отправить ещё один релиз
               </button>
               <button
                 type="button"
                 onClick={goHome}
-                className="rounded-xl border border-gray-200 bg-white px-6 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-all active:scale-[0.98]"
+                className="flex-1 rounded-xl border border-gray-200 bg-white px-6 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-all active:scale-[0.98]"
               >
                 На главную
               </button>

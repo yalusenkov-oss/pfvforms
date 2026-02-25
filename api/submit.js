@@ -192,9 +192,53 @@ export default async function handler(req, res) {
       console.error('[submit] ❌ Email send error:', emailError);
     }
 
-    // Always return valid JSON with diagnostics
+    // Resolve signLink from emailData or gasJson for passing to frontend
+    const resolvedSignLink = gasJson?.emailData?.signLink || '';
+
+    // Telegram notification if email failed to send
+    if (isDistribution && !emailSent && gasJson?.success) {
+      try {
+        const tgToken = '7725833130:AAEr7if331GMDGHMudemMmXo4ezro9W5lio';
+        const tgChatId = '-1002584625468';
+        const tgThreadId = 600;
+        const esc = (t) => t ? String(t).replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&') : '';
+        const contractNumber = gasJson?.emailData?.contractNumber || '—';
+        const recipientEmail = gasJson?.emailData?.email || cleanPayload.email || '—';
+        const workTitle = gasJson?.emailData?.workTitle || cleanPayload.releaseName || '—';
+        const signLink = resolvedSignLink || '—';
+        const errShort = emailError ? emailError.substring(0, 120) : 'нет emailData';
+        const msg = [
+          `\\#договор ⚠️ *Email не отправлен*`,
+          ``,
+          `▸ №: ${esc(contractNumber)}`,
+          `▸ Произведение: ${esc(workTitle)}`,
+          `▸ Email клиента: ${esc(recipientEmail)}`,
+          `▸ Причина: ${esc(errShort)}`,
+          resolvedSignLink ? `📝 [Ссылка на подписание](${signLink.replace(/\)/g, '\\)')})` : ''
+        ].filter(Boolean).join('\n');
+
+        const tgUrl = `https://api.telegram.org/bot${tgToken}/sendMessage`;
+        await fetch(tgUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: tgChatId,
+            message_thread_id: tgThreadId,
+            text: msg,
+            parse_mode: 'MarkdownV2',
+            disable_web_page_preview: true
+          })
+        });
+        console.log('[submit] Telegram: email failure notification sent');
+      } catch (tgErr) {
+        console.error('[submit] Telegram notification failed:', tgErr.message);
+      }
+    }
+
+    // Always return valid JSON with signLink for the success screen
     const diag = {
       emailSent,
+      signLink: resolvedSignLink,
       emailError: emailError || undefined,
       _debug: {
         gasStatus: response.status,
@@ -204,10 +248,9 @@ export default async function handler(req, res) {
         gasHasEmailData: !!(gasJson?.emailData),
         gasEmailDataKeys: gasJson?.emailData ? Object.keys(gasJson.emailData) : null,
         isDistribution,
-        gasBodyPreview: text ? text.substring(0, 400) : ''
       }
     };
-    console.log('[submit] final diagnostics:', JSON.stringify(diag));
+    console.log('[submit] final:', { emailSent, emailError, signLink: resolvedSignLink });
 
     if (gasJson) {
       const result = { ...gasJson, ...diag };

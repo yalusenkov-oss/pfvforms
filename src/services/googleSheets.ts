@@ -72,6 +72,8 @@ interface SubmitResponse {
   success: boolean;
   message: string;
   row?: number;
+  signLink?: string;
+  emailSent?: boolean;
 }
 
 export interface PromoCodeRecord {
@@ -440,7 +442,15 @@ export async function submitToGoogleSheets(
             message: `Failed to parse response: ${text.substring(0, 200)}`,
           };
         }
-        if (json && typeof json.success === 'boolean') return json as SubmitResponse;
+        if (json && typeof json.success === 'boolean') {
+          return {
+            success: json.success,
+            message: json.message || '',
+            row: json.row,
+            signLink: json.signLink || '',
+            emailSent: !!json.emailSent,
+          };
+        }
         return { success: true, message: 'Данные успешно отправлены' };
       }
 
