@@ -1636,7 +1636,8 @@ export function App() {
                 Загружаем файлы и сохраняем заявку.<br />
                 Это может занять до <span className="font-semibold text-purple-600">30–60 секунд</span>.
               </p>
-              <p className="text-xs text-gray-400 mt-2">Не закрывайте страницу</p>
+              <p className="text-xs text-purple-500 font-medium mt-2">Формируем ссылку на подписание договора…</p>
+              <p className="text-xs text-gray-400 mt-1">Не закрывайте страницу</p>
             </div>
             <div className="flex gap-2">
               {[0, 1, 2].map(i => (
