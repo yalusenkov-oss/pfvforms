@@ -1,4 +1,4 @@
-import { ArrowLeft, Disc3, FileText, Music2, ExternalLink, ChevronDown, Copy, Check, Send } from 'lucide-react';
+import { ArrowLeft, Disc3, FileText, Music2, ExternalLink, ChevronDown, Copy, Check, Send, Download } from 'lucide-react';
 import { useState } from 'react';
 import { DistributionData, TARIFF_LABELS, RELEASE_TYPE_LABELS, STATUS_LABELS, STATUS_COLORS, PRICES, KARAOKE_PRICES } from '../types';
 import { cn } from '../utils/cn';
@@ -104,6 +104,80 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
     }
   };
 
+  const handleDownload = () => {
+    const line = (label: string, value: string | number | boolean | undefined | null) => {
+      if (value === undefined || value === null || value === '') return '';
+      return `${label}: ${value}`;
+    };
+    const sep = (title: string) => `\n${'─'.repeat(50)}\n  ${title}\n${'─'.repeat(50)}`;
+
+    const trackLines = tracks.map((t, i) => {
+      const artists = Array.isArray(t?.artists) ? t.artists : [];
+      const artistStr = artists.map((a, ai) => ai === 0 ? a.name : `${a.separator === 'feat.' ? ' feat. ' : ', '}${a.name}`).join('');
+      const composers = Array.isArray(t?.composers) ? t.composers.join(', ') : '';
+      const lyricists = Array.isArray(t?.lyricists) ? t.lyricists.join(', ') : '';
+      return [
+        `  Трек ${i + 1}: ${t.name}${t.version ? ` (${t.version})` : ''}`,
+        artistStr ? `    Артисты: ${artistStr}` : '',
+        composers ? `    Композиторы: ${composers}` : '',
+        lyricists ? `    Авторы текста: ${lyricists}` : '',
+        t.explicit ? `    18+: Да` : '',
+        t.lyrics ? `    Текст:\n${t.lyrics.split('\n').map(l => `      ${l}`).join('\n')}` : '',
+      ].filter(Boolean).join('\n');
+    }).join('\n\n');
+
+    const sections = [
+      `PFVMUSIC — Данные релиза`,
+      `Сформировано: ${new Date().toLocaleString('ru-RU')}`,
+      sep('ОСНОВНОЕ'),
+      line('ID заявки', data.id),
+      line('Номер договора', data.contractNumber),
+      line('Статус', STATUS_LABELS[data.status]),
+      line('Подано', formatDateTime(data.submittedAt)),
+      line('Тариф', TARIFF_LABELS[data.tariff]),
+      line('Итого к оплате', formatPrice(data.totalPrice)),
+      sep('РЕЛИЗ'),
+      line('Название', data.releaseName),
+      line('Основной артист', data.mainArtist),
+      line('Версия', data.releaseVersion),
+      line('Тип релиза', RELEASE_TYPE_LABELS[data.releaseType]),
+      line('Жанр', data.genre),
+      line('Язык', data.language),
+      line('Площадки', data.platforms === 'no-apple' ? 'Без Apple Music' : 'Все площадки'),
+      line('Дата релиза', formatDate(data.releaseDate)),
+      line('Ссылка на релиз', data.releaseLink),
+      line('Обложка', data.coverLink),
+      line('TikTok начало', data.tiktokStart),
+      line('Полная версия TikTok', data.tiktokFull ? 'Да' : 'Нет'),
+      line('Pre-Save Яндекс', data.preSaveYandex ? 'Да' : 'Нет'),
+      line('Караоке', data.karaoke ? 'Да' : 'Нет'),
+      sep('ДАННЫЕ ДОГОВОРА'),
+      line('ФИО', data.fullName),
+      line('Паспорт', data.passportSeries),
+      line('Кем выдан', data.passportIssuedBy),
+      line('Дата выдачи', formatDate(data.passportIssuedDate)),
+      line('Банковские реквизиты', data.bankDetails),
+      line('Email', data.email),
+      line('Контакты', data.contacts),
+      line('Профили артиста', data.artistProfileLinks),
+      line('Чек оплаты', data.paymentProofUrl),
+      sep('ПОДПИСАНИЕ'),
+      line('Статус подписания', data.signStatus === 'signed' || data.signedUrl ? 'Подписан' : data.signLink ? 'Ссылка создана' : 'Не создано'),
+      line('Ссылка на подписание', data.signLink),
+      line('Подписан', data.signedAt ? formatDateTime(data.signedAt) : ''),
+      line('Подписанный договор', data.signedUrl),
+      ...(tracks.length > 0 ? [sep(`ТРЕКИ (${tracks.length})`), trackLines] : []),
+    ].filter(Boolean).join('\n');
+
+    const blob = new Blob([sections], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Релиз_${data.contractNumber || data.id}_${data.releaseName}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-5 animate-fade-in">
       {/* Header */}
@@ -128,6 +202,15 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
             <p className="text-sm text-dark-400 mt-0.5">{data.mainArtist} · {data.id} · Подано: {formatDateTime(data.submittedAt)}</p>
           </div>
         </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleDownload}
+            title="Скачать данные релиза"
+            className="p-2 rounded-lg bg-dark-800 border border-dark-700 text-dark-400 hover:text-white hover:border-dark-500 transition-colors"
+          >
+            <Download size={16} />
+          </button>
         <div className="relative z-30 inline-block">
           <button
             type="button"
@@ -157,6 +240,7 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
               ))}
             </div>
           )}
+        </div>
         </div>
       </div>
 
