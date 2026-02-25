@@ -5,8 +5,8 @@ function esc(str) {
 }
 
 export async function sendContractEmail({ email, name, contractNumber, signLink, workTitle, releaseType }) {
-  const smtpUser = process.env.SMTP_USER;
-  const smtpPass = process.env.SMTP_PASS;
+  const smtpUser = process.env.SMTP_USER || 'noreply@pfvmusic.digital';
+  const smtpPass = process.env.SMTP_PASS || 'fsvyjzrabtslbfef';
   if (!smtpUser || !smtpPass) {
     throw new Error('SMTP credentials not configured in ENV');
   }
