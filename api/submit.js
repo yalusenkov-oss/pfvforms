@@ -123,54 +123,69 @@ export default async function handler(req, res) {
     });
 
     const text = await response.text();
+    console.log('[submit] GAS response status:', response.status, '| body length:', text.length);
 
     // After successful GAS response, send contract email via Yandex SMTP
     let emailSent = false;
     let emailError = '';
     const isDistribution = cleanPayload.formType === 'distribution' && cleanPayload.email;
     try {
-      const gasJson = text ? JSON.parse(text) : null;
-      let emailData = gasJson?.success ? gasJson.emailData : null;
+      let gasJson = null;
+      try { gasJson = text ? JSON.parse(text) : null; } catch {}
+      console.log('[submit] gasJson.success:', gasJson?.success, '| has emailData:', !!gasJson?.emailData);
 
-      // Fallback: if GAS didn't return emailData (old GAS version),
-      // fetch the latest distribution row to get signLink & contractNumber
+      let emailData = (gasJson?.success && gasJson?.emailData) ? gasJson.emailData : null;
+
+      // Fallback: if GAS didn't return emailData (old/undeployed GAS version),
+      // fetch distributions and find the row matching this email address
       if (!emailData && isDistribution && gasJson?.success) {
-        console.log('No emailData in GAS response, fetching latest row...');
+        console.log('[submit] No emailData in GAS response — running fallback: searching by email...');
         try {
-          const listUrl = `${scriptUrl}?action=list&sheet=distributions&limit=1`;
+          // Fetch last 10 rows to safely handle concurrent submissions
+          const listUrl = `${scriptUrl}?action=list&sheet=distributions&limit=10`;
           const listRes = await fetch(listUrl, { redirect: 'follow' });
           const listText = await listRes.text();
-          const listJson = JSON.parse(listText);
+          let listJson = null;
+          try { listJson = JSON.parse(listText); } catch {}
           const rows = listJson?.rows;
+          console.log('[submit] Fallback fetched rows count:', Array.isArray(rows) ? rows.length : 'none');
           if (Array.isArray(rows) && rows.length > 0) {
-            const last = rows[rows.length - 1];
-            const signLink = last.sign_link || last.signLink || '';
-            const contractNumber = last.contract_number || last.contractNumber || '';
-            if (signLink) {
+            // Find the most recent row matching this email that has a signLink
+            const match = [...rows].reverse().find(r => {
+              const rowEmail = r.email || r.Email || '';
+              const rowLink = r.signLink || r.sign_link || '';
+              return rowEmail === cleanPayload.email && rowLink;
+            });
+            if (match) {
               emailData = {
                 email: cleanPayload.email,
                 name: cleanPayload.fullName || '',
-                contractNumber,
-                signLink,
+                contractNumber: match.contractNumber || match.contract_number || '',
+                signLink: match.signLink || match.sign_link || '',
                 workTitle: cleanPayload.releaseName || '',
-                releaseType: last.release_type || last.releaseType || cleanPayload.releaseType || ''
+                releaseType: match.releaseType || match.release_type || ''
               };
-              console.log('Fallback emailData constructed from latest row');
+              console.log('[submit] Fallback: found matching row for email', cleanPayload.email, '| signLink:', emailData.signLink);
+            } else {
+              console.log('[submit] Fallback: no matching row found for email', cleanPayload.email);
             }
           }
         } catch (fallbackErr) {
-          console.error('Fallback row fetch failed:', fallbackErr);
+          console.error('[submit] Fallback row fetch failed:', fallbackErr.message);
         }
       }
 
       if (emailData?.email && emailData?.signLink) {
+        console.log('[submit] Sending email to', emailData.email, '| contract:', emailData.contractNumber);
         await sendContractEmail(emailData);
         emailSent = true;
-        console.log('Contract email sent to', emailData.email);
+        console.log('[submit] ✅ Email sent to', emailData.email);
+      } else {
+        console.log('[submit] ⚠️ No emailData available — email not sent');
       }
     } catch (emailErr) {
       emailError = String(emailErr.message || emailErr);
-      console.error('Email send error (non-fatal):', emailError);
+      console.error('[submit] Email send error:', emailError);
     }
 
     // Always return valid JSON
