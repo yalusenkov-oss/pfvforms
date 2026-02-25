@@ -238,6 +238,9 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
     promoDiscountValue: formData.promoDiscountValue || '',
     promoDiscountAmount: formData.promoDiscountAmount || '',
 
+    // Площадки
+    platforms: formData.platforms || 'all',
+
     // Автогенерируемые данные договора
     contractNumber: formData.contractNumber || '',
     signLink: formData.signLink || '',

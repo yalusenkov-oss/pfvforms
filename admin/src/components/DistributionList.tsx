@@ -198,15 +198,15 @@ export function DistributionList({ distributions, onView, onDelete, onStatusChan
                   <td className="px-4 py-3 text-sm text-white font-medium">{formatPrice(d.totalPrice)}</td>
                   <td className="px-4 py-3">
                     {d.signStatus === 'signed' || d.signedUrl ? (
-                      <span className="text-xs px-2 py-0.5 rounded-full border bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                      <span className="text-xs px-2 py-0.5 rounded-full border bg-emerald-500/20 text-emerald-400 border-emerald-500/30 whitespace-nowrap">
                         Подписан
                       </span>
                     ) : d.signLink ? (
-                      <span className="text-xs px-2 py-0.5 rounded-full border bg-blue-500/20 text-blue-400 border-blue-500/30">
+                      <span className="text-xs px-2 py-0.5 rounded-full border bg-blue-500/20 text-blue-400 border-blue-500/30 whitespace-nowrap">
                         Ссылка создана
                       </span>
                     ) : (
-                      <span className="text-xs px-2 py-0.5 rounded-full border bg-dark-700/50 text-dark-400 border-dark-600">
+                      <span className="text-xs px-2 py-0.5 rounded-full border bg-dark-700/50 text-dark-400 border-dark-600 whitespace-nowrap">
                         Не создано
                       </span>
                     )}
@@ -345,6 +345,26 @@ export function DistributionList({ distributions, onView, onDelete, onStatusChan
                 >
                   Подробнее
                 </button>
+                {onGenerateContract && (
+                  <button
+                    type="button"
+                    onClick={() => handleCopySignLink(d)}
+                    disabled={creatingId === d.id}
+                    className={cn(
+                      'py-2 px-3 rounded-lg text-xs transition-colors flex items-center gap-1',
+                      copiedId === d.id
+                        ? 'bg-green-500/20 text-green-400'
+                        : creatingId === d.id
+                          ? 'bg-yellow-500/10 text-yellow-400 animate-pulse'
+                          : d.signLink
+                            ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20'
+                            : 'bg-dark-700 text-dark-400 hover:text-green-400 hover:bg-green-500/10'
+                    )}
+                    title={copiedId === d.id ? 'Скопировано!' : d.signLink ? 'Копировать ссылку' : 'Создать ссылку'}
+                  >
+                    {copiedId === d.id ? <Check size={14} /> : <Copy size={14} />}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => { if (confirm('Удалить?')) onDelete(d.id); }}
