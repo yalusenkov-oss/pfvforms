@@ -142,7 +142,7 @@ export function StepThree({ agreed, onAgree }: StepThreeProps) {
                 <p className="mb-2">Согласие действует до момента его отзыва. После отзыва данные подлежат удалению в установленные сроки, за исключением случаев, когда хранение необходимо для исполнения обязательств.</p>
                 <p>
                   Отзыв — уведомление на{' '}
-                  <a href="mailto:booking@pfvmusic.ru" className="text-purple-700 underline font-medium">booking@pfvmusic.ru</a>
+                  <a href="mailto:support@pfvmusic.digital" className="text-purple-700 underline font-medium">support@pfvmusic.digital</a>
                 </p>
               </ConsentSection>
 
@@ -287,7 +287,7 @@ export function StepThree({ agreed, onAgree }: StepThreeProps) {
                 <p><strong>Полное наименование:</strong> Орехов Данила Александрович</p>
                 <p><strong>ИНН:</strong> 711613056345</p>
                 <p><strong>ОГРНИП:</strong> 324710000080681</p>
-                <p><strong>Контактный e-mail:</strong> booking@pfvmusic.ru</p>
+                <p><strong>Контактный e-mail:</strong> support@pfvmusic.digital</p>
               </div>
             </div>
 

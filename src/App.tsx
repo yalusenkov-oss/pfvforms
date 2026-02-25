@@ -567,7 +567,7 @@ export function App() {
               <p><strong>Полное наименование:</strong> Орехов Данила Александрович</p>
               <p><strong>ИНН:</strong> 711613056345</p>
               <p><strong>ОГРНИП:</strong> 324710000080681</p>
-              <p><strong>Контактный e-mail:</strong> booking@pfvmusic.ru</p>
+              <p><strong>Контактный e-mail:</strong> support@pfvmusic.digital</p>
             </div>
           </div>
 
@@ -981,7 +981,7 @@ export function App() {
                   <p className="text-sm font-semibold text-gray-900">Контакты и реквизиты</p>
                 </div>
                 <div className="space-y-1.5 text-xs text-gray-700">
-                  <p><span className="font-semibold">Email:</span> booking@pfvmusic.ru</p>
+                  <p><span className="font-semibold">Email:</span> support@pfvmusic.digital</p>
                   <p><span className="font-semibold">Telegram:</span> @pfvmusic_support</p>
                   <p><span className="font-semibold">ВКонтакте:</span> vk.ru/pfvmusic</p>
                   <p className="pt-2 border-t border-gray-200 mt-2">
@@ -1750,8 +1750,8 @@ function Footer() {
             <p className="text-xs text-gray-400">
               © {new Date().getFullYear()} PFVMUSIC. Все права защищены.
             </p>
-            <a href="mailto:booking@pfvmusic.ru" className="text-xs text-purple-500 hover:text-purple-700 transition-colors">
-              booking@pfvmusic.ru
+            <a href="mailto:support@pfvmusic.digital" className="text-xs text-purple-500 hover:text-purple-700 transition-colors">
+              support@pfvmusic.digital
             </a>
           </div>
         </div>

@@ -16,8 +16,8 @@ export function InfoBlock() {
           </p>
           <p className="text-sm text-purple-800/80 leading-relaxed">
             В случае возникновения вопросов, пожалуйста, свяжитесь с нами по адресу{' '}
-            <a href="mailto:booking@pfvmusic.ru" className="font-semibold text-purple-700 hover:text-purple-900 underline underline-offset-2">
-              booking@pfvmusic.ru
+            <a href="mailto:support@pfvmusic.digital" className="font-semibold text-purple-700 hover:text-purple-900 underline underline-offset-2">
+              support@pfvmusic.digital
             </a>
           </p>
         </div>

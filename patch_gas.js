@@ -1,94 +1,75 @@
-import { DistributionData, TARIFF_LABELS, RELEASE_TYPE_LABELS, TARIFF_PERCENTAGES } from '../types';
-
-// Generate a random contract number like "ЛД-240125-001"
-export function generateContractNumber(): string {
-  const now = new Date();
-  const yy = String(now.getFullYear()).slice(2);
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
-  const dd = String(now.getDate()).padStart(2, '0');
-  const seq = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0');
-  return `PFV-${yy}${mm}${dd}-${seq}`;
+const RELEASE_TYPE_LABELS = {
+    single: 'Сингл',
+    ep: 'EP',
+    album: 'Альбом'
+};
+const TARIFF_LABELS = {
+    PREMIUM: 'PFVMUSIC | PREMIUM',
+    PRO: 'PFVMUSIC | PRO',
+    LITE: 'PFVMUSIC | LITE'
+};
+const TARIFF_PERCENTAGES = {
+    PREMIUM: 75,
+    PRO: 70,
+    LITE: 55
+};
+export function generateContractNumber() {
+    const now = new Date();
+    const yy = String(now.getFullYear()).slice(2);
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const seq = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0');
+    return `PFV-${yy}${mm}${dd}-${seq}`;
 }
-
-function formatDateRussian(dateStr: string): string {
-  const date = new Date(dateStr);
-  const months = [
-    'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-    'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
-  ];
-  const day = date.getDate();
-  const month = months[date.getMonth()];
-  const year = date.getFullYear();
-  return `«${String(day).padStart(2, '0')}» ${month} ${year} г.`;
+function formatDateRussian(dateStr) {
+    const date = new Date(dateStr);
+    const months = [
+        'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+        'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
+    ];
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+    return `«${String(day).padStart(2, '0')}» ${month} ${year} г.`;
 }
-
-function getFutureDate(yearsAhead: number): string {
-  const now = new Date();
-  const future = new Date(now.getFullYear() + yearsAhead, now.getMonth(), now.getDate());
-  return formatDateRussian(future.toISOString());
+function getFutureDate(yearsAhead) {
+    const now = new Date();
+    const future = new Date(now.getFullYear() + yearsAhead, now.getMonth(), now.getDate());
+    return formatDateRussian(future.toISOString());
 }
-
-function getCurrentDateFormatted(): string {
-  return formatDateRussian(new Date().toISOString());
+function getCurrentDateFormatted() {
+    return formatDateRussian(new Date().toISOString());
 }
-
-export interface ContractData {
-  contractNumber: string;
-  licensorName: string;
-  passportSeriesNumber: string;
-  passportIssuedBy: string;
-  passportIssueDate: string;
-  bankDetails: string;
-  email: string;
-  pseudonym: string;
-  workTitle: string;
-  musicAuthor: string;
-  lyricsAuthor: string;
-  contact: string;
-  releaseType: string;
-  tariff: string;
-  percentage: number;
-  date: string;
-  futureDate: string;
+export function extractContractData(dist) {
+    const allComposers = new Set();
+    const allLyricists = new Set();
+    dist.tracks.forEach(track => {
+        track.composers.forEach(c => allComposers.add(c));
+        track.lyricists.forEach(l => allLyricists.add(l));
+    });
+    const contractNumber = dist.contractNumber || generateContractNumber();
+    return {
+        contractNumber,
+        licensorName: dist.fullName,
+        passportSeriesNumber: dist.passportSeries,
+        passportIssuedBy: dist.passportIssuedBy,
+        passportIssueDate: formatDateRussian(dist.passportIssuedDate),
+        bankDetails: dist.bankDetails,
+        email: dist.email,
+        pseudonym: dist.mainArtist,
+        workTitle: dist.releaseName,
+        musicAuthor: Array.from(allComposers).join(', '),
+        lyricsAuthor: Array.from(allLyricists).join(', '),
+        contact: dist.contacts,
+        releaseType: RELEASE_TYPE_LABELS[dist.releaseType] || dist.releaseType,
+        tariff: TARIFF_LABELS[dist.tariff] || dist.tariff,
+        percentage: TARIFF_PERCENTAGES[dist.tariff] || 55,
+        date: getCurrentDateFormatted(),
+        futureDate: getFutureDate(4),
+    };
 }
-
-export function extractContractData(dist: DistributionData): ContractData {
-  // Collect all unique composers across tracks
-  const allComposers = new Set<string>();
-  const allLyricists = new Set<string>();
-  dist.tracks.forEach(track => {
-    track.composers.forEach(c => allComposers.add(c));
-    track.lyricists.forEach(l => allLyricists.add(l));
-  });
-
-  const contractNumber = dist.contractNumber || generateContractNumber();
-
-  return {
-    contractNumber,
-    licensorName: dist.fullName,
-    passportSeriesNumber: dist.passportSeries,
-    passportIssuedBy: dist.passportIssuedBy,
-    passportIssueDate: formatDateRussian(dist.passportIssuedDate),
-    bankDetails: dist.bankDetails,
-    email: dist.email,
-    pseudonym: dist.mainArtist,
-    workTitle: dist.releaseName,
-    musicAuthor: Array.from(allComposers).join(', '),
-    lyricsAuthor: Array.from(allLyricists).join(', '),
-    contact: dist.contacts,
-    releaseType: RELEASE_TYPE_LABELS[dist.releaseType] || dist.releaseType,
-    tariff: TARIFF_LABELS[dist.tariff] || dist.tariff,
-    percentage: TARIFF_PERCENTAGES[dist.tariff] || 55,
-    date: getCurrentDateFormatted(),
-    futureDate: getFutureDate(4),
-  };
-}
-
-// ==========================================
-// FULL CONTRACT TEXT — exact template from client's Google Doc
-// ==========================================
-export function generateContractText(d: ContractData): string {
-  return `ЛИЦЕНЗИОННЫЙ ДОГОВОР № ${d.contractNumber}
+export function generateContractText(d) {
+    return `ЛИЦЕНЗИОННЫЙ ДОГОВОР № ${d.contractNumber}
 
 ГОРОД Санкт-Петербург\tДАТА ${d.date}
 
@@ -196,7 +177,7 @@ ${d.passportSeriesNumber}                     Дата рождения: 15.08.2
                                               Серия и номер паспорта: 7020 974645
 Выдан:                                       Выдан: УМВД РОССИИ ПО ТУЛЬСКОЙ ОБЛАСТИ
 ${d.passportIssuedBy}
-                                              Электронная почта: support@pfvmusic.digital
+                                              Электронная почта: booking@pfvmusic.ru
 Дата выдачи:
 ${d.passportIssueDate}                        Банковские реквизиты:
                                               Наименование: Индивидуальный предприниматель
@@ -230,7 +211,7 @@ _________________                             _________________
 № | Название Произведения | Исполнитель | Автор слов | Автор музыки | Доля авторских прав | Доля смежных прав | Наименование лейбла Лицензиара
 1 | ${d.workTitle} | ${d.pseudonym} | ${d.lyricsAuthor} | ${d.musicAuthor} | 100% | 100% | PFVMUSIC
 
-Настоящий Акт удостоверяет факт передачи Лицензиаром Лицензиату Объектов посредством сети Интернет с электронного адреса Лицензиара ${d.email} на электронный адрес Лицензиата support@pfvmusic.digital
+Настоящий Акт удостоверяет факт передачи Лицензиаром Лицензиату Объектов посредством сети Интернет с электронного адреса Лицензиара ${d.email} на электронный адрес Лицензиата booking@pfvmusic.ru
 2. За предоставленное Лицензиаром Право использования Объектов, Лицензиат выплачивает Лицензиару вознаграждение согласно Разделу 3 Договора.
 3. Стороны претензий друг к другу не имеют.
 4. Настоящий Акт составлен в двух подлинных экземплярах, имеющих равную юридическую силу – по одному экземпляру для каждой из Сторон.
@@ -262,25 +243,18 @@ _________________                             _________________
 / ${d.licensorName} /                         / Орехов Данила Александрович /
 `;
 }
-
-// ==========================================
-// HTML version of the contract for printing/PDF — exact template
-// ==========================================
-export function generateContractHTML(
-  d: ContractData,
-  options: { signatureUrl?: string; useSignatureMarkers?: boolean } = {}
-): string {
-  const signatureUrl = options.signatureUrl || '';
-  const useSignatureMarkers = options.useSignatureMarkers === true;
-  const licenseeSignatureBlock = useSignatureMarkers
-    ? `<div class="sig-line">{{signature_or}}</div>`
-    : signatureUrl
-      ? `<div class="sig-image"><img src="${signatureUrl}" alt="signature" /></div>`
-      : `<div class="sig-line"></div>`;
-  const licensorSignatureBlock = useSignatureMarkers
-    ? `<div class="sig-line">{{signature_client}}</div>`
-    : `<div class="sig-line"></div>`;
-  return `<!DOCTYPE html>
+export function generateContractHTML(d, options = {}) {
+    const signatureUrl = options.signatureUrl || '';
+    const useSignatureMarkers = options.useSignatureMarkers === true;
+    const licenseeSignatureBlock = useSignatureMarkers
+        ? `<div class="sig-line">{{signature_or}}</div>`
+        : signatureUrl
+            ? `<div class="sig-image"><img src="${signatureUrl}" alt="signature" /></div>`
+            : `<div class="sig-line"></div>`;
+    const licensorSignatureBlock = useSignatureMarkers
+        ? `<div class="sig-line">{{signature_client}}</div>`
+        : `<div class="sig-line"></div>`;
+    return `<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -491,7 +465,7 @@ export function generateContractHTML(
     <div class="col-title">ЛИЦЕНЗИАТ</div>
     <p>Индивидуальный предприниматель<br><b>Орехов Данила Александрович</b><br>(ОГРНИП 324710000080681)</p>
     <p>Дата рождения: 15.08.2006<br>Серия и номер паспорта: 7020 974645<br>Выдан: УМВД РОССИИ ПО ТУЛЬСКОЙ ОБЛАСТИ</p>
-    <p>Электронная почта: support@pfvmusic.digital</p>
+    <p>Электронная почта: booking@pfvmusic.ru</p>
     <p>Банковские реквизиты:<br>
     Наименование: Индивидуальный предприниматель Орехов Данила Александрович<br>
     ИНН: 711613056345<br>
@@ -550,7 +524,7 @@ export function generateContractHTML(
   </tbody>
 </table>
 
-<p>Настоящий Акт удостоверяет факт передачи Лицензиаром Лицензиату Объектов посредством сети Интернет с электронного адреса Лицензиара <b>${d.email}</b> на электронный адрес Лицензиата support@pfvmusic.digital</p>
+<p>Настоящий Акт удостоверяет факт передачи Лицензиаром Лицензиату Объектов посредством сети Интернет с электронного адреса Лицензиара <b>${d.email}</b> на электронный адрес Лицензиата booking@pfvmusic.ru</p>
 
 <p>2. За предоставленное Лицензиаром Право использования Объектов, Лицензиат выплачивает Лицензиару вознаграждение согласно Разделу 3 Договора.</p>
 
