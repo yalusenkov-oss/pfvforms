@@ -28,56 +28,127 @@ function buildHtml({ safeName, safeContract, safeWork, safeRelease, safeLink }) 
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PFVMUSIC: договор готов к подписанию</title>
+  <title>PFVMUSIC — Договор готов к подписанию</title>
   <style>
-    body { margin:0; padding:0; background:#f4f5f7; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:#0f172a; }
-    .wrap { width:100%; padding:28px 14px; box-sizing:border-box; }
-    .card { max-width:620px; margin:0 auto; background:#ffffff; border:1px solid #e5e7eb; border-radius:16px; overflow:hidden; }
-    .head { background:#111827; color:#ffffff; padding:26px 30px; }
-    .brand { font-size:18px; font-weight:800; letter-spacing:1px; }
-    .sub { font-size:12px; color:#cbd5e1; margin-top:6px; }
-    .body { padding:28px 30px; }
-    .title { font-size:22px; margin:0 0 12px; }
-    .text { font-size:15px; color:#334155; line-height:1.6; margin:0 0 20px; }
-    .box { border:1px solid #e2e8f0; border-radius:12px; padding:16px; background:#f8fafc; margin-bottom:22px; }
-    .row { font-size:14px; color:#334155; margin:8px 0; }
-    .label { color:#64748b; display:inline-block; min-width:130px; }
-    .cta-wrap { margin:22px 0; text-align:center; }
-    .cta { display:inline-block; background:#2563eb; color:#ffffff; text-decoration:none; padding:13px 22px; border-radius:10px; font-size:16px; font-weight:700; }
-    .hint { font-size:13px; color:#64748b; line-height:1.5; }
-    .link { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; color:#1d4ed8; word-break:break-all; }
-    .foot { border-top:1px solid #e5e7eb; padding:18px 30px 24px; font-size:12px; color:#64748b; line-height:1.6; }
+    body { margin:0; padding:0; background:#f3f4f6; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:#111827; }
+    table { border-spacing:0; border-collapse:collapse; }
+    .outer { width:100%; background:#f3f4f6; padding:34px 12px; box-sizing:border-box; }
+    .card { max-width:600px; width:100%; margin:0 auto; background:#ffffff; border:1px solid #e5e7eb; border-radius:18px; overflow:hidden; box-shadow:0 8px 30px rgba(0,0,0,0.06); }
+    .hero { background:#12072b; background-image:linear-gradient(135deg, #12072b 0%, #2a1154 100%); padding:40px 34px; text-align:center; }
+    .brand { color:#ffffff; font-size:28px; font-weight:900; letter-spacing:4px; text-transform:uppercase; }
+    .subtitle { color:#c8b4f4; font-size:11px; letter-spacing:5px; text-transform:uppercase; font-weight:700; margin-top:8px; }
+    .section { padding:34px; }
+    .title { font-size:24px; font-weight:800; margin:0 0 12px; }
+    .text { font-size:16px; color:#4b5563; line-height:1.6; margin:0 0 28px; }
+    .info-card { border:1px solid #e5e7eb; border-radius:14px; background:#f8f9fa; padding:22px; margin-bottom:28px; }
+    .icon-box { width:48px; height:48px; background:#7c3aed; color:#ffffff; font-size:11px; font-weight:700; border-radius:12px; text-align:center; }
+    .icon-box span { line-height:48px; display:block; }
+    .icon-box.secondary { background:#a855f7; font-size:10px; }
+    .rowline { border-top:1px solid #f0f1f3; margin:12px 0; }
+    .meta-title { font-size:16px; font-weight:700; color:#111827; }
+    .meta-sub { font-size:13px; color:#6b7280; margin-top:2px; }
+    .kv td { font-size:14px; padding:8px 0; }
+    .k { color:#6b7280; }
+    .v { color:#111827; font-weight:600; text-align:right; }
+    .cta-wrap { text-align:center; margin:26px 0 28px; }
+    .cta { display:inline-block; text-decoration:none; color:#ffffff; background:#7c3aed; background-image:linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); font-size:18px; font-weight:700; padding:16px 40px; border-radius:12px; }
+    .support { border:1px solid #e9d5ff; background:#faf5ff; border-radius:14px; padding:20px; margin-bottom:16px; }
+    .support-title { color:#111827; font-size:15px; font-weight:700; margin-bottom:5px; }
+    .support-text { color:#4b5563; font-size:14px; }
+    .warning { border:1px solid #fde68a; background:#fef3c7; border-radius:14px; padding:20px; }
+    .warning-title { color:#b45309; font-size:15px; font-weight:700; margin-bottom:8px; }
+    .warning-text { color:#92400e; font-size:14px; margin-bottom:12px; }
+    .linkbox { border:1px dashed #fbbf24; border-radius:8px; background:#ffffff; padding:12px; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:13px; color:#d97706; word-break:break-all; }
+    .footer { background:#12072b; padding:34px; text-align:center; }
+    .footer-brand { color:#ffffff; font-size:18px; font-weight:900; letter-spacing:4px; text-transform:uppercase; margin-bottom:14px; }
+    .footer-main { color:#e5e7eb; font-size:15px; line-height:1.6; margin-bottom:8px; }
+    .footer-mail { color:#a78bfa; font-size:14px; font-weight:700; }
+    .footer-sep { height:1px; background:#2a1154; margin:24px 0; }
+    .footer-note { color:#9ca3af; font-size:12px; line-height:1.6; margin-bottom:12px; }
+    .footer-copy { color:#6b7280; font-size:12px; font-weight:500; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <div class="head">
-        <div class="brand">PFVMUSIC</div>
-        <div class="sub">Музыкальное издательство</div>
-      </div>
-      <div class="body">
-        <h1 class="title">Здравствуйте, ${safeName}!</h1>
-        <p class="text">Ваш договор готов к подписанию. Проверьте данные и подпишите документ по кнопке ниже.</p>
+  <div class="outer">
+    <table role="presentation" class="card" cellpadding="0" cellspacing="0">
+      <tr>
+        <td class="hero">
+          <div class="brand">PFVMUSIC</div>
+          <div class="subtitle">ИЗДАТЕЛЬСТВО</div>
+        </td>
+      </tr>
+      <tr>
+        <td class="section">
+          <h1 class="title">Здравствуйте, ${safeName}!</h1>
+          <p class="text">Ваш договор успешно сгенерирован и готов к подписанию.<br/>Пожалуйста, ознакомьтесь с деталями ниже и подтвердите документ.</p>
 
-        <div class="box">
-          <div class="row"><span class="label">Номер договора:</span> ${safeContract}</div>
-          <div class="row"><span class="label">Произведение:</span> ${safeWork}</div>
-          <div class="row"><span class="label">Тип релиза:</span> ${safeRelease}</div>
+          <div class="info-card">
+            <table role="presentation" width="100%">
+              <tr>
+                <td width="48" valign="top">
+                  <div class="icon-box"><span>DOC</span></div>
+                </td>
+                <td width="14"></td>
+                <td valign="top">
+                  <div class="meta-title">Детали договора</div>
+                  <div class="meta-sub">Автоматически сгенерировано</div>
+                </td>
+              </tr>
+            </table>
+            <div class="rowline"></div>
+            <table role="presentation" width="100%" class="kv">
+              <tr>
+                <td class="k">№ Договора</td>
+                <td class="v">${safeContract}</td>
+              </tr>
+              <tr>
+                <td class="k">Произведение</td>
+                <td class="v">«${safeWork}»</td>
+              </tr>
+              <tr>
+                <td class="k">Тип релиза</td>
+                <td class="v">${safeRelease}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div class="cta-wrap">
+            <a href="${safeLink}" class="cta">Подписать договор</a>
+          </div>
+
+          <div class="support">
+            <table role="presentation" width="100%">
+              <tr>
+                <td width="48" valign="top">
+                  <div class="icon-box secondary"><span>INFO</span></div>
+                </td>
+                <td width="14"></td>
+                <td valign="top">
+                  <div class="support-title">Вопросы по дистрибуции?</div>
+                  <div class="support-text">Поддержка: @pfvmusic_support</div>
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <div class="warning">
+            <div class="warning-title">Если кнопка не работает</div>
+            <div class="warning-text">Скопируйте этот адрес и вставьте в строку браузера:</div>
+            <div class="linkbox">${safeLink}</div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="footer">
+          <div class="footer-brand">PFVMUSIC</div>
+          <div class="footer-main">С уважением, Музыкальное издательство PFVMUSIC</div>
+          <div class="footer-mail">support@pfvmusic.digital</div>
+          <div class="footer-sep"></div>
+          <div class="footer-note">Это письмо и все приложения к нему строго конфиденциальны и предназначены исключительно для указанного адресата. Если вы получили это письмо по ошибке, пожалуйста, немедленно уведомите отправителя и удалите сообщение.</div>
+          <div class="footer-copy">© 2026 PFVMUSIC. Все права защищены.</div>
         </div>
-
-        <div class="cta-wrap">
-          <a class="cta" href="${safeLink}">Подписать договор</a>
-        </div>
-
-        <p class="hint">Если кнопка не открывается, вставьте ссылку в браузер:</p>
-        <p class="link">${safeLink}</p>
-      </div>
-      <div class="foot">
-        Поддержка: support@pfvmusic.digital<br/>
-        Это служебное письмо по вашему договору.
-      </div>
-    </div>
+      </tr>
+    </table>
   </div>
 </body>
 </html>`;
