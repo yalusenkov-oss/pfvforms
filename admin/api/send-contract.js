@@ -1,4 +1,4 @@
-import { sendContractEmail } from '../../api/_email.js';
+import { sendContractEmail } from './_email.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

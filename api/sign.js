@@ -149,7 +149,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // Enrich response with email status for create actions
+    // Always return valid JSON for create actions
     if (action === 'create') {
       try {
         const parsed = JSON.parse(text);
@@ -158,10 +158,23 @@ export default async function handler(req, res) {
         delete parsed.emailData;
         res.status(response.status).json(parsed);
         return;
-      } catch { /* fall through to raw send */ }
+      } catch {
+        res.status(response.status).json({
+          success: response.ok,
+          message: text ? text.substring(0, 500) : 'Empty GAS response',
+          emailSent,
+          emailError: emailError || undefined
+        });
+        return;
+      }
     }
 
-    res.status(response.status).send(text);
+    // For non-create actions, try JSON then fallback
+    try {
+      res.status(response.status).json(JSON.parse(text));
+    } catch {
+      res.status(response.status).json({ success: response.ok, message: text ? text.substring(0, 500) : 'Empty response' });
+    }
   } catch (err) {
     res.status(500).json({ success: false, error: String(err) });
   }

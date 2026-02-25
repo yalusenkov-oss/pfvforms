@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
-import { sendContractEmail } from '../../api/_email.js';
+import { sendContractEmail } from './_email.js';
 
 const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxV8xHP0O09Q7KqMWmsApHOiSw9oNMDb6JKonoVnOBwbL95-v9duxnNZLca55yQJQk7OQ/exec';
 
@@ -153,10 +153,22 @@ export default async function handler(req, res) {
         delete parsed.emailData;
         res.status(response.status).json(parsed);
         return;
-      } catch { /* fall through */ }
+      } catch {
+        res.status(response.status).json({
+          success: response.ok,
+          message: text ? text.substring(0, 500) : 'Empty GAS response',
+          emailSent,
+          emailError: emailError || undefined
+        });
+        return;
+      }
     }
 
-    res.status(response.status).send(text);
+    try {
+      res.status(response.status).json(JSON.parse(text));
+    } catch {
+      res.status(response.status).json({ success: response.ok, message: text ? text.substring(0, 500) : 'Empty response' });
+    }
   } catch (err) {
     res.status(500).json({ success: false, error: String(err) });
   }
