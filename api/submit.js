@@ -87,12 +87,22 @@ export default async function handler(req, res) {
       'full_contract_html',
     ];
 
+    // Fields that can be large but must be passed through without truncation
+    // (GAS handles them directly, e.g. uploads to Drive — they never end up in a cell)
+    const fieldsNoTruncate = ['paymentProof', 'payment_proof'];
+
     const maxFieldLength = 45000; // Leave 5000 char margin for safety
     const cleanPayload = {};
 
     for (const [key, value] of Object.entries(payload)) {
       // Skip excluded fields entirely
       if (fieldsToExclude.includes(key)) {
+        continue;
+      }
+
+      // Pass through without truncation (large binary/base64 fields handled by GAS)
+      if (fieldsNoTruncate.includes(key)) {
+        cleanPayload[key] = value;
         continue;
       }
 

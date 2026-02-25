@@ -155,7 +155,7 @@ export function StepFour({ data, onChange }: StepFourProps) {
       setPaymentProofError('Загрузите изображение (JPG/PNG).');
       return;
     }
-    const maxSizeMb = 8;
+    const maxSizeMb = 3;
     if (file.size > maxSizeMb * 1024 * 1024) {
       setPaymentProofName('');
       onChange('paymentProof', '');
@@ -411,7 +411,7 @@ export function StepFour({ data, onChange }: StepFourProps) {
                     className="block w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200"
                   />
                   <span className="text-xs text-gray-500">
-                    Фото чека или подтверждения оплаты. Без файла отправка формы недоступна.
+                    Фото чека или подтверждения оплаты (JPG/PNG, до 3 МБ). Без файла отправка формы недоступна.
                   </span>
                 </label>
                 {paymentProofName && (

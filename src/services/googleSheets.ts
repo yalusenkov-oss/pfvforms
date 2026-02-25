@@ -241,6 +241,9 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
     // Площадки
     platforms: formData.platforms || 'all',
 
+    // Скриншот оплаты (base64 Data URL — GAS загрузит в Drive и сохранит ссылку)
+    paymentProof: formData.paymentProof || '',
+
     // Автогенерируемые данные договора
     contractNumber: formData.contractNumber || '',
     signLink: formData.signLink || '',
