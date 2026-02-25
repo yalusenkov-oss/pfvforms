@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useLayoutEffect } from 'react';
 import { ChevronRight, ChevronLeft, Send, CheckCircle2, FileText, Shield, CreditCard, Disc3, Sparkles, AlertCircle, Megaphone, ArrowLeft, XCircle, Clock, ExternalLink, Home, Loader2, Wallet, Clipboard, FileCheck, Phone } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { StepOne, getTrackCount } from './components/StepOne';
@@ -325,14 +325,15 @@ export function App() {
   // Offer modal state
   const [showOfferModal, setShowOfferModal] = useState(false);
 
-  // Hard reset scroll after mode/form state switches to prevent blank viewport on mobile browsers.
-  useEffect(() => {
+  // useLayoutEffect fires after DOM update but before paint — guarantees scroll
+  // happens exactly when the new screen is in the DOM, eliminating white flash on mobile.
+  useLayoutEffect(() => {
     if (submitted || promoSubmitted || mode === 'success' || mode === 'fail' || mode === 'result') {
-      requestAnimationFrame(() => {
-        scrollToTopInstant();
-      });
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0; // iOS Safari fallback
     }
-  }, [mode, submitted, promoSubmitted, scrollToTopInstant]);
+  }, [mode, submitted, promoSubmitted]);
 
   const handleChange = useCallback((key: string, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -392,11 +393,8 @@ export function App() {
     try {
       const result = await submitToGoogleSheets('distribution', normalized);
       if (result.success) {
-        // Switch to success view while overlay is still covering the screen —
-        // this prevents white flash between form unmount and success mount.
-        scrollToTopInstant();
         setSubmitted(true);
-        // Overlay disappears on next render when submitting=false (batched with setSubmitted)
+        // useLayoutEffect will scroll to top synchronously after the success screen mounts
       } else {
         setValidationErrors([result.message || 'Ошибка при отправке. Попробуйте ещё раз.']);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -425,8 +423,8 @@ export function App() {
     try {
       const result = await submitToGoogleSheets('promo', promoData);
       if (result.success) {
-        scrollToTopInstant();
         setPromoSubmitted(true);
+        // useLayoutEffect will scroll to top synchronously after the success screen mounts
       } else {
         setPromoErrors([result.message || 'Ошибка при отправке. Попробуйте ещё раз.']);
         window.scrollTo({ top: 0, behavior: 'smooth' });
