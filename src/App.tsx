@@ -1141,7 +1141,7 @@ export function App() {
               <button
                 type="button"
                 onClick={() => navigateTo('distribution')}
-                className="rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-200 hover:from-emerald-600 hover:to-emerald-700 transition-all active:scale-[0.98]"
+                className="rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-200 hover:opacity-90 transition-opacity active:scale-[0.98]"
               >
                 Отправить ещё релиз
               </button>
@@ -1242,7 +1242,7 @@ export function App() {
               <button
                 type="button"
                 onClick={() => navigateTo('distribution')}
-                className="rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-200 hover:from-purple-700 hover:to-purple-800 transition-all active:scale-[0.98]"
+                className="rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-200 hover:opacity-90 transition-opacity active:scale-[0.98]"
               >
                 Попробовать снова
               </button>
@@ -1342,7 +1342,7 @@ export function App() {
               <button
                 type="button"
                 onClick={() => window.location.reload()}
-                className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-200 hover:from-amber-600 hover:to-orange-600 transition-all active:scale-[0.98]"
+                className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-200 hover:opacity-90 transition-opacity active:scale-[0.98]"
               >
                 Проверить статус
               </button>
@@ -1384,7 +1384,7 @@ export function App() {
                 <button
                   type="button"
                   onClick={resetPromo}
-                  className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-200 hover:from-amber-600 hover:to-orange-700 transition-all active:scale-[0.98]"
+                  className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-200 hover:opacity-90 transition-opacity active:scale-[0.98]"
                 >
                   Отправить ещё одну заявку
                 </button>
@@ -1494,7 +1494,7 @@ export function App() {
               type="button"
               onClick={handlePromoSubmit}
               disabled={promoSubmitting}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-orange-600 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-200/50 hover:shadow-amber-300/50 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-orange-600 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-200/50 hover:opacity-90 transition-opacity duration-200 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {promoSubmitting ? (
                 <>
@@ -1560,7 +1560,7 @@ export function App() {
                     href={submittedSignLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block w-full text-center rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-purple-200 hover:from-purple-700 hover:to-purple-800 transition-all active:scale-[0.98] mb-3"
+                    className="block w-full text-center rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-purple-200 hover:opacity-90 transition-opacity active:scale-[0.98] mb-3"
                   >
                     ✍️ Подписать договор
                   </a>
@@ -1598,7 +1598,7 @@ export function App() {
               <button
                 type="button"
                 onClick={resetDistribution}
-                className="flex-1 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-200 hover:from-purple-700 hover:to-purple-800 transition-all active:scale-[0.98]"
+                className="flex-1 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-200 hover:opacity-90 transition-opacity active:scale-[0.98]"
               >
                 Отправить ещё один релиз
               </button>
@@ -1776,7 +1776,7 @@ export function App() {
             <button
               type="button"
               onClick={goNext}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-7 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-200/50 hover:from-purple-700 hover:to-purple-800 hover:shadow-purple-300/50 transition-all duration-200 active:scale-[0.98]"
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-7 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-200/50 hover:opacity-90 transition-opacity duration-200 active:scale-[0.98]"
             >
               Далее
               <ChevronRight className="w-4 h-4" />
@@ -1786,7 +1786,7 @@ export function App() {
               type="button"
               onClick={handleDistributionSubmit}
               disabled={submitting || !canSubmitDistribution}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-200/50 hover:shadow-purple-300/50 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-200/50 hover:opacity-90 transition-opacity duration-200 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {submitting ? (
                 <>
