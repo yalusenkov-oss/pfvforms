@@ -168,7 +168,6 @@ function doPost(e) {
       Logger.log('RAW e.postData: ' + (e && e.postData ? JSON.stringify({
         type: e.postData.type || '',
         length: e.postData.length || '',
-        contents: e.postData.contents || ''
       }) : 'no postData'));
     }
     logWebRequest('POST', e);
@@ -184,7 +183,10 @@ function doPost(e) {
     }
 
     if (DEBUG_LOGGING) {
-      Logger.log('Parsed data: ' + JSON.stringify(data));
+      // Strip large binary fields before logging to avoid memory/truncation issues
+      const logData = Object.assign({}, data);
+      if (logData.paymentProof) logData.paymentProof = '[base64 image, ' + Math.round(String(logData.paymentProof).length / 1024) + ' KB]';
+      Logger.log('Parsed data keys: ' + JSON.stringify(logData));
     }
 
     let result = null;
@@ -330,15 +332,6 @@ function saveDistribution(data) {
 
     const contractNumber = generateContractNumber();
     const percentage = getTariffPercentage(data.tariff);
-    let paymentProofUrl = '';
-    if (data.paymentProof) {
-      try {
-        const proofFile = storePaymentProof(data.paymentProof, contractNumber, data.fullName || '');
-        paymentProofUrl = proofFile ? proofFile.getUrl() : '';
-      } catch (e) {
-        Logger.log('saveDistribution paymentProof error: ' + e);
-      }
-    }
 
     const tracksArray = normalizeTracksInput(data.tracks || data.tracks_json || []);
     const authorsFromTracks = extractAuthorsFromTracks(tracksArray);
@@ -412,7 +405,7 @@ function saveDistribution(data) {
       Number(data.basePrice || 0),
       Number(data.karaokePrice || 0),
       Number(data.totalPrice || 0),
-      paymentProofUrl,
+      '',                              // payment_proof_url — заполним ниже асинхронно
       contractNumber,
       percentage + '%',
       '',                              // contract_status
@@ -444,6 +437,30 @@ function saveDistribution(data) {
     Logger.log('Distribution data saved successfully. Contract: ' + contractNumber);
     Logger.log('Sign link auto-generated: ' + signUrl);
 
+    // ── Telegram-уведомление — ПЕРВЫМ, до медленных операций ────────────────
+    const distCfg = getTelegramConfig('distribution');
+    if (TELEGRAM_CONFIG.NOTIFY_DISTRIBUTION && distCfg.ENABLED && distCfg.BOT_TOKEN && distCfg.CHAT_ID) {
+      try {
+        sendDistributionNotification({
+          contractNumber: contractNumber,
+          licensorName:   data.fullName || '',
+          pseudonym:      data.mainArtist || '',
+          tariff:         tariffName,
+          releaseType:    releaseTypeName,
+          releaseDate:    data.releaseDate || '',
+          workTitle:      data.releaseName || '',
+          musicAuthor:    musicAuthorValue || '',
+          lyricsAuthor:   lyricsAuthorValue || '',
+          platforms:      data.platforms || '',
+          email:          data.email || '',
+          contact:        data.contactInfo || '',
+          sheetUrl:       SpreadsheetApp.getActiveSpreadsheet().getUrl()
+        });
+      } catch (tgErr) {
+        Logger.log('❌ Telegram distribution error: ' + tgErr);
+      }
+    }
+
     // ── Отправка письма клиенту ─────────────────────────────────────────────
     if (data.email) {
       try {
@@ -462,24 +479,23 @@ function saveDistribution(data) {
       }
     }
 
-    // ── Telegram-уведомление ────────────────────────────────────────────────
-    const distCfg = getTelegramConfig('distribution');
-    if (TELEGRAM_CONFIG.NOTIFY_DISTRIBUTION && distCfg.ENABLED && distCfg.BOT_TOKEN && distCfg.CHAT_ID) {
-      sendDistributionNotification({
-        contractNumber: contractNumber,
-        licensorName:   data.fullName || '',
-        pseudonym:      data.mainArtist || '',
-        tariff:         tariffName,
-        releaseType:    releaseTypeName,
-        releaseDate:    data.releaseDate || '',
-        workTitle:      data.releaseName || '',
-        musicAuthor:    musicAuthorValue || '',
-        lyricsAuthor:   lyricsAuthorValue || '',
-        platforms:      data.platforms || '',
-        email:          data.email || '',
-        contact:        data.contactInfo || '',
-        sheetUrl:       SpreadsheetApp.getActiveSpreadsheet().getUrl()
-      });
+    // ── Загрузка скриншота оплаты на Drive (медленная операция — после уведомлений) ──
+    if (data.paymentProof) {
+      try {
+        const proofFile = storePaymentProof(data.paymentProof, contractNumber, data.fullName || '');
+        if (proofFile) {
+          const proofUrl = proofFile.getUrl();
+          // Обновляем ячейку payment_proof_url в только что добавленной строке
+          const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+          const proofColIdx = headers.indexOf('payment_proof_url');
+          if (proofColIdx >= 0) {
+            sheet.getRange(lastRow, proofColIdx + 1).setValue(proofUrl);
+          }
+          Logger.log('✅ Скриншот оплаты загружен: ' + proofUrl);
+        }
+      } catch (e) {
+        Logger.log('saveDistribution paymentProof error: ' + e);
+      }
     }
 
   } catch (error) {
@@ -796,6 +812,11 @@ function buildDistributionMessage(data) {
     if (!text) return '';
     return String(text).replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&');
   };
+  // URL inside [text](URL) must only have ')' escaped, not all special chars
+  const escapeUrl = (url) => {
+    if (!url) return '';
+    return String(url).replace(/\)/g, '\\)');
+  };
 
   const messageParts = [
     "\\#дистрибуция *Новая заявка получена*\\!",
@@ -818,7 +839,7 @@ function buildDistributionMessage(data) {
     `▸ Email: ${escapeMd(data.email || 'не указан')}`,
     `▸ Связь: ${escapeMd(data.contact || 'не указан')}`,
     "",
-    `📄 [Открыть таблицу](${escapeMd(data.sheetUrl)})`
+    `📄 [Открыть таблицу](${escapeUrl(data.sheetUrl)})`
   ];
 
   return messageParts.join("\n");
@@ -829,20 +850,24 @@ function buildPromoMessage(data) {
     if (!text) return '';
     return String(text).replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&');
   };
+  const escapeUrl = (url) => {
+    if (!url) return '';
+    return String(url).replace(/\)/g, '\\)');
+  };
 
   const messageParts = [
     "\\#питчинг *Новая заявка на промо*\\!",
     "",
     `▸ Тип: ${escapeMd(data.promoType)}`,
     `▸ Артист и название: ${escapeMd(data.artistAndTitle || 'не указано')}`,
-    `▸ Ссылка: ${escapeMd(data.releaseLink || 'не указана')}`,
+    `▸ Ссылка: ${escapeUrl(data.releaseLink || 'не указана')}`,
     `▸ UPC: ${escapeMd(data.upcOrName || 'не указан')}`,
     `▸ Дата релиза: ${escapeMd(data.releaseDate || 'не указана')}`,
     `▸ Жанр: ${escapeMd(data.genre || 'не указан')}`,
     `▸ Фокус\\-трек: ${escapeMd(data.focusTrack || 'не указан')}`,
     `▸ Контакты: ${escapeMd(data.contactInfo || 'не указаны')}`,
     "",
-    `📄 [Открыть таблицу](${escapeMd(data.sheetUrl)})`
+    `📄 [Открыть таблицу](${escapeUrl(data.sheetUrl)})`
   ];
 
   return messageParts.join("\n");
@@ -877,6 +902,10 @@ function buildDocumentMessage(data) {
     if (!text) return '';
     return String(text).replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&');
   };
+  const escapeUrl = (url) => {
+    if (!url) return '';
+    return String(url).replace(/\)/g, '\\)');
+  };
 
   const messageParts = [
     "\\#договор *Договор создан*\\!",
@@ -886,7 +915,7 @@ function buildDocumentMessage(data) {
     `▸ Псевдоним: ${escapeMd(data.pseudonym || 'не указан')}`,
     `▸ Произведение: ${escapeMd(data.workTitle || 'не указано')}`,
     "",
-    `📄 [Открыть договор](${escapeMd(data.docUrl)})`
+    `📄 [Открыть договор](${escapeUrl(data.docUrl)})`
   ];
 
   return messageParts.join("\n");
@@ -901,37 +930,63 @@ function sendToTelegramAPI(message, cfg) {
 
   let lastError;
 
+  // Try each chat ID first with MarkdownV2, then with plain text on parse failure
   for (const chatId of chatIdsToTry) {
-    try {
-      const payload = {
-        chat_id: chatId,
-        text: message,
-        parse_mode: "MarkdownV2",
-        disable_web_page_preview: false
-      };
+    for (const parseMode of ['MarkdownV2', null]) {
+      try {
+        const payload = {
+          chat_id: chatId,
+          text: parseMode === null ? stripMarkdown(message) : message,
+          disable_web_page_preview: true
+        };
+        if (parseMode) payload.parse_mode = parseMode;
 
-      // thread работает только в супергруппах/форумах
-      if (shouldAttachThread(chatId, cfg.THREAD_ID)) {
-        payload.message_thread_id = Number(cfg.THREAD_ID);
+        // thread работает только в супергруппах/форумах
+        if (shouldAttachThread(chatId, cfg.THREAD_ID)) {
+          payload.message_thread_id = Number(cfg.THREAD_ID);
+        }
+
+        const response = UrlFetchApp.fetch(url, {
+          method: "post",
+          contentType: "application/json",
+          payload: JSON.stringify(payload),
+          muteHttpExceptions: true
+        });
+
+        const responseData = JSON.parse(response.getContentText());
+        if (responseData.ok) return responseData;
+
+        const desc = responseData.description || 'unknown error';
+        // If parse error — fall through to plain text retry
+        if (desc.indexOf("parse") !== -1 || desc.indexOf("can't parse") !== -1 ||
+            desc.indexOf("Can't parse") !== -1 || desc.indexOf("parse entities") !== -1) {
+          Logger.log('MarkdownV2 parse error for chatId ' + chatId + ', retrying as plain text: ' + desc);
+          continue; // try plain text
+        }
+        lastError = `${chatId}/${parseMode || 'plain'}: ${desc}`;
+        break; // non-parse error, try next chatId
+      } catch (e) {
+        lastError = `${chatId}/${parseMode || 'plain'}: ${e.message}`;
+        break;
       }
-
-      const response = UrlFetchApp.fetch(url, {
-        method: "post",
-        contentType: "application/json",
-        payload: JSON.stringify(payload),
-        muteHttpExceptions: true
-      });
-
-      const responseData = JSON.parse(response.getContentText());
-      if (responseData.ok) return responseData;
-
-      lastError = `${chatId}: ${responseData.description || 'unknown error'}`;
-    } catch (e) {
-      lastError = `${chatId}: ${e.message}`;
     }
   }
 
   throw new Error(`Telegram API: ${lastError || "Не удалось отправить сообщение"}`);
+}
+
+// Убирает MarkdownV2-разметку для отправки plain text fallback
+function stripMarkdown(text) {
+  if (!text) return '';
+  return String(text)
+    .replace(/\\\\/g, '\\')        // double backslash → single
+    .replace(/\\([_*\[\]()~`>#+\-=|{}.!])/g, '$1')  // remove escape backslashes
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/__(.*?)__/g, '$1')
+    .replace(/_(.*?)_/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')  // [text](url) → text
+    .replace(/`([^`]+)`/g, '$1');
 }
 
 function buildTelegramChatCandidates(chatId) {
@@ -2979,4 +3034,86 @@ function testTelegramPromo() {
       10
     );
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Диагностика Telegram — запустите эту функцию в редакторе GAS для проверки
+// ═══════════════════════════════════════════════════════════════════════════
+function diagnoseTelegram() {
+  const ui = SpreadsheetApp.getUi();
+  const lines = [];
+
+  const configs = [
+    { name: 'DISTRIBUTION', cfg: getTelegramConfig('distribution') },
+    { name: 'PROMO', cfg: getTelegramConfig('promo') },
+    { name: 'DOCUMENT', cfg: getTelegramConfig('document') }
+  ];
+
+  for (const entry of configs) {
+    const cfg = entry.cfg;
+    lines.push('=== ' + entry.name + ' ===');
+    lines.push('ENABLED: ' + cfg.ENABLED);
+    lines.push('BOT_TOKEN: ' + (cfg.BOT_TOKEN ? cfg.BOT_TOKEN.substring(0, 12) + '...' : 'MISSING'));
+    lines.push('CHAT_ID: ' + (cfg.CHAT_ID || 'MISSING'));
+    lines.push('THREAD_ID: ' + (cfg.THREAD_ID || 'нет'));
+
+    if (!cfg.ENABLED || !cfg.BOT_TOKEN || !cfg.CHAT_ID) {
+      lines.push('→ ПРОПУЩЕН (не настроен)');
+      lines.push('');
+      continue;
+    }
+
+    // Check bot token via getMe
+    try {
+      const getMeResp = UrlFetchApp.fetch(
+        'https://api.telegram.org/bot' + cfg.BOT_TOKEN + '/getMe',
+        { muteHttpExceptions: true }
+      );
+      const getMeData = JSON.parse(getMeResp.getContentText());
+      if (getMeData.ok) {
+        lines.push('Bot: @' + getMeData.result.username + ' ✅');
+      } else {
+        lines.push('Bot: ОШИБКА — ' + getMeData.description + ' ❌');
+        lines.push('');
+        continue;
+      }
+    } catch (e) {
+      lines.push('Bot: запрос упал — ' + e.message + ' ❌');
+      lines.push('');
+      continue;
+    }
+
+    // Send a test ping message
+    try {
+      const testMsg = '🔔 Тест PFVMUSIC [' + entry.name + '] — ' + new Date().toLocaleString('ru-RU');
+      const candidates = buildTelegramChatCandidates(String(cfg.CHAT_ID));
+      let sent = false;
+      for (const chatId of candidates) {
+        const payload = { chat_id: chatId, text: testMsg };
+        if (shouldAttachThread(chatId, cfg.THREAD_ID)) {
+          payload.message_thread_id = Number(cfg.THREAD_ID);
+        }
+        const resp = UrlFetchApp.fetch(
+          'https://api.telegram.org/bot' + cfg.BOT_TOKEN + '/sendMessage',
+          { method: 'post', contentType: 'application/json', payload: JSON.stringify(payload), muteHttpExceptions: true }
+        );
+        const respData = JSON.parse(resp.getContentText());
+        if (respData.ok) {
+          lines.push('Отправка → chatId ' + chatId + ': ✅ OK');
+          sent = true;
+          break;
+        } else {
+          lines.push('Отправка → chatId ' + chatId + ': ❌ ' + respData.description);
+        }
+      }
+      if (!sent) lines.push('Не удалось отправить ни в один из chatId ❌');
+    } catch (e) {
+      lines.push('Ошибка отправки: ' + e.message + ' ❌');
+    }
+    lines.push('');
+  }
+
+  const report = lines.join('\n');
+  Logger.log(report);
+  ui.alert('Диагностика Telegram', report, ui.ButtonSet.OK);
 }
