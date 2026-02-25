@@ -80,12 +80,15 @@ export default function SignPage() {
   const [isSigned, setIsSigned] = useState(false);
   const [signedDate, setSignedDate] = useState<string | null>(null);
   const [showOverlay, setShowOverlay] = useState(false);
+  const [serverReady, setServerReady] = useState(false);
   const [signatureData, setSignatureData] = useState<string | null>(null);
   const [downloadUrl, setDownloadUrl] = useState('');
   // Used as key on iframe to force reload when signature is injected
   const [contractVersion, setContractVersion] = useState(0);
   // Ref keeps latest signatureData available inside callbacks without stale closure
   const signatureDataRef = useRef<string | null>(null);
+  // Stores server result while overlay is still showing
+  const serverResultRef = useRef<{ downloadUrl: string } | null>(null);
 
   // Extract token from URL hash (#sign?token=xyz)
   const getToken = () => {
@@ -153,11 +156,11 @@ export default function SignPage() {
   useEffect(() => { fetchContract(); }, [fetchContract]);
 
   // ═══ Submit signature to Google Apps Script ═══
-  const submitSignatureToServer = useCallback(async () => {
-    if (!token) return;
+  const submitSignatureToServer = useCallback(async (): Promise<string> => {
+    if (!token) return '';
     try {
       const scriptUrl = await getScriptUrl();
-      if (!scriptUrl) return;
+      if (!scriptUrl) return '';
 
       const res = await fetch(scriptUrl, {
         method: 'POST',
@@ -166,19 +169,19 @@ export default function SignPage() {
         body: JSON.stringify({
           action: 'sign_submit',
           token,
-          signature: signatureData || `Подписано электронно: ${new Date().toLocaleString('ru-RU')}`,
+          signature: signatureDataRef.current || `Подписано электронно: ${new Date().toLocaleString('ru-RU')}`,
         }),
       });
       const text = await res.text();
       let data: any;
       try { data = JSON.parse(text); } catch { data = {}; }
-      if (data?.downloadUrl || data?.signedUrl) {
-        setDownloadUrl(data.downloadUrl || data.signedUrl);
-      }
+      const url = data?.downloadUrl || data?.signedUrl || '';
+      return url;
     } catch (e) {
       console.error('submitSignature error:', e);
+      return '';
     }
-  }, [token, signatureData]);
+  }, [token]);
 
   // ═══ Handlers matching the design component interface ═══
   const injectSignatureLocally = (html: string, dataUrl: string) => {
@@ -193,7 +196,8 @@ export default function SignPage() {
     return result;
   };
 
-  const handleSign = useCallback(() => {
+  // Applies signature locally and marks as signed (called after overlay closes)
+  const handleSign = useCallback((resolvedDownloadUrl: string) => {
     const now = new Date();
     const formatted = now.toLocaleString('ru-RU', {
       day: '2-digit', month: '2-digit', year: 'numeric',
@@ -201,24 +205,34 @@ export default function SignPage() {
     });
     setIsSigned(true);
     setSignedDate(formatted);
-    // Use ref to guarantee we have the latest signature even if closure is stale
+    if (resolvedDownloadUrl) setDownloadUrl(resolvedDownloadUrl);
     const sigData = signatureDataRef.current || signatureData;
     if (sigData) {
       setContractHtml(prev => injectSignatureLocally(prev, sigData));
-      // Increment version so ContractDocument forces iframe reload
       setContractVersion(v => v + 1);
     }
-    // Submit to server in background
-    submitSignatureToServer();
-  }, [submitSignatureToServer, signatureData]);
+  }, [signatureData]);
 
+  // Called when user clicks "Подписать договор":
+  // 1. Show overlay immediately
+  // 2. Fire server request in parallel — set serverReady when done
   const handleSigningStart = useCallback(() => {
     setShowOverlay(true);
-  }, []);
+    setServerReady(false);
+    serverResultRef.current = null;
 
+    submitSignatureToServer().then(url => {
+      serverResultRef.current = { downloadUrl: url };
+      setServerReady(true);
+    });
+  }, [submitSignatureToServer]);
+
+  // Called by overlay once animation done AND server responded
   const handleOverlayComplete = useCallback(() => {
     setShowOverlay(false);
-    handleSign();
+    setServerReady(false);
+    const url = serverResultRef.current?.downloadUrl || '';
+    handleSign(url);
   }, [handleSign]);
 
   const handleSignatureChange = useCallback((data: string | null) => {
@@ -296,7 +310,7 @@ export default function SignPage() {
   // ═══ RENDER ═══
   return (
     <div className="min-h-screen bg-[#fafafc] flex flex-col font-sans">
-      {showOverlay && <SigningOverlay onComplete={handleOverlayComplete} />}
+      {showOverlay && <SigningOverlay onComplete={handleOverlayComplete} serverReady={serverReady} />}
       <Header />
 
       <main className="flex-1 w-full mx-auto px-2.5 sm:px-6 lg:px-8 py-4 sm:py-8 xl:px-12">
