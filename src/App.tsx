@@ -392,17 +392,21 @@ export function App() {
     try {
       const result = await submitToGoogleSheets('distribution', normalized);
       if (result.success) {
+        // Switch to success view while overlay is still covering the screen —
+        // this prevents white flash between form unmount and success mount.
         scrollToTopInstant();
         setSubmitted(true);
+        // Overlay disappears on next render when submitting=false (batched with setSubmitted)
       } else {
-        setValidationErrors([result.message]);
+        setValidationErrors([result.message || 'Ошибка при отправке. Попробуйте ещё раз.']);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     } catch (error) {
       console.error('Submit error:', error);
       setValidationErrors(['Ошибка при отправке формы. Попробуйте ещё раз.']);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setSubmitting(false);
-      scrollToTopInstant();
     }
   };
 
@@ -424,14 +428,15 @@ export function App() {
         scrollToTopInstant();
         setPromoSubmitted(true);
       } else {
-        setPromoErrors([result.message]);
+        setPromoErrors([result.message || 'Ошибка при отправке. Попробуйте ещё раз.']);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     } catch (error) {
       console.error('Submit error:', error);
       setPromoErrors(['Ошибка при отправке формы. Попробуйте ещё раз.']);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setPromoSubmitting(false);
-      scrollToTopInstant();
     }
   };
 
@@ -1395,6 +1400,35 @@ export function App() {
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-amber-50/80 via-white to-amber-50/40 mobile-zoom-70">
+        {promoSubmitting && (
+          <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/95 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-6 px-8 text-center">
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full bg-amber-200 animate-ping opacity-30" style={{ animationDuration: '1.5s' }} />
+                <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-xl shadow-amber-200/60">
+                  <Loader2 className="w-10 h-10 text-white animate-spin" />
+                </div>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Отправляем заявку</h3>
+                <p className="text-gray-500 text-sm max-w-xs leading-relaxed">
+                  Сохраняем данные и отправляем уведомление.<br />
+                  Подождите <span className="font-semibold text-amber-600">несколько секунд</span>.
+                </p>
+                <p className="text-xs text-gray-400 mt-2">Не закрывайте страницу</p>
+              </div>
+              <div className="flex gap-2">
+                {[0, 1, 2].map(i => (
+                  <div
+                    key={i}
+                    className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-bounce"
+                    style={{ animationDelay: `${i * 0.18}s` }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
         <Header onBack={goHome} />
 
         {/* Hero */}
@@ -1530,6 +1564,36 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50/80 via-white to-purple-50/40 mobile-zoom-70">
+      {/* Full-screen submitting overlay — prevents white flash and shows clear progress */}
+      {(submitting || promoSubmitting) && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/95 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-6 px-8 text-center">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full bg-purple-200 animate-ping opacity-30" style={{ animationDuration: '1.5s' }} />
+              <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center shadow-xl shadow-purple-200/60">
+                <Loader2 className="w-10 h-10 text-white animate-spin" />
+              </div>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Отправляем данные</h3>
+              <p className="text-gray-500 text-sm max-w-xs leading-relaxed">
+                Загружаем файлы и сохраняем заявку.<br />
+                Это может занять до <span className="font-semibold text-purple-600">30–60 секунд</span>.
+              </p>
+              <p className="text-xs text-gray-400 mt-2">Не закрывайте страницу</p>
+            </div>
+            <div className="flex gap-2">
+              {[0, 1, 2].map(i => (
+                <div
+                  key={i}
+                  className="w-2.5 h-2.5 rounded-full bg-purple-400 animate-bounce"
+                  style={{ animationDelay: `${i * 0.18}s` }}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
       <Header onBack={goHome} />
 
       {/* Hero */}
