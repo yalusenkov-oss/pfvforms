@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Header } from '@/components/sign/Header';
 import { ContractInfo } from '@/components/sign/ContractInfo';
@@ -82,6 +82,10 @@ export default function SignPage() {
   const [showOverlay, setShowOverlay] = useState(false);
   const [signatureData, setSignatureData] = useState<string | null>(null);
   const [downloadUrl, setDownloadUrl] = useState('');
+  // Used as key on iframe to force reload when signature is injected
+  const [contractVersion, setContractVersion] = useState(0);
+  // Ref keeps latest signatureData available inside callbacks without stale closure
+  const signatureDataRef = useRef<string | null>(null);
 
   // Extract token from URL hash (#sign?token=xyz)
   const getToken = () => {
@@ -197,9 +201,12 @@ export default function SignPage() {
     });
     setIsSigned(true);
     setSignedDate(formatted);
-    // Instant visual update of HTML
-    if (signatureData) {
-      setContractHtml(prev => injectSignatureLocally(prev, signatureData));
+    // Use ref to guarantee we have the latest signature even if closure is stale
+    const sigData = signatureDataRef.current || signatureData;
+    if (sigData) {
+      setContractHtml(prev => injectSignatureLocally(prev, sigData));
+      // Increment version so ContractDocument forces iframe reload
+      setContractVersion(v => v + 1);
     }
     // Submit to server in background
     submitSignatureToServer();
@@ -216,6 +223,7 @@ export default function SignPage() {
 
   const handleSignatureChange = useCallback((data: string | null) => {
     setSignatureData(data);
+    signatureDataRef.current = data;
   }, []);
 
   const resolveLatestDownloadUrl = useCallback(async (): Promise<string> => {
@@ -336,7 +344,7 @@ export default function SignPage() {
             <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(360px,420px)] gap-3 sm:gap-6 items-start">
               {/* Left column: Contract Document */}
               <div className="min-w-0 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-                <ContractDocument htmlContent={contractHtml} />
+                <ContractDocument htmlContent={contractHtml} version={contractVersion} />
               </div>
 
               {/* Right column: Signature + Info */}

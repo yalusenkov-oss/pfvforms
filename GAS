@@ -1860,134 +1860,193 @@ function sendSignLinkEmail(opts) {
     day: '2-digit', month: 'long', year: 'numeric'
   });
 
-  // ── Красивый HTML для письма ─────────────────────────────────────────────
+  // ── HTML письмо (table-based, inline styles — работает во всех почтовых клиентах) ──
   const htmlBody = `<!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>PFVMUSIC — Договор готов к подписанию</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-    body { background: #f0f2f5; min-height: 100vh; padding: 40px 16px; }
-    .email-wrapper { width: 100%; max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.08); }
-    .header { background: linear-gradient(145deg, #0e0e1a 0%, #1b1b3a 40%, #252552 70%, #1b1b3a 100%); padding: 52px 40px 48px; text-align: center; }
-    .logo-icon { width: 68px; height: 68px; border-radius: 18px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
-    .logo-title { color: #ffffff; font-size: 26px; font-weight: 900; letter-spacing: 5px; }
-    .logo-subtitle { color: rgba(165,180,252,0.5); font-size: 11px; font-weight: 600; letter-spacing: 4px; text-transform: uppercase; margin-top: 6px; }
-    .body { padding: 44px 44px 36px; }
-    .greeting { color: #111827; font-size: 22px; font-weight: 800; margin-bottom: 10px; }
-    .intro-text { color: #6b7280; font-size: 15px; line-height: 1.75; margin-bottom: 32px; }
-    .details-card { background: #fafbfd; border: 1px solid #eef0f4; border-radius: 16px; padding: 28px 30px; margin-bottom: 32px; }
-    .details-header { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid #eef0f4; }
-    .details-icon { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .details-title { font-size: 16px; font-weight: 700; color: #111827; }
-    .details-title-sub { font-size: 12px; color: #9ca3af; font-weight: 500; margin-top: 1px; }
-    .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-top: 1px solid #f0f1f5; }
-    .detail-row:first-of-type { border-top: none; }
-    .detail-label { color: #9ca3af; font-size: 13px; font-weight: 500; }
-    .detail-value { color: #1f2937; font-size: 14px; font-weight: 600; text-align: right; }
-    .detail-value.highlight { color: #6366f1; font-weight: 700; }
-    .badge { display: inline-block; background: #eef2ff; color: #6366f1; padding: 4px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; }
-    .cta-wrapper { text-align: center; margin-bottom: 36px; }
-    .cta-button { display: inline-block; background: linear-gradient(135deg, #6366f1 0%, #7c3aed 100%); color: #ffffff !important; text-decoration: none; padding: 18px 56px; border-radius: 14px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 12px rgba(99,102,241,0.25), 0 12px 32px rgba(99,102,241,0.2); }
-    .cta-hint { text-align: center; color: #b0b8c9; font-size: 12px; margin-top: 12px; font-weight: 500; }
-    .section-divider { height: 1px; background: linear-gradient(90deg, transparent, #e5e7eb, transparent); margin: 0 0 32px; }
-    .fallback-card { background: #fffdf5; border: 1px solid #fde68a; border-radius: 14px; padding: 22px 26px; margin-bottom: 8px; }
-    .fallback-title { color: #92400e; font-size: 14px; font-weight: 700; margin-bottom: 10px; }
-    .fallback-text { color: #a16207; font-size: 13px; line-height: 1.65; margin-bottom: 14px; }
-    .fallback-url { background: #fefce8; border: 1px dashed #fbbf24; border-radius: 10px; padding: 12px 16px; font-size: 12px; color: #6366f1; word-break: break-all; font-family: monospace; line-height: 1.6; }
-    .footer { background: linear-gradient(145deg, #0e0e1a, #1b1b3a); padding: 40px 44px; text-align: center; }
-    .footer-logo-text { color: #c7d2fe; font-size: 15px; font-weight: 800; letter-spacing: 3px; }
-    .footer-regards { color: #9ca3af; font-size: 14px; line-height: 1.6; margin: 16px 0 6px; }
-    .footer-regards strong { color: #c7d2fe; }
-    .footer-email { color: #818cf8; font-size: 13px; text-decoration: none; font-weight: 600; }
-    .footer-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 24px 0; }
-    .footer-disclaimer { color: #4b5563; font-size: 11px; line-height: 1.8; max-width: 460px; margin: 0 auto 16px; }
-    .footer-copy { color: #374151; font-size: 11px; font-weight: 500; }
-  </style>
+  <!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
 </head>
-<body>
-  <div class="email-wrapper">
-    <div class="header">
-      <div class="logo-icon">
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
-          <path d="M9 18V5l12-2v13" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-          <circle cx="6" cy="18" r="3" stroke="white" stroke-width="2.2"/>
-          <circle cx="18" cy="16" r="3" stroke="white" stroke-width="2.2"/>
-        </svg>
-      </div>
-      <div class="logo-title">PFVMUSIC</div>
-      <div class="logo-subtitle">Издательство</div>
-    </div>
+<body style="margin:0;padding:0;background-color:#f0f2f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;">
 
-    <div class="body">
-      <h1 class="greeting">Здравствуйте, ${name}!</h1>
-      <p class="intro-text">
-        Ваш договор успешно сгенерирован и готов к подписанию.<br>
-        Пожалуйста, ознакомьтесь с деталями ниже и подтвердите документ, перейдя по ссылке.
-      </p>
+<!-- Outer wrapper -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f0f2f5;">
+  <tr>
+    <td align="center" style="padding:40px 16px;">
 
-      <div class="details-card">
-        <div class="details-header">
-          <div class="details-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <div>
-            <div class="details-title">Детали договора</div>
-            <div class="details-title-sub">Автоматически сгенерированный документ</div>
-          </div>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">№ Договора</span>
-          <span class="detail-value highlight">${contractNumber}</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Произведение</span>
-          <span class="detail-value">«${workTitle}»</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Тип релиза</span>
-          <span class="detail-value"><span class="badge">${releaseType}</span></span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Ссылка действительна до</span>
-          <span class="detail-value">${expiresStr}</span>
-        </div>
-      </div>
+      <!-- Email card -->
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background-color:#ffffff;border-radius:20px;overflow:hidden;">
 
-      <div class="cta-wrapper">
-        <a href="${signUrl}" class="cta-button">✍️ Подписать договор</a>
-        <p class="cta-hint">Ссылка действительна 14 дней · Откройте в любом браузере</p>
-      </div>
+        <!-- HEADER -->
+        <tr>
+          <td align="center" bgcolor="#151528" style="background-color:#151528;padding:48px 40px 44px;">
+            <p style="margin:0;color:#ffffff;font-size:24px;font-weight:900;letter-spacing:6px;text-transform:uppercase;">PFVMUSIC</p>
+            <p style="margin:6px 0 0;color:#c4b5fd;font-size:11px;font-weight:600;letter-spacing:4px;text-transform:uppercase;">&#1048;&#1047;&#1044;&#1040;&#1058;&#1045;&#1051;&#1068;&#1057;&#1058;&#1042;&#1054;</p>
+          </td>
+        </tr>
 
-      <div class="section-divider"></div>
+        <!-- BODY -->
+        <tr>
+          <td style="padding:40px 40px 32px;">
 
-      <div class="fallback-card">
-        <div class="fallback-title">⚠️ Кнопка не работает?</div>
-        <p class="fallback-text">
-          Некоторые почтовые клиенты блокируют интерактивные элементы. Скопируйте адрес ниже и вставьте в строку браузера:
-        </p>
-        <div class="fallback-url">${signUrl}</div>
-      </div>
-    </div>
+            <!-- Greeting -->
+            <p style="margin:0 0 8px;color:#111827;font-size:22px;font-weight:800;">&#1047;&#1076;&#1088;&#1072;&#1074;&#1089;&#1090;&#1074;&#1091;&#1081;&#1090;&#1077;, ${name}!</p>
+            <p style="margin:0 0 32px;color:#6b7280;font-size:15px;line-height:1.7;">
+              &#1042;&#1072;&#1096; &#1076;&#1086;&#1075;&#1086;&#1074;&#1086;&#1088; &#1091;&#1089;&#1087;&#1077;&#1096;&#1085;&#1086; &#1089;&#1075;&#1077;&#1085;&#1077;&#1088;&#1080;&#1088;&#1086;&#1074;&#1072;&#1085; &#1080; &#1075;&#1086;&#1090;&#1086;&#1074; &#1082; &#1087;&#1086;&#1076;&#1087;&#1080;&#1089;&#1072;&#1085;&#1080;&#1102;.<br>
+              &#1054;&#1079;&#1085;&#1072;&#1082;&#1086;&#1084;&#1100;&#1090;&#1077;&#1089;&#1100; &#1089; &#1076;&#1077;&#1090;&#1072;&#1083;&#1103;&#1084;&#1080; &#1085;&#1080;&#1078;&#1077; &#1080; &#1087;&#1086;&#1076;&#1090;&#1074;&#1077;&#1088;&#1076;&#1080;&#1090;&#1077; &#1076;&#1086;&#1082;&#1091;&#1084;&#1077;&#1085;&#1090;, &#1087;&#1077;&#1088;&#1077;&#1081;&#1076;&#1103; &#1087;&#1086; &#1089;&#1089;&#1099;&#1083;&#1082;&#1077;.
+            </p>
 
-    <div class="footer">
-      <div class="footer-logo-text">PFVMUSIC</div>
-      <p class="footer-regards">
-        С уважением, Музыкальное издательство <strong>PFVMUSIC</strong>
-      </p>
-      <a href="mailto:booking@pfvmusic.ru" class="footer-email">booking@pfvmusic.ru</a>
-      <div class="footer-divider"></div>
-      <p class="footer-disclaimer">
-        Это письмо и все приложения к нему строго конфиденциальны и предназначены исключительно для указанного адресата.
-      </p>
-      <p class="footer-copy">© 2026 PFVMUSIC. Все права защищены.</p>
-    </div>
-  </div>
+            <!-- Details card -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                   style="background-color:#f8f9fc;border:1px solid #e8eaf0;border-radius:14px;margin-bottom:28px;">
+              <tr>
+                <td style="padding:22px 24px 8px;">
+                  <!-- Card header row -->
+                  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #e8eaf0;">
+                    <tr>
+                      <td valign="middle" width="40">
+                        <table cellpadding="0" cellspacing="0" border="0">
+                          <tr>
+                            <td align="center" valign="middle" width="40" height="40"
+                                style="width:40px;height:40px;background-color:#7c3aed;border-radius:10px;text-align:center;font-size:20px;line-height:40px;">
+                              &#128196;
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                      <td valign="middle" style="padding-left:14px;">
+                        <p style="margin:0;color:#111827;font-size:15px;font-weight:700;">&#1044;&#1077;&#1090;&#1072;&#1083;&#1080; &#1076;&#1086;&#1075;&#1086;&#1074;&#1086;&#1088;&#1072;</p>
+                        <p style="margin:2px 0 0;color:#9ca3af;font-size:12px;">&#1040;&#1074;&#1090;&#1086;&#1084;&#1072;&#1090;&#1080;&#1095;&#1077;&#1089;&#1082;&#1080; &#1089;&#1075;&#1077;&#1085;&#1077;&#1088;&#1080;&#1088;&#1086;&#1074;&#1072;&#1085;&#1085;&#1099;&#1081; &#1076;&#1086;&#1082;&#1091;&#1084;&#1077;&#1085;&#1090;</p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <!-- Detail rows -->
+              <tr>
+                <td style="padding:0 24px;">
+                  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td style="padding:12px 0;border-top:1px solid #f0f1f5;color:#9ca3af;font-size:13px;">&#8470; &#1044;&#1086;&#1075;&#1086;&#1074;&#1086;&#1088;&#1072;</td>
+                      <td style="padding:12px 0;border-top:1px solid #f0f1f5;color:#7c3aed;font-size:14px;font-weight:700;text-align:right;">${contractNumber}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:12px 0;border-top:1px solid #f0f1f5;color:#9ca3af;font-size:13px;">&#1055;&#1088;&#1086;&#1080;&#1079;&#1074;&#1077;&#1076;&#1077;&#1085;&#1080;&#1077;</td>
+                      <td style="padding:12px 0;border-top:1px solid #f0f1f5;color:#1f2937;font-size:14px;font-weight:600;text-align:right;">&#171;${workTitle}&#187;</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:12px 0;border-top:1px solid #f0f1f5;color:#9ca3af;font-size:13px;">&#1058;&#1080;&#1087; &#1088;&#1077;&#1083;&#1080;&#1079;&#1072;</td>
+                      <td style="padding:12px 0;border-top:1px solid #f0f1f5;text-align:right;">
+                        <span style="display:inline-block;background-color:#f5f3ff;color:#7c3aed;padding:3px 12px;border-radius:6px;font-size:12px;font-weight:700;">${releaseType}</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding:12px 0 16px;border-top:1px solid #f0f1f5;color:#9ca3af;font-size:13px;">&#1057;&#1089;&#1099;&#1083;&#1082;&#1072; &#1076;&#1077;&#1081;&#1089;&#1090;&#1074;&#1080;&#1090;&#1077;&#1083;&#1100;&#1085;&#1072; &#1076;&#1086;</td>
+                      <td style="padding:12px 0 16px;border-top:1px solid #f0f1f5;color:#1f2937;font-size:14px;font-weight:600;text-align:right;">${expiresStr}</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+
+            <!-- CTA Button -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;">
+              <tr>
+                <td align="center">
+                  <table cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td align="center" bgcolor="#7c3aed" style="background-color:#7c3aed;border-radius:12px;">
+                        <a href="${signUrl}"
+                           style="display:inline-block;padding:16px 52px;color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;border-radius:12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;">
+                          &#9997;&#65039; &#1055;&#1086;&#1076;&#1087;&#1080;&#1089;&#1072;&#1090;&#1100; &#1076;&#1086;&#1075;&#1086;&#1074;&#1086;&#1088;
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="margin:10px 0 0;color:#b0b8c9;font-size:12px;">&#1057;&#1089;&#1099;&#1083;&#1082;&#1072; &#1076;&#1077;&#1081;&#1089;&#1090;&#1074;&#1080;&#1090;&#1077;&#1083;&#1100;&#1085;&#1072; 14 &#1076;&#1085;&#1077;&#1081; &middot; &#1054;&#1090;&#1082;&#1088;&#1086;&#1081;&#1090;&#1077; &#1074; &#1083;&#1102;&#1073;&#1086;&#1084; &#1073;&#1088;&#1072;&#1091;&#1079;&#1077;&#1088;&#1077;</p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Support card -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                   style="background-color:#f5f3ff;border:1px solid #ede9fe;border-radius:12px;margin-bottom:16px;">
+              <tr>
+                <td style="padding:18px 20px;">
+                  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td valign="middle" width="40">
+                        <table cellpadding="0" cellspacing="0" border="0">
+                          <tr>
+                            <td align="center" valign="middle" width="40" height="40"
+                                style="width:40px;height:40px;background-color:#7c3aed;border-radius:10px;text-align:center;font-size:20px;line-height:40px;">
+                              &#128172;
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                      <td valign="middle" style="padding-left:14px;">
+                        <p style="margin:0 0 3px;color:#111827;font-size:14px;font-weight:700;">&#1042;&#1086;&#1087;&#1088;&#1086;&#1089;&#1099; &#1087;&#1086; &#1076;&#1080;&#1089;&#1090;&#1088;&#1080;&#1073;&#1091;&#1094;&#1080;&#1080;?</p>
+                        <p style="margin:0;color:#6b7280;font-size:13px;">&#1055;&#1086;&#1076;&#1076;&#1077;&#1088;&#1078;&#1082;&#1072; &#1074; Telegram: <a href="https://t.me/pfvmusic_support" style="color:#7c3aed;text-decoration:none;font-weight:600;">@pfvmusic_support</a></p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Fallback card -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                   style="background-color:#fffdf5;border:1px solid #fde68a;border-radius:12px;margin-bottom:8px;">
+              <tr>
+                <td style="padding:20px 24px;">
+                  <p style="margin:0 0 8px;color:#92400e;font-size:14px;font-weight:700;">&#9888;&#65039; &#1050;&#1085;&#1086;&#1087;&#1082;&#1072; &#1085;&#1077; &#1088;&#1072;&#1073;&#1086;&#1090;&#1072;&#1077;&#1090;?</p>
+                  <p style="margin:0 0 12px;color:#a16207;font-size:13px;line-height:1.65;">
+                    &#1057;&#1082;&#1086;&#1087;&#1080;&#1088;&#1091;&#1081;&#1090;&#1077; &#1072;&#1076;&#1088;&#1077;&#1089; &#1085;&#1080;&#1078;&#1077; &#1080; &#1074;&#1089;&#1090;&#1072;&#1074;&#1100;&#1090;&#1077; &#1074; &#1089;&#1090;&#1088;&#1086;&#1082;&#1091; &#1073;&#1088;&#1072;&#1091;&#1079;&#1077;&#1088;&#1072;:
+                  </p>
+                  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td style="background-color:#fefce8;border:1px dashed #fbbf24;border-radius:8px;padding:12px 14px;">
+                        <a href="${signUrl}" style="color:#7c3aed;font-size:12px;font-family:monospace,Courier,serif;word-break:break-all;text-decoration:none;line-height:1.6;">${signUrl}</a>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+
+          </td>
+        </tr>
+
+        <!-- FOOTER -->
+        <tr>
+          <td align="center" bgcolor="#151528" style="background-color:#151528;padding:36px 40px;">
+            <p style="margin:0 0 6px;color:#ddd6fe;font-size:14px;font-weight:800;letter-spacing:3px;">PFVMUSIC</p>
+            <p style="margin:0 0 6px;color:#9ca3af;font-size:13px;line-height:1.6;">
+              &#1057; &#1091;&#1074;&#1072;&#1078;&#1077;&#1085;&#1080;&#1077;&#1084;, &#1052;&#1091;&#1079;&#1099;&#1082;&#1072;&#1083;&#1100;&#1085;&#1086;&#1077; &#1080;&#1079;&#1076;&#1072;&#1090;&#1077;&#1083;&#1100;&#1089;&#1090;&#1074;&#1086; <strong style="color:#ddd6fe;">PFVMUSIC</strong>
+            </p>
+            <a href="mailto:support@pfvmusic.digital" style="color:#a78bfa;font-size:13px;text-decoration:none;font-weight:600;">support@pfvmusic.digital</a>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:20px 0 16px;">
+              <tr><td height="1" style="background-color:rgba(255,255,255,0.07);font-size:1px;line-height:1px;">&nbsp;</td></tr>
+            </table>
+            <p style="margin:0 0 6px;color:#4b5563;font-size:11px;line-height:1.8;max-width:420px;">
+              &#1069;&#1090;&#1086; &#1087;&#1080;&#1089;&#1100;&#1084;&#1086; &#1080; &#1074;&#1089;&#1077; &#1087;&#1088;&#1080;&#1083;&#1086;&#1078;&#1077;&#1085;&#1080;&#1103; &#1082; &#1085;&#1077;&#1084;&#1091; &#1089;&#1090;&#1088;&#1086;&#1075;&#1086; &#1082;&#1086;&#1085;&#1092;&#1080;&#1076;&#1077;&#1085;&#1094;&#1080;&#1072;&#1083;&#1100;&#1085;&#1099; &#1080; &#1087;&#1088;&#1077;&#1076;&#1085;&#1072;&#1079;&#1085;&#1072;&#1095;&#1077;&#1085;&#1099; &#1080;&#1089;&#1082;&#1083;&#1102;&#1095;&#1080;&#1090;&#1077;&#1083;&#1100;&#1085;&#1086; &#1076;&#1083;&#1103; &#1091;&#1082;&#1072;&#1079;&#1072;&#1085;&#1085;&#1086;&#1075;&#1086; &#1072;&#1076;&#1088;&#1077;&#1089;&#1072;&#1090;&#1072;. &#1045;&#1089;&#1083;&#1080; &#1074;&#1099; &#1087;&#1086;&#1083;&#1091;&#1095;&#1080;&#1083;&#1080; &#1101;&#1090;&#1086; &#1087;&#1080;&#1089;&#1100;&#1084;&#1086; &#1087;&#1086; &#1086;&#1096;&#1080;&#1073;&#1082;&#1077;, &#1087;&#1086;&#1078;&#1072;&#1083;&#1091;&#1081;&#1089;&#1090;&#1072;, &#1085;&#1077;&#1084;&#1077;&#1076;&#1083;&#1077;&#1085;&#1085;&#1086; &#1091;&#1074;&#1077;&#1076;&#1086;&#1084;&#1080;&#1090;&#1077; &#1086;&#1090;&#1087;&#1088;&#1072;&#1074;&#1080;&#1090;&#1077;&#1083;&#1103; &#1080; &#1091;&#1076;&#1072;&#1083;&#1080;&#1090;&#1077; &#1089;&#1086;&#1086;&#1073;&#1097;&#1077;&#1085;&#1080;&#1077;.
+            </p>
+            <p style="margin:0;color:#374151;font-size:11px;">&#169; 2026 PFVMUSIC. &#1042;&#1089;&#1077; &#1087;&#1088;&#1072;&#1074;&#1072; &#1079;&#1072;&#1097;&#1080;&#1097;&#1077;&#1085;&#1099;.</p>
+          </td>
+        </tr>
+
+      </table>
+      <!-- /Email card -->
+
+    </td>
+  </tr>
+</table>
+<!-- /Outer wrapper -->
+
 </body>
 </html>`;
 

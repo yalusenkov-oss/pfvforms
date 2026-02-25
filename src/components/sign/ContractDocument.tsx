@@ -2,9 +2,10 @@ import { FileText } from 'lucide-react';
 
 interface ContractDocumentProps {
   htmlContent: string;
+  version?: number;
 }
 
-export function ContractDocument({ htmlContent }: ContractDocumentProps) {
+export function ContractDocument({ htmlContent, version = 0 }: ContractDocumentProps) {
   const mobileCompactCss = `
 @media (max-width: 640px) {
   body { font-size: 11px !important; line-height: 1.45 !important; padding: 12mm !important; }
@@ -30,6 +31,7 @@ export function ContractDocument({ htmlContent }: ContractDocumentProps) {
       <div className="p-2.5 sm:p-6 flex-1 min-h-0">
         <div className="contract-scroll max-h-[58vh] sm:max-h-[70vh] xl:max-h-[800px] overflow-hidden border border-gray-200 rounded-lg bg-gray-50">
           <iframe
+            key={version}
             title="contract-preview"
             srcDoc={compactHtml}
             sandbox=""
