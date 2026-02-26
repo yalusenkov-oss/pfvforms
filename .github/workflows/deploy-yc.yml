@@ -1,0 +1,39 @@
+name: Deploy to Yandex Object Storage
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # ВАЖНО: у тебя проект в подпапке pfv
+      - name: Install
+        working-directory: pfv
+        run: npm ci
+
+      - name: Build
+        working-directory: pfv
+        run: npm run build
+
+      - name: Install AWS CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y awscli
+
+      - name: Sync dist to bucket
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.YC_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.YC_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ru-central1
+        run: |
+          aws --endpoint-url https://storage.yandexcloud.net s3 sync pfv/dist s3://${{ secrets.YC_BUCKET }} --delete
