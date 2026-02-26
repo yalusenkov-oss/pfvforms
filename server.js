@@ -40,7 +40,7 @@ app.all('/api/list', vercelHandler(listHandler));
 const distPath = join(__dirname, 'dist');
 app.use(express.static(distPath));
 // Правильный SPA-fallback для Express 5 / Node 24
-app.get('/:any*', (req, res) => {
+app.use((req, res) => {
   // Проверка на API запросы
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({ success: false, error: 'API route not found' });
