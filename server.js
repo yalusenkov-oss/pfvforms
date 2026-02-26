@@ -17,6 +17,15 @@ const app = express();
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// Редирект с www на основной домен
+app.use((req, res, next) => {
+  const host = req.headers.host || '';
+  if (host.startsWith('www.')) {
+    return res.redirect(301, `https://pfvmusic.digital${req.url}`);
+  }
+  next();
+});
+
 // Wrap a Vercel-style handler (req, res) for Express
 function vercelHandler(handler) {
   return async (req, res) => {
