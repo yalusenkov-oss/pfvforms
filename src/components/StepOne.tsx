@@ -150,7 +150,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
     if (!track.artists || track.artists.length === 0) return '';
     const parts: string[] = [];
     const featParts: string[] = [];
-
+    
     track.artists.forEach(a => {
       if (a.name.trim()) {
         if (a.type === 'feat') {
@@ -160,7 +160,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
         }
       }
     });
-
+    
     let result = parts.join(', ');
     if (featParts.length > 0) {
       result += (result ? ' feat. ' : 'feat. ') + featParts.join(', ');
@@ -210,7 +210,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
                 <span className="font-bold text-blue-700">900 ₽</span>
               </div>
             </div>
-          </div>
+        </div>
 
           {/* Продвинутый */}
           <div className={cn(
@@ -222,14 +222,14 @@ export function StepOne({ data, onChange }: StepOneProps) {
             {tariff === 'Продвинутый' && (
               <div className="absolute top-3 right-3">
                 <span className="text-[10px] font-bold text-white px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500 to-purple-600 shadow-md">✓ ВЫБРАНО</span>
-              </div>
+            </div>
             )}
             <div className="flex items-start gap-3 mb-5">
               <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center flex-shrink-0 text-xl shadow-md">🚀</div>
               <div className="flex-1 pt-1">
                 <h4 className="font-bold text-sm text-gray-900">Продвинутый</h4>
                 <p className="text-xs text-gray-600 mt-1.5 font-medium">Расширенные возможности</p>
-              </div>
+          </div>
             </div>
             <div className="space-y-2.5 text-xs border-t border-gray-200/50 pt-4">
               <div className="flex justify-between items-center">
@@ -660,12 +660,12 @@ export function StepOne({ data, onChange }: StepOneProps) {
                           <Plus className="w-3.5 h-3.5" /> Добавить исполнителя
                         </button>
                       </div>
-
+                      
                       <div className="space-y-2">
                         {track.artists.map((artist, ai) => (
                           <div key={ai} className="flex items-center gap-2">
                             <span className="text-xs text-gray-400 w-5 text-right flex-shrink-0 font-mono">{ai + 1}.</span>
-
+                            
                             {ai > 0 && (
                               <Select
                                 value={artist.type}
@@ -681,7 +681,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
                                 className="w-28 flex-shrink-0 text-xs py-2.5"
                               />
                             )}
-
+                            
                             <input
                               className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 shadow-sm transition-all placeholder:text-gray-400 focus:border-purple-400 focus:outline-none focus:ring-3 focus:ring-purple-100 hover:border-purple-300"
                               value={artist.name}
@@ -692,7 +692,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
                               }}
                               placeholder={ai === 0 ? 'Основной исполнитель' : 'Имя исполнителя'}
                             />
-
+                            
                             {track.artists.length > 1 && (
                               <button
                                 type="button"
@@ -823,14 +823,14 @@ export function StepOne({ data, onChange }: StepOneProps) {
 
                     {/* Lyrics */}
                     <div className="mt-4">
-                      <TextArea
+                    <TextArea
                         label="Текст трека" required
                         icon={<PenTool className="w-4 h-4" />}
-                        value={track.lyrics}
-                        onChange={(e) => updateTrack(i, 'lyrics', e.target.value)}
-                        placeholder="Текст трека..."
-                        className="min-h-[100px]"
-                      />
+                      value={track.lyrics}
+                      onChange={(e) => updateTrack(i, 'lyrics', e.target.value)}
+                      placeholder="Текст трека..."
+                      className="min-h-[100px]"
+                    />
                       <p className="text-xs text-gray-500 mt-2">
                         Добавление текста является обязательным для проверки трека на упоминание наркотических веществ.
                       </p>

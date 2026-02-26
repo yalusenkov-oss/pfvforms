@@ -254,46 +254,31 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
 
 export async function fetchPromoCodes(): Promise<PromoCodeRecord[] | null> {
   const isProd = typeof window !== 'undefined' && !/localhost|127\\.0\\.0\\.1/.test(window.location.hostname);
-  const directScriptUrl = await getGoogleScriptUrl();
-  const buildUrl = (base: string) => {
-    try {
-      const u = new URL(base);
-      u.searchParams.set('action', 'list');
-      u.searchParams.set('sheet', 'promocodes');
-      return u.toString();
-    } catch {
-      return `${base}${base.includes('?') ? '&' : '?'}action=list&sheet=promocodes`;
-    }
-  };
-  const parseRows = (text: string) => {
-    let json: any = null;
-    try {
-      json = text ? JSON.parse(text) : null;
-    } catch {
-      throw new Error(`Response was not valid JSON: ${text.slice(0, 300)}`);
-    }
-    return Array.isArray(json) ? json : Array.isArray(json?.rows) ? json.rows : null;
-  };
+  const url = isProd ? '/api/list' : await getGoogleScriptUrl();
+  if (!url) return null;
 
-  let rows: any[] | null = null;
-
-  if (isProd) {
-    const res = await fetch(buildUrl('/api/list'), { method: 'GET', redirect: 'follow' });
-    const text = await res.text();
-    if (res.ok) {
-      rows = parseRows(text);
-    } else if (res.status !== 404 && res.status !== 405 && res.status !== 413) {
-      throw new Error(`HTTP ${res.status} when fetching promo codes: ${text.slice(0, 300)}`);
-    }
+  let final = url;
+  try {
+    const u = new URL(url);
+    u.searchParams.set('action', 'list');
+    u.searchParams.set('sheet', 'promocodes');
+    final = u.toString();
+  } catch {
+    final = `${url}${url.includes('?') ? '&' : '?'}action=list&sheet=promocodes`;
   }
 
-  if (!rows && directScriptUrl) {
-    const res = await fetch(buildUrl(directScriptUrl), { method: 'GET', redirect: 'follow' });
-    const text = await res.text();
-    if (!res.ok) throw new Error(`HTTP ${res.status} when fetching promo codes: ${text.slice(0, 300)}`);
-    rows = parseRows(text);
+  const res = await fetch(final, { method: 'GET', redirect: 'follow' });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`HTTP ${res.status} when fetching promo codes: ${text.slice(0, 300)}`);
+
+  let json: any = null;
+  try {
+    json = text ? JSON.parse(text) : null;
+  } catch {
+    throw new Error(`Response was not valid JSON: ${text.slice(0, 300)}`);
   }
 
+  const rows = Array.isArray(json) ? json : Array.isArray(json?.rows) ? json.rows : null;
   if (!rows) return null;
 
   const toArray = (v: any) => {
@@ -434,76 +419,89 @@ export async function submitToGoogleSheets(
         });
     });
   };
-  const parseSubmitResponse = (status: number, text: string): SubmitResponse => {
-    let json: any = null;
-    try {
-      json = text ? JSON.parse(text) : null;
-    } catch {
-      return {
-        success: false,
-        message: `Failed to parse response: ${text.substring(0, 200)}`,
-      };
-    }
-    if (json && typeof json.success === 'boolean') {
-      return {
-        success: json.success,
-        message: json.message || '',
-        row: json.row,
-        signLink: json.signLink || '',
-        emailSent: !!json.emailSent,
-      };
-    }
-    if (status >= 200 && status < 300) return { success: true, message: 'Данные успешно отправлены' };
-    return { success: false, message: json?.message || `HTTP ${status}` };
-  };
-
-  const submitDirectToScript = async (): Promise<SubmitResponse> => {
-    const scriptUrl = await getGoogleScriptUrl();
-    if (!scriptUrl) {
-      return {
-        success: false,
-        message:
-          'Google Script URL not configured. Set VITE_GOOGLE_SCRIPT_URL in .env (or configure env) and restart dev server.',
-      };
-    }
-
-    const res = await fetchWithTimeout(scriptUrl, {
-      method: 'POST',
-      body: JSON.stringify(preparedData),
-      redirect: 'follow',
-    }, isTestEnv ? 500 : 12000);
-
-    const text = await res.text();
-    if (DEBUG_LOGGING) {
-      console.log('[DEBUG] Apps Script response status', res.status, 'body', text);
-    }
-    return parseSubmitResponse(res.status, text);
-  };
 
   // Без ретраев — GAS не идемпотентен (повторные попытки дублируют строки и письма)
   try {
       if (isProd) {
-        try {
-          const res = await fetchWithTimeout('/api/submit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(preparedData),
-          });
-          const text = await res.text();
-          if (DEBUG_LOGGING) {
-            console.log('[DEBUG] /api/submit status', res.status, 'body', text);
-          }
-          if (res.status === 404 || res.status === 405 || res.status === 413) {
-            return await submitDirectToScript();
-          }
-          return parseSubmitResponse(res.status, text);
-        } catch (e) {
-          if (DEBUG_LOGGING) console.warn('[DEBUG] /api/submit failed, fallback to GAS', e);
-          return await submitDirectToScript();
+        const res = await fetchWithTimeout('/api/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(preparedData),
+        });
+        const text = await res.text();
+        if (DEBUG_LOGGING) {
+          console.log('[DEBUG] /api/submit status', res.status, 'body', text);
         }
+        let json: any = null;
+        try {
+          json = text ? JSON.parse(text) : null;
+        } catch (parseErr) {
+          // Do not retry on non-JSON HTML responses to avoid duplicate submissions
+          return {
+            success: false,
+            message: `Failed to parse response: ${text.substring(0, 200)}`,
+          };
+        }
+        if (json && typeof json.success === 'boolean') {
+          return {
+            success: json.success,
+            message: json.message || '',
+            row: json.row,
+            signLink: json.signLink || '',
+            emailSent: !!json.emailSent,
+          };
+        }
+        return { success: true, message: 'Данные успешно отправлены' };
       }
 
-      return await submitDirectToScript();
+      const GOOGLE_SCRIPT_URL = await getGoogleScriptUrl();
+      if (!GOOGLE_SCRIPT_URL) {
+        console.error('Google Script URL not configured. Data not sent.');
+        return {
+          success: false,
+          message:
+            'Google Script URL not configured. Set VITE_GOOGLE_SCRIPT_URL in .env (or configure env) and restart dev server.',
+        };
+      }
+
+      // Dev: use POST with text/plain to avoid CORS preflight (simple request)
+      // Apps Script reads JSON from e.postData.contents
+      const res = await fetchWithTimeout(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify(preparedData),
+        redirect: 'follow',
+      }, isTestEnv ? 500 : 12000);
+
+      // Ожидаем JSON-ответ от Apps Script
+      const text = await res.text();
+      if (DEBUG_LOGGING) {
+        console.log('[DEBUG] Apps Script response status', res.status, 'body', text);
+      }
+      let json: any = null;
+      try {
+        json = text ? JSON.parse(text) : null;
+      } catch (parseErr) {
+        // если не JSON — вернём текст
+        json = { success: res.ok, message: text || res.statusText };
+      }
+
+      if (!res.ok) {
+        // Небольшая полезная информация для отладки
+        const msg = json && json.error ? json.error : json && json.message ? json.message : `HTTP ${res.status}`;
+        return { success: false, message: `Server error: ${msg}` };
+      }
+
+      // Если сервер вернул JSON { success: true } — используем его
+      if (json && typeof json === 'object') {
+        return {
+          success: !!json.success,
+          message: json.message || 'Данные успешно отправлены',
+          row: json.row,
+        };
+      }
+
+      // По умолчанию считаем успехом, если HTTP 2xx
+      return { success: true, message: 'Данные успешно отправлены' };
 
     } catch (err) {
       console.error('Error submitting to Google Sheets:', err);
