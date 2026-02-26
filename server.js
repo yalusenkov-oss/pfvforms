@@ -39,8 +39,14 @@ app.all('/api/list', vercelHandler(listHandler));
 // Serve built frontend (dist/) for all other routes (SPA fallback)
 const distPath = join(__dirname, 'dist');
 app.use(express.static(distPath));
-app.get('/{*path}', (_req, res) => {
-  res.sendFile(join(distPath, 'index.html'));
+// Правильный SPA-fallback для Express
+app.get('*', (req, res) => {
+  // Если это не API-запрос, отдаем фронтенд
+  if (!req.path.startsWith('/api/')) {
+    res.sendFile(join(distPath, 'index.html'));
+  } else {
+    res.status(404).json({ error: 'API route not found' });
+  }
 });
 
 const PORT = process.env.PORT || 3000;
