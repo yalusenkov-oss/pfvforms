@@ -18,6 +18,56 @@ const KARAOKE_PRICES: Record<string, number> = {
   'Платинум': 0,
 };
 
+function loadImageFromDataUrl(dataUrl: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('IMAGE_LOAD_ERROR'));
+    img.src = dataUrl;
+  });
+}
+
+async function compressImageToDataUrl(file: File): Promise<string> {
+  const readAsDataUrl = () =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+      reader.onerror = () => reject(new Error('FILE_READ_ERROR'));
+      reader.readAsDataURL(file);
+    });
+
+  const originalDataUrl = await readAsDataUrl();
+  if (!originalDataUrl) throw new Error('FILE_READ_ERROR');
+
+  const img = await loadImageFromDataUrl(originalDataUrl);
+  const maxDimension = 1600;
+  const scale = Math.min(1, maxDimension / Math.max(img.width, img.height));
+  const width = Math.max(1, Math.round(img.width * scale));
+  const height = Math.max(1, Math.round(img.height * scale));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('CANVAS_ERROR');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, width, height);
+  ctx.drawImage(img, 0, 0, width, height);
+
+  const targetMaxBytes = 1_200_000;
+  const qualitySteps = [0.82, 0.72, 0.62, 0.52, 0.42];
+
+  let best = canvas.toDataURL('image/jpeg', qualitySteps[0]);
+  for (const quality of qualitySteps) {
+    const current = canvas.toDataURL('image/jpeg', quality);
+    best = current;
+    const approxBytes = Math.ceil((current.length * 3) / 4);
+    if (approxBytes <= targetMaxBytes) break;
+  }
+
+  return best;
+}
+
 export function StepFour({ data, onChange }: StepFourProps) {
   const tariff = data.tariff || '';
   const releaseType = data.releaseType || '';
@@ -141,7 +191,7 @@ export function StepFour({ data, onChange }: StepFourProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tariff, releaseType, base, karaoke, promoCodes]);
 
-  const handlePaymentProofChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handlePaymentProofChange = async (e: ChangeEvent<HTMLInputElement>) => {
     setPaymentProofError('');
     const file = e.target.files?.[0];
     if (!file) {
@@ -155,7 +205,7 @@ export function StepFour({ data, onChange }: StepFourProps) {
       setPaymentProofError('Загрузите изображение (JPG/PNG).');
       return;
     }
-    const maxSizeMb = 3;
+    const maxSizeMb = 12;
     if (file.size > maxSizeMb * 1024 * 1024) {
       setPaymentProofName('');
       onChange('paymentProof', '');
@@ -163,20 +213,15 @@ export function StepFour({ data, onChange }: StepFourProps) {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = typeof reader.result === 'string' ? reader.result : '';
-      if (!result) {
-        setPaymentProofError('Не удалось прочитать файл. Попробуйте ещё раз.');
-        return;
-      }
+    try {
+      const result = await compressImageToDataUrl(file);
       setPaymentProofName(file.name);
       onChange('paymentProof', result);
-    };
-    reader.onerror = () => {
+    } catch {
+      setPaymentProofName('');
+      onChange('paymentProof', '');
       setPaymentProofError('Ошибка чтения файла.');
-    };
-    reader.readAsDataURL(file);
+    }
   };
 
   return (
