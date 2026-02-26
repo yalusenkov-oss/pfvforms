@@ -20,6 +20,7 @@ function getTrackCount(data: Record<string, string>): number {
 // Функция для получения URL (читает переменную при вызове).
 // Попытки (в порядке): import.meta.env -> window global -> /config.json
 let _cachedGoogleScriptUrl: string | null = null;
+const DEFAULT_GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxV8xHP0O09Q7KqMWmsApHOiSw9oNMDb6JKonoVnOBwbL95-v9duxnNZLca55yQJQk7OQ/exec';
 const DEBUG_LOGGING = true;
 async function getGoogleScriptUrl(): Promise<string> {
   if (_cachedGoogleScriptUrl) return _cachedGoogleScriptUrl;
@@ -49,7 +50,13 @@ async function getGoogleScriptUrl(): Promise<string> {
     // ignore
   }
 
-  // 3) try to fetch /config.json (served from public/)
+  // 3) production fallback (no runtime /config.json dependency)
+  if (typeof window !== 'undefined' && !/localhost|127\.0\.0\.1/.test(window.location.hostname)) {
+    _cachedGoogleScriptUrl = DEFAULT_GOOGLE_SCRIPT_URL;
+    return _cachedGoogleScriptUrl;
+  }
+
+  // 4) try to fetch /config.json (served from public/)
   try {
     const res = await fetch('/config.json', { cache: 'no-store' });
     if (res.ok) {
@@ -469,7 +476,7 @@ export async function submitToGoogleSheets(
         method: 'POST',
         body: JSON.stringify(preparedData),
         redirect: 'follow',
-      }, isTestEnv ? 500 : 12000);
+      }, isTestEnv ? 500 : 60000);
 
       // Ожидаем JSON-ответ от Apps Script
       const text = await res.text();
