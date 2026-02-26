@@ -253,8 +253,7 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
 }
 
 export async function fetchPromoCodes(): Promise<PromoCodeRecord[] | null> {
-  const isProd = typeof window !== 'undefined' && !/localhost|127\\.0\\.0\\.1/.test(window.location.hostname);
-  const url = isProd ? '/api/list' : await getGoogleScriptUrl();
+  const url = await getGoogleScriptUrl();
   if (!url) return null;
 
   let final = url;
