@@ -27,40 +27,7 @@ const cleanMarkersFromHtml = (html: string, isSigned: boolean): string => {
   return result;
 };
 
-// ════════════════════════════════════════════════════════════════
-// Google Apps Script URL resolution (same pattern as main app)
-// ════════════════════════════════════════════════════════════════
-let _cachedScriptUrl: string | null = null;
-
-async function getScriptUrl(): Promise<string> {
-  if (_cachedScriptUrl) return _cachedScriptUrl;
-
-  try {
-    const envUrl = ((import.meta as any)?.env?.VITE_GOOGLE_SCRIPT_URL as string) || '';
-    if (envUrl) { _cachedScriptUrl = envUrl; return envUrl; }
-  } catch { }
-
-  try {
-    const w = window as any;
-    if (w?.VITE_GOOGLE_SCRIPT_URL) {
-      _cachedScriptUrl = String(w.VITE_GOOGLE_SCRIPT_URL);
-      return _cachedScriptUrl;
-    }
-  } catch { }
-
-  try {
-    const res = await fetch('/config.json', { cache: 'no-store' });
-    if (res.ok) {
-      const obj = await res.json();
-      if (obj?.VITE_GOOGLE_SCRIPT_URL) {
-        _cachedScriptUrl = String(obj.VITE_GOOGLE_SCRIPT_URL);
-        return _cachedScriptUrl;
-      }
-    }
-  } catch { }
-
-  return '';
-}
+const SIGN_API_URL = '/api/sign';
 
 // ════════════════════════════════════════════════════════════════
 // Sign Page Component
@@ -69,7 +36,7 @@ export default function SignPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Contract data from GAS
+  // Contract data
   const [contractNumber, setContractNumber] = useState('');
   const [contractHtml, setContractHtml] = useState('');
   const [licensorName, setLicensorName] = useState('');
@@ -99,7 +66,7 @@ export default function SignPage() {
 
   const token = getToken();
 
-  // ═══ Fetch contract data from Google Apps Script ═══
+  // ═══ Fetch contract data through backend proxy ═══
   const fetchContract = useCallback(async () => {
     if (!token) {
       setError('Токен договора не найден в URL');
@@ -111,10 +78,7 @@ export default function SignPage() {
       setLoading(true);
       setError('');
 
-      const scriptUrl = await getScriptUrl();
-      if (!scriptUrl) throw new Error('Google Script URL не настроен. Проверьте config.json');
-
-      const url = `${scriptUrl}?action=sign_get&token=${encodeURIComponent(token)}`;
+      const url = `${SIGN_API_URL}?action=get&token=${encodeURIComponent(token)}`;
       const res = await fetch(url, { redirect: 'follow' });
       const text = await res.text();
 
@@ -155,19 +119,16 @@ export default function SignPage() {
 
   useEffect(() => { fetchContract(); }, [fetchContract]);
 
-  // ═══ Submit signature to Google Apps Script ═══
+  // ═══ Submit signature through backend proxy ═══
   const submitSignatureToServer = useCallback(async (): Promise<string> => {
     if (!token) return '';
     try {
-      const scriptUrl = await getScriptUrl();
-      if (!scriptUrl) return '';
-
-      const res = await fetch(scriptUrl, {
+      const res = await fetch(SIGN_API_URL, {
         method: 'POST',
         redirect: 'follow',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'sign_submit',
+          action: 'submit',
           token,
           signature: signatureDataRef.current || `Подписано электронно: ${new Date().toLocaleString('ru-RU')}`,
         }),
@@ -216,24 +177,21 @@ export default function SignPage() {
 
     // Then reload from server to get the version with BOTH signatures
     if (token) {
-      getScriptUrl().then(scriptUrl => {
-        if (!scriptUrl) return;
-        fetch(`${scriptUrl}?action=sign_get&token=${encodeURIComponent(token)}`, { redirect: 'follow' })
-          .then(r => r.text())
-          .then(text => {
-            let data: any;
-            try { data = JSON.parse(text); } catch { return; }
-            if (data?.success && data?.contractHtml) {
-              const signedHtml = cleanMarkersFromHtml(data.contractHtml, true);
-              setContractHtml(signedHtml);
-              setContractVersion(v => v + 1);
-              // Also update downloadUrl if server returned a fresher one
-              const freshUrl = data.downloadUrl || data.signedUrl || '';
-              if (freshUrl) setDownloadUrl(freshUrl);
-            }
-          })
-          .catch(() => {});
-      });
+      fetch(`${SIGN_API_URL}?action=get&token=${encodeURIComponent(token)}`, { redirect: 'follow' })
+        .then(r => r.text())
+        .then(text => {
+          let data: any;
+          try { data = JSON.parse(text); } catch { return; }
+          if (data?.success && data?.contractHtml) {
+            const signedHtml = cleanMarkersFromHtml(data.contractHtml, true);
+            setContractHtml(signedHtml);
+            setContractVersion(v => v + 1);
+            // Also update downloadUrl if server returned a fresher one
+            const freshUrl = data.downloadUrl || data.signedUrl || '';
+            if (freshUrl) setDownloadUrl(freshUrl);
+          }
+        })
+        .catch(() => {});
     }
   }, [signatureData, token]);
 
@@ -266,11 +224,8 @@ export default function SignPage() {
 
   const resolveLatestDownloadUrl = useCallback(async (): Promise<string> => {
     if (!token) return '';
-    const scriptUrl = await getScriptUrl();
-    if (!scriptUrl) return '';
-
     try {
-      const url = `${scriptUrl}?action=sign_get&token=${encodeURIComponent(token)}`;
+      const url = `${SIGN_API_URL}?action=get&token=${encodeURIComponent(token)}`;
       const res = await fetch(url, { redirect: 'follow' });
       const text = await res.text();
       let data: any;

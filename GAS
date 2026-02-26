@@ -443,21 +443,21 @@ function saveDistribution(data) {
     const distCfg = getTelegramConfig('distribution');
     if (TELEGRAM_CONFIG.NOTIFY_DISTRIBUTION && distCfg.ENABLED && distCfg.BOT_TOKEN && distCfg.CHAT_ID) {
       try {
-        sendDistributionNotification({
-          contractNumber: contractNumber,
-          licensorName:   data.fullName || '',
-          pseudonym:      data.mainArtist || '',
-          tariff:         tariffName,
-          releaseType:    releaseTypeName,
-          releaseDate:    data.releaseDate || '',
-          workTitle:      data.releaseName || '',
-          musicAuthor:    musicAuthorValue || '',
-          lyricsAuthor:   lyricsAuthorValue || '',
-          platforms:      data.platforms || '',
-          email:          data.email || '',
-          contact:        data.contactInfo || '',
-          sheetUrl:       SpreadsheetApp.getActiveSpreadsheet().getUrl()
-        });
+      sendDistributionNotification({
+        contractNumber: contractNumber,
+        licensorName:   data.fullName || '',
+        pseudonym:      data.mainArtist || '',
+        tariff:         tariffName,
+        releaseType:    releaseTypeName,
+        releaseDate:    data.releaseDate || '',
+        workTitle:      data.releaseName || '',
+        musicAuthor:    musicAuthorValue || '',
+        lyricsAuthor:   lyricsAuthorValue || '',
+        platforms:      data.platforms || '',
+        email:          data.email || '',
+        contact:        data.contactInfo || '',
+        sheetUrl:       SpreadsheetApp.getActiveSpreadsheet().getUrl()
+      });
       } catch (tgErr) {
         Logger.log('❌ Telegram distribution error: ' + tgErr);
       }
@@ -959,28 +959,28 @@ function sendToTelegramAPI(message, cfg) {
   // Try each chat ID first with MarkdownV2, then with plain text on parse failure
   for (const chatId of chatIdsToTry) {
     for (const parseMode of ['MarkdownV2', null]) {
-      try {
-        const payload = {
-          chat_id: chatId,
+    try {
+      const payload = {
+        chat_id: chatId,
           text: parseMode === null ? stripMarkdown(message) : message,
           disable_web_page_preview: true
-        };
+      };
         if (parseMode) payload.parse_mode = parseMode;
 
-        // thread работает только в супергруппах/форумах
-        if (shouldAttachThread(chatId, cfg.THREAD_ID)) {
-          payload.message_thread_id = Number(cfg.THREAD_ID);
-        }
+      // thread работает только в супергруппах/форумах
+      if (shouldAttachThread(chatId, cfg.THREAD_ID)) {
+        payload.message_thread_id = Number(cfg.THREAD_ID);
+      }
 
-        const response = UrlFetchApp.fetch(url, {
-          method: "post",
-          contentType: "application/json",
-          payload: JSON.stringify(payload),
-          muteHttpExceptions: true
-        });
+      const response = UrlFetchApp.fetch(url, {
+        method: "post",
+        contentType: "application/json",
+        payload: JSON.stringify(payload),
+        muteHttpExceptions: true
+      });
 
-        const responseData = JSON.parse(response.getContentText());
-        if (responseData.ok) return responseData;
+      const responseData = JSON.parse(response.getContentText());
+      if (responseData.ok) return responseData;
 
         const desc = responseData.description || 'unknown error';
         // If parse error — fall through to plain text retry
@@ -991,7 +991,7 @@ function sendToTelegramAPI(message, cfg) {
         }
         lastError = `${chatId}/${parseMode || 'plain'}: ${desc}`;
         break; // non-parse error, try next chatId
-      } catch (e) {
+    } catch (e) {
         lastError = `${chatId}/${parseMode || 'plain'}: ${e.message}`;
         break;
       }

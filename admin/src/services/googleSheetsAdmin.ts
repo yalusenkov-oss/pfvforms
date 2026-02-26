@@ -1,7 +1,9 @@
 // Admin Google Sheets helper — use local API proxy to avoid browser CORS/preflight issues.
+const DEFAULT_GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxV8xHP0O09Q7KqMWmsApHOiSw9oNMDb6JKonoVnOBwbL95-v9duxnNZLca55yQJQk7OQ/exec';
 async function getGoogleScriptUrl(): Promise<string> {
   // @ts-ignore
   if ((window as any)?.VITE_GOOGLE_SCRIPT_URL) return (window as any).VITE_GOOGLE_SCRIPT_URL;
+  if (!/localhost|127\.0\.0\.1/.test(window.location.hostname)) return DEFAULT_GOOGLE_SCRIPT_URL;
   try {
     const res = await fetch('/config.json', { cache: 'no-store' });
     if (res.ok) {

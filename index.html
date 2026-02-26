@@ -17,17 +17,19 @@
   </head>
   <body>
     <div id="root"></div>
-    <!-- Runtime config injection: try to set window.VITE_GOOGLE_SCRIPT_URL from /config.json -->
+    <!-- Runtime config injection -->
     <script>
       (function(){
         try {
-          // initialize global
-          window.VITE_GOOGLE_SCRIPT_URL = '';
-          // fetch runtime config (non-blocking)
-          fetch('/config.json', { cache: 'no-store' })
-            .then(function(res){ if(!res.ok) throw new Error('no-config'); return res.json(); })
-            .then(function(obj){ if(obj && obj.VITE_GOOGLE_SCRIPT_URL){ window.VITE_GOOGLE_SCRIPT_URL = obj.VITE_GOOGLE_SCRIPT_URL; } })
-            .catch(function(){ /* ignore */ });
+          // Default production GAS URL to avoid runtime dependency on /config.json.
+          window.VITE_GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxV8xHP0O09Q7KqMWmsApHOiSw9oNMDb6JKonoVnOBwbL95-v9duxnNZLca55yQJQk7OQ/exec';
+          // Keep /config.json lookup only for local/dev overrides.
+          if (/localhost|127\\.0\\.0\\.1/.test(window.location.hostname)) {
+            fetch('/config.json', { cache: 'no-store' })
+              .then(function(res){ if(!res.ok) throw new Error('no-config'); return res.json(); })
+              .then(function(obj){ if(obj && obj.VITE_GOOGLE_SCRIPT_URL){ window.VITE_GOOGLE_SCRIPT_URL = obj.VITE_GOOGLE_SCRIPT_URL; } })
+              .catch(function(){ /* ignore */ });
+          }
         } catch (e) { /* ignore */ }
       })();
     </script>
