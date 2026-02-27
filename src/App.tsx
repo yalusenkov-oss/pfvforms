@@ -811,20 +811,18 @@ export function App() {
                         <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-1">Срок обработки</p>
                         <p className="text-sm font-semibold text-gray-900">{tariff.turnaround}</p>
                       </div>
+                      {tariff.restrictions && tariff.restrictions.length > 0 && (
+                        <div className="pt-2.5 border-t border-red-200">
+                          {tariff.restrictions.map((r) => (
+                            <p key={r} className="text-[11px] font-bold text-red-600 flex items-center gap-1.5">
+                              <XCircle className="w-3 h-3 flex-shrink-0" />
+                              {r}
+                            </p>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
-
-                  {/* Restrictions */}
-                  {tariff.restrictions && tariff.restrictions.length > 0 && (
-                    <div className="mb-5 rounded-xl bg-red-50 border border-red-200 px-4 py-3">
-                      {tariff.restrictions.map((r) => (
-                        <p key={r} className="text-xs font-bold text-red-700 flex items-center gap-2">
-                          <XCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                          {r}
-                        </p>
-                      ))}
-                    </div>
-                  )}
 
                   {/* Main Pricing - Single, EP, Album */}
                   <div className="mb-5 pb-5 border-b-2 border-gray-100">
