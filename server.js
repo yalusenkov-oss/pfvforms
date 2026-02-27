@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -7,6 +8,8 @@ import submitHandler from './api/submit.js';
 import signHandler from './api/sign.js';
 import sendContractHandler from './api/send-contract.js';
 import listHandler from './api/list.js';
+import paymentCreateHandler from './api/payment/create.js';
+import paymentStatusHandler from './api/payment/status.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -44,6 +47,8 @@ app.all('/api/submit', vercelHandler(submitHandler));
 app.all('/api/sign', vercelHandler(signHandler));
 app.all('/api/send-contract', vercelHandler(sendContractHandler));
 app.all('/api/list', vercelHandler(listHandler));
+app.all('/api/payment/create', vercelHandler(paymentCreateHandler));
+app.all('/api/payment/status', vercelHandler(paymentStatusHandler));
 
 // Serve built frontend (dist/) for all other routes (SPA fallback)
 const distPath = join(__dirname, 'dist');

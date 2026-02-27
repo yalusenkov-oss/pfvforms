@@ -250,8 +250,10 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
     // Площадки
     platforms: formData.platforms || 'all',
 
-    // Скриншот оплаты (base64 Data URL — GAS загрузит в Drive и сохранит ссылку)
-    paymentProof: formData.paymentProof || '',
+    // Оплата через ЮKassa (ID платежа вместо base64 скриншота)
+    paymentProof: formData.paymentId ? `yookassa:${formData.paymentId}` : (formData.paymentProof || ''),
+    paymentId: formData.paymentId || '',
+    paymentStatus: formData.paymentStatus || '',
 
     // Автогенерируемые данные договора
     contractNumber: formData.contractNumber || '',

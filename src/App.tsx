@@ -224,7 +224,7 @@ function validateStep3(data: Record<string, string>): ValidationResult {
   const errors: string[] = [];
   
   if (!data.contactInfo?.trim()) errors.push('Укажите контакты для связи');
-  if (!data.paymentProof?.trim()) errors.push('Загрузите фото оплаты');
+  if (data.paymentStatus !== 'succeeded') errors.push('Необходимо оплатить заказ');
   
   return { valid: errors.length === 0, errors };
 }
@@ -305,6 +305,25 @@ export function App() {
   // Distribution form state
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<Record<string, string>>({});
+
+  // If returning from YooKassa payment, navigate straight to step 3
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('paymentComplete')) {
+      // Ensure we're in distribution mode at step 3
+      if (mode !== 'distribution') {
+        navigateTo('distribution');
+      }
+      setCurrentStep(3);
+
+      // Restore paymentId from localStorage into formData
+      const savedPaymentId = localStorage.getItem('pfv_paymentId');
+      if (savedPaymentId) {
+        setFormData((prev) => ({ ...prev, paymentId: savedPaymentId, paymentStatus: 'pending' }));
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [agreed, setAgreed] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -462,7 +481,7 @@ export function App() {
     setPromoErrors([]);
   };
 
-  const canSubmitDistribution = !!formData.paymentProof;
+  const canSubmitDistribution = formData.paymentStatus === 'succeeded';
 
   const renderOfferModal = () => {
     if (!showOfferModal) return null;

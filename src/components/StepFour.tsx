@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import type { ChangeEvent } from 'react';
-import { Input, StepCard, InfoBox, Divider } from './UI';
-import { CreditCard, ExternalLink, Building2, Calculator, ReceiptText, MessageSquare, UserCheck, TicketPercent, CheckCircle2, XCircle, Send, MessageCircle } from 'lucide-react';
+import { Input, StepCard, InfoBox } from './UI';
+import { CreditCard, Calculator, ReceiptText, MessageSquare, UserCheck, TicketPercent, CheckCircle2, XCircle, Send, MessageCircle, Loader2, Wallet, ShieldCheck } from 'lucide-react';
 import { calcTotal, getTrackCount } from './StepOne';
 import { fetchPromoCodes, PromoCodeRecord } from '@/services/googleSheets';
+import { createPayment, checkPaymentStatus } from '@/services/payment';
 
 interface StepFourProps {
   data: Record<string, string>;
@@ -29,9 +29,9 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady 
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoMessage, setPromoMessage] = useState<string>('');
   const [promoError, setPromoError] = useState<string>('');
-  const [paymentProofName, setPaymentProofName] = useState<string>('');
-  const [paymentProofError, setPaymentProofError] = useState<string>('');
-
+  const [paymentCreating, setPaymentCreating] = useState(false);
+  const [paymentError, setPaymentError] = useState<string>('');
+  const [paymentPolling, setPaymentPolling] = useState(false);
   const tariffMap: Record<string, string> = {
     'Базовый': 'basic',
     'Продвинутый': 'advanced',
@@ -165,43 +165,111 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tariff, releaseType, base, karaoke, promoCodes, promoLoading]);
 
-  const handlePaymentProofChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setPaymentProofError('');
-    const file = e.target.files?.[0];
-    if (!file) {
-      setPaymentProofName('');
-      onChange('paymentProof', '');
-      return;
+  const handlePayment = async () => {
+    if (!hasSelection) return;
+    setPaymentError('');
+    setPaymentCreating(true);
+
+    try {
+      const result = await createPayment({
+        amount: totalAfterDiscount,
+        description: `Дистрибуция PFVMUSIC — ${tariff}, ${releaseType}`,
+        metadata: {
+          tariff,
+          releaseType,
+          trackCount: String(trackCount),
+          promoCode: data.promoCode || '',
+        },
+      });
+
+      if (!result.success || !result.confirmationUrl || !result.paymentId) {
+        setPaymentError(result.error || 'Не удалось создать платёж');
+        setPaymentCreating(false);
+        return;
+      }
+
+      // Store the payment ID in formData so we can track it
+      onChange('paymentId', result.paymentId);
+      onChange('paymentStatus', 'pending');
+
+      // Persist paymentId to localStorage before redirect
+      // (React state will be lost when navigating away)
+      localStorage.setItem('pfv_paymentId', result.paymentId);
+
+      // Redirect user to YooKassa payment page
+      window.location.href = result.confirmationUrl;
+    } catch (err) {
+      console.error('[StepFour] payment error:', err);
+      setPaymentError('Произошла ошибка при создании платежа. Попробуйте ещё раз.');
+      setPaymentCreating(false);
     }
-    if (!file.type.startsWith('image/')) {
-      setPaymentProofName('');
-      onChange('paymentProof', '');
-      setPaymentProofError('Загрузите изображение (JPG/PNG).');
-      return;
+  };
+
+  // When the component mounts, check if we're returning from YooKassa
+  useEffect(() => {
+    // Check URL for paymentComplete flag first
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has('paymentComplete')) return;
+
+    // Restore paymentId from localStorage if not in formData
+    let paymentId = data.paymentId;
+    if (!paymentId) {
+      paymentId = localStorage.getItem('pfv_paymentId') || '';
+      if (paymentId) {
+        onChange('paymentId', paymentId);
+      }
     }
-    const maxSizeMb = 8;
-    if (file.size > maxSizeMb * 1024 * 1024) {
-      setPaymentProofName('');
-      onChange('paymentProof', '');
-      setPaymentProofError(`Файл слишком большой. Максимум ${maxSizeMb} МБ.`);
+    if (!paymentId) return;
+
+    // Already confirmed? Skip polling
+    if (data.paymentStatus === 'succeeded') {
+      // Clean URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete('paymentComplete');
+      window.history.replaceState({}, '', url.pathname + url.search + url.hash);
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = typeof reader.result === 'string' ? reader.result : '';
-      if (!result) {
-        setPaymentProofError('Не удалось прочитать файл. Попробуйте ещё раз.');
-        return;
+    // Clean URL
+    const url = new URL(window.location.href);
+    url.searchParams.delete('paymentComplete');
+    window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+
+    // Poll for payment status
+    let cancelled = false;
+    setPaymentPolling(true);
+
+    const poll = async () => {
+      for (let i = 0; i < 20; i++) {
+        if (cancelled) return;
+        const status = await checkPaymentStatus(paymentId);
+        if (status.success) {
+          if (status.status === 'succeeded') {
+            onChange('paymentStatus', 'succeeded');
+            onChange('paymentProof', `yookassa:${paymentId}`);
+            localStorage.removeItem('pfv_paymentId');
+            setPaymentPolling(false);
+            return;
+          }
+          if (status.status === 'canceled') {
+            onChange('paymentStatus', 'canceled');
+            localStorage.removeItem('pfv_paymentId');
+            setPaymentError('Платёж был отменён. Попробуйте оплатить ещё раз.');
+            setPaymentPolling(false);
+            return;
+          }
+        }
+        await new Promise((r) => setTimeout(r, 3000));
       }
-      setPaymentProofName(file.name);
-      onChange('paymentProof', result);
+      // Timeout
+      setPaymentPolling(false);
+      setPaymentError('Не удалось подтвердить статус платежа. Если вы оплатили, свяжитесь с нами.');
     };
-    reader.onerror = () => {
-      setPaymentProofError('Ошибка чтения файла.');
-    };
-    reader.readAsDataURL(file);
-  };
+
+    poll();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -222,46 +290,62 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady 
           placeholder="Ссылки на профили" />
       </StepCard>
 
-      {/* ═══ Payment Details ═══ */}
+      {/* ═══ Payment Info ═══ */}
       <StepCard
-        title="Информация для приёма платежей"
-        subtitle="Произведите оплату удобным способом"
+        title="Оплата"
+        subtitle="Безопасная оплата через ЮKassa"
         icon={<CreditCard className="w-5 h-5" />}
       >
-        {/* Physical Persons */}
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <CreditCard className="w-4 h-4 text-purple-600" />
-            <h3 className="font-bold text-gray-900 text-sm">Для физических лиц</h3>
+        <div className="rounded-xl bg-gradient-to-br from-purple-50 to-white border border-purple-100 p-4">
+          <div className="flex items-center gap-3 mb-3">
+            <ShieldCheck className="w-5 h-5 text-green-600" />
+            <p className="text-sm font-medium text-gray-700">
+              Приём платежей осуществляет ЮKassa — сертифицированный платёжный сервис
+            </p>
           </div>
-          <div className="space-y-2">
-            <BankCard name="СберБанк" number="4276 6600 2869 0832" color="bg-green-600" emoji="💚" />
-            <BankCard name="Тинькофф" number="2200 7013 8560 0850" color="bg-yellow-500" emoji="💛" />
-            <BankCard name="Альфа-Банк" number="2200 1523 7944 2612" color="bg-red-500" emoji="❤️" />
+          <div className="text-xs text-gray-500 space-y-1">
+            <p>• Банковские карты (Visa, MasterCard, МИР)</p>
+            <p>• СБП (Система быстрых платежей)</p>
+            <p>• ЮMoney и другие способы</p>
           </div>
         </div>
 
-        <Divider label="Юридические лица" />
-
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <Building2 className="w-4 h-4 text-purple-600" />
-            <h3 className="font-bold text-gray-900 text-sm">Для юридических лиц</h3>
-          </div>
-          <div className="rounded-xl bg-gray-50 border border-gray-200 p-4 space-y-2 text-xs">
-            <DetailRow label="ИНН" value="711613056345" />
-            <DetailRow label="Получатель" value="ИП Орехов Данила Александрович" />
-            <DetailRow label="Расчётный счёт" value="40802810020000509587" mono />
-            <DetailRow label="Банк" value='ООО «Банк Точка»' />
-            <DetailRow label="БИК" value="044525104" mono />
-            <div className="pt-2 border-t border-gray-200">
-              <a href="https://i.tochka.com/bank/myprofile/pfvmusic" target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-purple-700 underline hover:text-purple-900 text-xs font-medium">
-                <ExternalLink className="w-3 h-3" /> Профиль в Точка Банке
-              </a>
+        {data.paymentStatus === 'succeeded' && (
+          <div className="mt-3 rounded-xl bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800 flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+            <div>
+              <p className="font-semibold">Оплата прошла успешно!</p>
+              <p className="text-xs text-green-600 mt-0.5">ID платежа: {data.paymentId}</p>
             </div>
           </div>
-        </div>
+        )}
+
+        {data.paymentStatus === 'canceled' && (
+          <div className="mt-3 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 flex items-center gap-2">
+            <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+            <div>
+              <p className="font-semibold">Платёж отменён</p>
+              <p className="text-xs text-red-600 mt-0.5">Вы можете попробовать оплатить ещё раз</p>
+            </div>
+          </div>
+        )}
+
+        {paymentPolling && (
+          <div className="mt-3 rounded-xl bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-700 flex items-center gap-2">
+            <Loader2 className="w-5 h-5 text-blue-500 animate-spin flex-shrink-0" />
+            <div>
+              <p className="font-semibold">Проверяем статус платежа...</p>
+              <p className="text-xs text-blue-600 mt-0.5">Пожалуйста, подождите</p>
+            </div>
+          </div>
+        )}
+
+        {paymentError && (
+          <div className="mt-3 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 flex items-center gap-2">
+            <XCircle className="w-4 h-4 flex-shrink-0" />
+            <span>{paymentError}</span>
+          </div>
+        )}
       </StepCard>
 
       {/* ═══ Promo Code ═══ */}
@@ -369,38 +453,43 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady 
             </div>
 
             <div className="pt-4 mt-2 border-t border-purple-200/60">
-              <p className="text-sm font-semibold text-gray-800 mb-2">
-                Загрузите фото оплаты
-              </p>
-              <label className="flex flex-col gap-2">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePaymentProofChange}
-                  className="block w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200"
-                />
-                <span className="text-xs text-gray-500">
-                  Фото чека или подтверждения оплаты. Без файла отправка формы недоступна.
-                </span>
-              </label>
-              {paymentProofName && (
-                <div className="mt-2 text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-                  Загружен файл: <span className="font-semibold">{paymentProofName}</span>
+              {data.paymentStatus === 'succeeded' ? (
+                <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+                  <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-bold text-green-800">Оплата подтверждена ✓</p>
+                    <p className="text-xs text-green-600">Нажмите «Отправить» для завершения</p>
+                  </div>
                 </div>
-              )}
-              {paymentProofError && (
-                <div className="mt-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                  {paymentProofError}
-                </div>
-              )}
-              {data.paymentProof && (
-                <div className="mt-3">
-                  <img
-                    src={data.paymentProof}
-                    alt="Подтверждение оплаты"
-                    className="max-h-40 rounded-lg border border-purple-200/70 bg-white p-2"
-                  />
-                </div>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={handlePayment}
+                    disabled={paymentCreating || paymentPolling || totalAfterDiscount <= 0}
+                    className="w-full flex items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 px-6 py-4 text-base font-bold text-white shadow-lg shadow-purple-300/50 hover:from-purple-700 hover:via-purple-800 hover:to-purple-900 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                  >
+                    {paymentCreating ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Переход к оплате...
+                      </>
+                    ) : paymentPolling ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Проверка платежа...
+                      </>
+                    ) : (
+                      <>
+                        <Wallet className="w-5 h-5" />
+                        Оплатить {totalAfterDiscount.toLocaleString('ru-RU')} ₽
+                      </>
+                    )}
+                  </button>
+                  <p className="text-[11px] text-gray-400 text-center mt-2">
+                    Вы будете перенаправлены на страницу оплаты ЮKassa
+                  </p>
+                </>
               )}
             </div>
 
@@ -436,36 +525,4 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady 
   );
 }
 
-function BankCard({ name, number, color, emoji }: { name: string; number: string; color: string; emoji: string }) {
-  const [copied, setCopied] = useState(false);
-  const handleCopy = () => {
-    navigator.clipboard?.writeText(number.replace(/\s/g, ''));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
-  return (
-    <div className="flex items-center gap-3 rounded-xl bg-white border border-gray-200 px-4 py-3">
-      <div className={`w-8 h-8 rounded-lg ${color} flex items-center justify-center flex-shrink-0 shadow-sm`}>
-        <span className="text-sm">{emoji}</span>
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[10px] text-gray-500 font-medium">{name}</p>
-        <p className="font-mono font-bold text-gray-900 text-sm tracking-wide">{number}</p>
-      </div>
-      <button type="button" onClick={handleCopy}
-        className={`text-[10px] font-medium px-2 py-1 rounded-md flex-shrink-0 min-w-[76px] text-center ${copied ? 'text-green-700 bg-green-50' : 'text-purple-600 hover:text-purple-800 hover:bg-purple-50'}`}>
-        {copied ? '✓ Скопировано' : 'Копировать'}
-      </button>
-    </div>
-  );
-}
-
-function DetailRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
-  return (
-    <div className="flex items-baseline justify-between gap-3 py-1 border-b border-gray-100 last:border-0">
-      <span className="text-gray-500 flex-shrink-0">{label}:</span>
-      <span className={`font-semibold text-gray-900 text-right ${mono ? 'font-mono' : ''}`}>{value}</span>
-    </div>
-  );
-}
