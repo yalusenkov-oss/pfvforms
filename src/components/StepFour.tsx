@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { Input, StepCard, InfoBox, Divider } from './UI';
-import { CreditCard, MessageCircle, Send, ExternalLink, Building2, Smartphone, Heart, Calculator, ReceiptText, MessageSquare, UserCheck, TicketPercent, CheckCircle2, XCircle } from 'lucide-react';
+import { CreditCard, MessageCircle, Send, ExternalLink, Building2, Heart, Calculator, ReceiptText, MessageSquare, UserCheck, TicketPercent, CheckCircle2, XCircle } from 'lucide-react';
 import { calcTotal, getTrackCount } from './StepOne';
 import { fetchPromoCodes, PromoCodeRecord } from '@/services/googleSheets';
 
@@ -246,14 +246,6 @@ export function StepFour({ data, onChange }: StepFourProps) {
             <BankCard name="СберБанк" number="4276 6600 2869 0832" color="bg-green-600" emoji="💚" />
             <BankCard name="Тинькофф" number="2200 7013 8560 0850" color="bg-yellow-500" emoji="💛" />
             <BankCard name="Альфа-Банк" number="2200 1523 7944 2612" color="bg-red-500" emoji="❤️" />
-          </div>
-
-          <div className="mt-3 flex items-center gap-2 rounded-lg bg-blue-50 border border-blue-200/60 px-4 py-3">
-            <Smartphone className="w-4 h-4 text-blue-600 flex-shrink-0" />
-            <div className="text-xs">
-              <span className="text-blue-700">Оплата через СБП:</span>{' '}
-              <span className="font-bold text-blue-900 font-mono">+7 (995) 488-50-53</span>
-            </div>
           </div>
         </div>
 

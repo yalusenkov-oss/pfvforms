@@ -1399,7 +1399,7 @@ export function App() {
         {/* Hero */}
         <div className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-amber-100/50 to-transparent pointer-events-none" />
-          <div className="mx-auto max-w-3xl px-4 pt-10 pb-8 text-center relative">
+          <div className="mx-auto max-w-4xl px-4 pt-10 pb-8 text-center relative">
             <div className="inline-flex items-center gap-2 rounded-full bg-amber-100/80 px-4 py-1.5 text-xs font-semibold text-amber-700 mb-5 backdrop-blur-sm border border-amber-200/50">
               <Megaphone className="w-3.5 h-3.5" />
               Отправка информации для промо
@@ -1418,7 +1418,7 @@ export function App() {
         
         {/* Validation Errors */}
         {promoErrors.length > 0 && (
-          <div className="mx-auto max-w-3xl px-4 mb-6">
+          <div className="mx-auto max-w-4xl px-4 mb-6">
             <div className="rounded-2xl border-2 border-red-200 bg-red-50/80 p-5 shadow-lg shadow-red-100/20">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
@@ -1446,7 +1446,7 @@ export function App() {
         )}
         
         {/* Promo Form */}
-        <div className="mx-auto max-w-3xl px-4 pb-8">
+        <div className="mx-auto max-w-4xl px-4 pb-8">
           <StepPromo data={promoData} onChange={handlePromoChange} />
           
           {/* Submit Button */}
