@@ -17,7 +17,7 @@ export function Footer() {
           <div className="flex flex-col items-center sm:items-end gap-1">
             <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
               <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <a href="mailto:support@pfvmusic.digital" className="hover:text-purple-600 transition-colors">
+              <a href="mailto:support@pfvmusic.digital" className="hover:text-purple-600">
                 support@pfvmusic.digital
               </a>
             </div>

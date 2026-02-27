@@ -179,7 +179,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
         <div className="grid gap-4 sm:grid-cols-2 mb-6">
           {/* Базовый */}
           <div className={cn(
-            'relative rounded-2xl border-2 p-5 transition-colors duration-200 overflow-hidden',
+            'relative rounded-2xl border-2 p-5 overflow-hidden',
             tariff === 'Базовый'
               ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-blue-50/50 ring-2 ring-blue-100 shadow-lg pt-10'
               : 'border-gray-200 bg-gradient-to-br from-white to-gray-50/50 hover:border-gray-300'
@@ -214,7 +214,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
 
           {/* Продвинутый */}
           <div className={cn(
-            'relative rounded-2xl border-2 p-5 transition-colors duration-200 overflow-hidden',
+            'relative rounded-2xl border-2 p-5 overflow-hidden',
             tariff === 'Продвинутый'
               ? 'border-purple-500 bg-gradient-to-br from-purple-50 to-purple-50/50 ring-2 ring-purple-100 shadow-lg pt-10'
               : 'border-gray-200 bg-gradient-to-br from-white to-gray-50/50 hover:border-gray-300'
@@ -249,7 +249,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
 
           {/* Премиум */}
           <div className={cn(
-            'relative rounded-2xl border-2 p-5 transition-colors duration-200 overflow-hidden',
+            'relative rounded-2xl border-2 p-5 overflow-hidden',
             tariff === 'Премиум'
               ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-emerald-50/50 ring-2 ring-emerald-100 shadow-lg pt-10'
               : 'border-emerald-300 bg-gradient-to-br from-emerald-50/80 to-emerald-50/30 hover:border-emerald-400'
@@ -289,7 +289,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
 
           {/* Платинум */}
           <div className={cn(
-            'relative rounded-2xl border-2 p-5 transition-colors duration-200 overflow-hidden',
+            'relative rounded-2xl border-2 p-5 overflow-hidden',
             tariff === 'Платинум'
               ? 'border-orange-500 bg-gradient-to-br from-orange-50 to-orange-50/50 ring-2 ring-orange-100 shadow-lg pt-10'
               : 'border-orange-300 bg-gradient-to-br from-orange-50/80 to-orange-50/30 hover:border-orange-400'
@@ -331,13 +331,13 @@ export function StepOne({ data, onChange }: StepOneProps) {
         <button
           type="button"
           onClick={goToHomeTariffs}
-          className="w-full flex items-center justify-between rounded-2xl bg-gradient-to-r from-purple-100 to-purple-50/40 border-2 border-purple-200 px-5 py-3.5 hover:border-purple-300 transition-colors group"
+          className="w-full flex items-center justify-between rounded-2xl bg-gradient-to-r from-purple-100 to-purple-50/40 border-2 border-purple-200 px-5 py-3.5 hover:border-purple-300 group"
         >
           <div className="flex items-center gap-2">
             <Link2 className="w-4 h-4 text-purple-600" />
             <span className="text-sm font-bold text-purple-900">🎵 Подробнее о тарифах</span>
           </div>
-          <ChevronRight className="w-4 h-4 text-purple-600 group-hover:translate-x-0.5 transition-transform" />
+          <ChevronRight className="w-4 h-4 text-purple-600 group-hover:translate-x-0.5" />
         </button>
 
         <p className="mt-2 text-[11px] text-gray-500">
@@ -552,11 +552,11 @@ export function StepOne({ data, onChange }: StepOneProps) {
         {trackCount > 2 && (
           <div className="flex items-center gap-2 justify-end">
             <button type="button" onClick={expandAll}
-              className="text-xs text-purple-600 hover:text-purple-800 font-medium px-3 py-1.5 rounded-lg hover:bg-purple-50 transition-colors flex items-center gap-1">
+              className="text-xs text-purple-600 hover:text-purple-800 font-medium px-3 py-1.5 rounded-lg hover:bg-purple-50 flex items-center gap-1">
               <ChevronDown className="w-3 h-3" /> Раскрыть все
             </button>
             <button type="button" onClick={collapseAll}
-              className="text-xs text-gray-500 hover:text-gray-700 font-medium px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1">
+              className="text-xs text-gray-500 hover:text-gray-700 font-medium px-3 py-1.5 rounded-lg hover:bg-gray-50 flex items-center gap-1">
               <ChevronUp className="w-3 h-3" /> Свернуть все
             </button>
           </div>
@@ -570,7 +570,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
 
             return (
               <div key={i} className={cn(
-                'rounded-xl border-2 transition-colors duration-200',
+                'rounded-xl border-2',
                 isOpen ? 'border-purple-300 bg-purple-50/20 shadow-sm' : 'border-gray-200 bg-white hover:border-purple-200'
               )}>
                 {/* Track header */}
@@ -584,7 +584,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
                 >
                   <div className="flex items-center gap-3">
                     <div className={cn(
-                      'w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold transition-colors',
+                      'w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold',
                       isOpen
                         ? 'bg-gradient-to-br from-purple-500 to-purple-700 text-white shadow-md shadow-purple-200'
                         : 'bg-gray-100 text-gray-500 group-hover:bg-purple-100 group-hover:text-purple-600'
@@ -593,7 +593,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
                     </div>
                     <div>
                       <p className={cn(
-                        'text-sm font-semibold transition-colors',
+                        'text-sm font-semibold',
                         isOpen ? 'text-purple-800' : 'text-gray-700'
                       )}>
                         {track.name || `Трек ${i + 1}`}
@@ -612,7 +612,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
                   </div>
                   {trackCount > 2 && (
                     <div className={cn(
-                      'w-7 h-7 rounded-lg flex items-center justify-center transition-colors',
+                      'w-7 h-7 rounded-lg flex items-center justify-center',
                       isOpen ? 'bg-purple-200 text-purple-700' : 'bg-gray-100 text-gray-400'
                     )}>
                       {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -655,7 +655,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
                             const newArtists = [...track.artists, { name: '', type: 'comma' as const }];
                             updateTrack(i, 'artists', newArtists);
                           }}
-                          className="flex items-center gap-1.5 text-xs font-medium text-purple-600 hover:text-purple-800 px-2 py-1 rounded-lg hover:bg-purple-50 transition-colors"
+                          className="flex items-center gap-1.5 text-xs font-medium text-purple-600 hover:text-purple-800 px-2 py-1 rounded-lg hover:bg-purple-50"
                         >
                           <Plus className="w-3.5 h-3.5" /> Добавить исполнителя
                         </button>
@@ -683,7 +683,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
                             )}
                             
                             <input
-                              className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 shadow-sm transition-colors placeholder:text-gray-400 focus:border-purple-400 focus:outline-none focus:ring-3 focus:ring-purple-100 hover:border-purple-300"
+                              className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-purple-400 focus:outline-none focus:ring-3 focus:ring-purple-100 hover:border-purple-300"
                               value={artist.name}
                               onChange={(e) => {
                                 const newArtists = [...track.artists];
@@ -700,7 +700,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
                                   const newArtists = track.artists.filter((_, idx) => idx !== ai);
                                   updateTrack(i, 'artists', newArtists);
                                 }}
-                                className="w-8 h-8 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-colors flex-shrink-0"
+                                className="w-8 h-8 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 flex-shrink-0"
                               >
                                 <X className="w-3.5 h-3.5" />
                               </button>
@@ -736,7 +736,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
                           <div key={li} className="flex items-center gap-2">
                             <span className="text-xs text-gray-400 w-5 text-right flex-shrink-0 font-mono">{li + 1}.</span>
                             <input
-                              className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 shadow-sm transition-colors placeholder:text-gray-400 focus:border-purple-400 focus:outline-none focus:ring-3 focus:ring-purple-100 hover:border-purple-300"
+                              className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-purple-400 focus:outline-none focus:ring-3 focus:ring-purple-100 hover:border-purple-300"
                               value={l}
                               onChange={(e) => {
                                 const newLyricists = [...track.lyricists];
@@ -750,7 +750,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
                                 const newLyricists = track.lyricists.filter((_, idx) => idx !== li);
                                 updateTrack(i, 'lyricists', newLyricists);
                               }}
-                                className="w-8 h-8 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-colors flex-shrink-0">
+                                className="w-8 h-8 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 flex-shrink-0">
                                 <X className="w-3.5 h-3.5" />
                               </button>
                             )}
@@ -760,7 +760,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
                       <button type="button" onClick={() => {
                         updateTrack(i, 'lyricists', [...track.lyricists, '']);
                       }}
-                        className="flex items-center gap-1.5 text-xs font-medium text-purple-600 hover:text-purple-800 px-3 py-1.5 rounded-lg hover:bg-purple-50 transition-colors">
+                        className="flex items-center gap-1.5 text-xs font-medium text-purple-600 hover:text-purple-800 px-3 py-1.5 rounded-lg hover:bg-purple-50">
                         <Plus className="w-3.5 h-3.5" /> Добавить автора
                       </button>
                     </div>
@@ -777,7 +777,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
                           <div key={ci} className="flex items-center gap-2">
                             <span className="text-xs text-gray-400 w-5 text-right flex-shrink-0 font-mono">{ci + 1}.</span>
                             <input
-                              className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 shadow-sm transition-colors placeholder:text-gray-400 focus:border-purple-400 focus:outline-none focus:ring-3 focus:ring-purple-100 hover:border-purple-300"
+                              className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-purple-400 focus:outline-none focus:ring-3 focus:ring-purple-100 hover:border-purple-300"
                               value={c}
                               onChange={(e) => {
                                 const newComposers = [...track.composers];
@@ -791,7 +791,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
                                 const newComposers = track.composers.filter((_, idx) => idx !== ci);
                                 updateTrack(i, 'composers', newComposers);
                               }}
-                                className="w-8 h-8 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-colors flex-shrink-0">
+                                className="w-8 h-8 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 flex-shrink-0">
                                 <X className="w-3.5 h-3.5" />
                               </button>
                             )}
@@ -801,7 +801,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
                       <button type="button" onClick={() => {
                         updateTrack(i, 'composers', [...track.composers, '']);
                       }}
-                        className="flex items-center gap-1.5 text-xs font-medium text-purple-600 hover:text-purple-800 px-3 py-1.5 rounded-lg hover:bg-purple-50 transition-colors">
+                        className="flex items-center gap-1.5 text-xs font-medium text-purple-600 hover:text-purple-800 px-3 py-1.5 rounded-lg hover:bg-purple-50">
                         <Plus className="w-3.5 h-3.5" /> Добавить композитора
                       </button>
                     </div>
@@ -835,14 +835,14 @@ export function StepOne({ data, onChange }: StepOneProps) {
                       onClick={() => updateTrack(i, 'substanceMention', track.substanceMention === 'confirmed' ? '' : 'confirmed')}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); updateTrack(i, 'substanceMention', track.substanceMention === 'confirmed' ? '' : 'confirmed'); } }}
                       className={cn(
-                        'flex items-start gap-3 rounded-xl border-2 px-4 py-3.5 cursor-pointer transition-colors duration-200 text-sm select-none',
+                        'flex items-start gap-3 rounded-xl border-2 px-4 py-3.5 cursor-pointer text-sm select-none',
                         track.substanceMention === 'confirmed'
                           ? 'border-emerald-400 bg-emerald-50/50 ring-1 ring-emerald-200'
                           : 'border-gray-200 bg-white hover:border-purple-200'
                       )}
                     >
                       <div className={cn(
-                        'w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors duration-200',
+                        'w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 mt-0.5',
                         track.substanceMention === 'confirmed'
                           ? 'border-emerald-600 bg-emerald-600'
                           : 'border-gray-300'

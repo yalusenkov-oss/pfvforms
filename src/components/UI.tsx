@@ -21,7 +21,7 @@ export function Input({ label, required, hint, icon, className, ...props }: Inpu
       {hint && <HintText>{hint}</HintText>}
       <input
         className={cn(
-          'w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm transition-colors duration-200',
+          'w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm',
           'placeholder:text-gray-400',
           'focus:border-purple-400 focus:outline-none focus:ring-3 focus:ring-purple-100',
           'hover:border-purple-300',
@@ -52,7 +52,7 @@ export function TextArea({ label, required, hint, icon, className, ...props }: T
       {hint && <HintText>{hint}</HintText>}
       <textarea
         className={cn(
-          'w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm transition-colors duration-200 min-h-[110px] resize-y',
+          'w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm min-h-[110px] resize-y',
           'placeholder:text-gray-400',
           'focus:border-purple-400 focus:outline-none focus:ring-3 focus:ring-purple-100',
           'hover:border-purple-300',
@@ -109,7 +109,7 @@ export function RadioGroup({
             onClick={() => onChange(option.label)}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onChange(option.label); } }}
             className={cn(
-              'flex items-center gap-3 rounded-xl border px-4 py-3 cursor-pointer transition-colors duration-200 text-sm group select-none shadow-sm ring-1',
+              'flex items-center gap-3 rounded-xl border px-4 py-3 cursor-pointer text-sm group select-none shadow-sm ring-1',
               horizontal && 'flex-1 min-w-[120px] justify-center',
               value === option.label
                 ? 'border-purple-400 bg-gradient-to-r from-purple-50 to-purple-50/50 text-purple-800 ring-purple-200'
@@ -117,7 +117,7 @@ export function RadioGroup({
             )}
           >
             <div className={cn(
-              'w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors duration-200',
+              'w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center flex-shrink-0',
               value === option.label ? 'border-purple-600 bg-purple-600' : 'border-gray-300 group-hover:border-purple-300'
             )}>
               {value === option.label && <div className="w-2 h-2 rounded-full bg-white" />}
@@ -137,14 +137,14 @@ export function RadioGroup({
             onClick={() => onChange('__other__')}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onChange('__other__'); } }}
             className={cn(
-              'flex items-center gap-3 rounded-xl border px-4 py-3 cursor-pointer transition-colors duration-200 text-sm group select-none shadow-sm ring-1',
+              'flex items-center gap-3 rounded-xl border px-4 py-3 cursor-pointer text-sm group select-none shadow-sm ring-1',
               value === '__other__'
                 ? 'border-purple-400 bg-gradient-to-r from-purple-50 to-purple-50/50 text-purple-800 ring-purple-200'
                 : 'border-gray-200 bg-white text-gray-700 ring-transparent hover:border-purple-200 hover:bg-purple-50/20'
             )}
           >
             <div className={cn(
-              'w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors duration-200',
+              'w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center flex-shrink-0',
               value === '__other__' ? 'border-purple-600 bg-purple-600' : 'border-gray-300 group-hover:border-purple-300'
             )}>
               {value === '__other__' && <div className="w-2 h-2 rounded-full bg-white" />}
@@ -152,7 +152,7 @@ export function RadioGroup({
             <span className="flex-shrink-0 text-gray-500">Другое:</span>
             <input
               type="text"
-              className="flex-1 border-b border-gray-300 bg-transparent py-0.5 text-sm text-gray-900 focus:border-purple-500 focus:outline-none transition-colors"
+              className="flex-1 border-b border-gray-300 bg-transparent py-0.5 text-sm text-gray-900 focus:border-purple-500 focus:outline-none"
               value={otherValue || ''}
               onClick={(e) => e.stopPropagation()}
               onChange={(e) => {
@@ -293,7 +293,7 @@ export function NumberStepper({ label, required, icon, hint, value, onChange, mi
           onClick={() => onChange(Math.max(min, value - 1))}
           disabled={value <= min}
           className={cn(
-            'w-10 h-10 rounded-xl border flex items-center justify-center text-lg font-bold transition-colors',
+            'w-10 h-10 rounded-xl border flex items-center justify-center text-lg font-bold',
             value <= min
               ? 'border-gray-200 text-gray-300 cursor-not-allowed'
               : 'border-purple-200 text-purple-600 hover:bg-purple-50 hover:border-purple-300'
@@ -309,7 +309,7 @@ export function NumberStepper({ label, required, icon, hint, value, onChange, mi
           onClick={() => onChange(Math.min(max, value + 1))}
           disabled={value >= max}
           className={cn(
-            'w-10 h-10 rounded-xl border flex items-center justify-center text-lg font-bold transition-colors',
+            'w-10 h-10 rounded-xl border flex items-center justify-center text-lg font-bold',
             value >= max
               ? 'border-gray-200 text-gray-300 cursor-not-allowed'
               : 'border-purple-200 text-purple-600 hover:bg-purple-50 hover:border-purple-300'
@@ -346,7 +346,7 @@ export function DatePicker({ label, required, hint, icon, className, ...props }:
         <input
           type="date"
           className={cn(
-            'w-full min-w-0 appearance-none block box-border rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm transition-colors duration-200',
+            'w-full min-w-0 appearance-none block box-border rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm',
             'placeholder:text-gray-400',
             'focus:border-purple-400 focus:outline-none focus:ring-3 focus:ring-purple-100',
             'hover:border-purple-300',
@@ -400,7 +400,7 @@ export function Select({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={cn(
-          'w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm transition-colors duration-200 appearance-none cursor-pointer',
+          'w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm appearance-none cursor-pointer',
           'focus:border-purple-400 focus:outline-none focus:ring-3 focus:ring-purple-100',
           'hover:border-purple-300',
           'select-custom',
@@ -420,7 +420,7 @@ export function Select({
         ))}
       </select>
       <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-        <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-purple-500 transition-colors" />
+        <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-purple-500" />
       </div>
     </div>
   );

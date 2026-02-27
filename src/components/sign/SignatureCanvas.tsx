@@ -137,7 +137,7 @@ export function SignatureCanvas({ onSignatureChange }: SignatureCanvasProps) {
       <div className="flex justify-center">
         <button
           onClick={clearCanvas}
-          className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-xs font-medium text-gray-400 hover:text-gray-500 bg-transparent hover:bg-gray-100/50 transition-colors"
+          className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-xs font-medium text-gray-400 hover:text-gray-500 bg-transparent hover:bg-gray-100/50"
         >
           <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
           Очистить

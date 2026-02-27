@@ -30,7 +30,7 @@ export function StepThree({ agreed, onAgree }: StepThreeProps) {
               <button
                 type="button"
                 onClick={() => setShowOfferModal(true)}
-                className="inline-flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-xs font-semibold text-white hover:bg-purple-700 transition-colors shadow-sm"
+                className="inline-flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-xs font-semibold text-white hover:bg-purple-700 shadow-sm"
               >
                 Открыть оферту
               </button>
@@ -163,14 +163,14 @@ export function StepThree({ agreed, onAgree }: StepThreeProps) {
           type="button"
           onClick={() => onAgree(!agreed)}
           className={cn(
-            'w-full rounded-xl border-2 px-6 py-4 text-sm font-bold transition-colors duration-200 flex items-center justify-center gap-3',
+            'w-full rounded-xl border-2 px-6 py-4 text-sm font-bold flex items-center justify-center gap-3',
             agreed
               ? 'border-emerald-400 bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-700 shadow-md shadow-emerald-100'
               : 'border-purple-300 bg-white text-purple-700 hover:bg-purple-50 hover:border-purple-400'
           )}
         >
           <div className={cn(
-            'w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-200',
+            'w-8 h-8 rounded-full flex items-center justify-center',
             agreed ? 'bg-emerald-500' : 'bg-purple-100'
           )}>
             <ShieldCheck className={cn('w-4 h-4', agreed ? 'text-white' : 'text-purple-600')} />
@@ -187,7 +187,7 @@ export function StepThree({ agreed, onAgree }: StepThreeProps) {
               <button
                 type="button"
                 onClick={() => setShowOfferModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 rounded-lg"
               >
                 <XCircle className="w-6 h-6 text-gray-500" />
               </button>
@@ -295,7 +295,7 @@ export function StepThree({ agreed, onAgree }: StepThreeProps) {
               <button
                 type="button"
                 onClick={() => setShowOfferModal(false)}
-                className="px-6 py-2.5 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700 transition-colors"
+                className="px-6 py-2.5 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700"
               >
                 Закрыть
               </button>

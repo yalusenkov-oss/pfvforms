@@ -67,7 +67,7 @@ export function SignatureBlock({
               <button
                 disabled={!isSigned}
                 onClick={() => onDownload?.('html')}
-                className="min-w-0 inline-flex items-center justify-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-xl text-[11px] sm:text-sm font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="min-w-0 inline-flex items-center justify-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-xl text-[11px] sm:text-sm font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                 <span className="truncate">HTML</span>
@@ -86,7 +86,7 @@ export function SignatureBlock({
           {isSigned ? (
             <button
               onClick={() => onDownload?.('pdf')}
-              className="w-full py-2.5 sm:py-4 rounded-xl text-xs sm:text-base font-bold text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg shadow-green-200/50 transition-colors duration-200 flex items-center justify-center gap-1.5 sm:gap-2"
+              className="w-full py-2.5 sm:py-4 rounded-xl text-xs sm:text-base font-bold text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg shadow-green-200/50 flex items-center justify-center gap-1.5 sm:gap-2"
             >
               <Download className="w-5 h-5" />
               Скачать договор
@@ -95,7 +95,7 @@ export function SignatureBlock({
             <button
               onClick={handleSign}
               disabled={!signatureData}
-              className="w-full py-2.5 sm:py-4 rounded-xl text-xs sm:text-base font-bold text-white bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 shadow-lg shadow-purple-200/50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-purple-600 disabled:hover:to-purple-700 flex items-center justify-center gap-1.5 sm:gap-2"
+              className="w-full py-2.5 sm:py-4 rounded-xl text-xs sm:text-base font-bold text-white bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 shadow-lg shadow-purple-200/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-purple-600 disabled:hover:to-purple-700 flex items-center justify-center gap-1.5 sm:gap-2"
             >
               🖊️ Подписать договор
             </button>

@@ -212,7 +212,7 @@ export function StepFour({ data, onChange }: StepFourProps) {
               type="button"
               onClick={applyPromo}
               disabled={promoLoading}
-              className="w-full sm:w-auto inline-flex items-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 text-sm font-semibold transition-colors shadow-sm disabled:opacity-60"
+              className="w-full sm:w-auto inline-flex items-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 text-sm font-semibold shadow-sm disabled:opacity-60"
             >
               <TicketPercent className="w-4 h-4" />
               {promoLoading ? 'Загрузка...' : 'Применить'}
@@ -272,7 +272,7 @@ export function StepFour({ data, onChange }: StepFourProps) {
             <DetailRow label="БИК" value="044525104" mono />
             <div className="pt-2 border-t border-gray-200">
               <a href="https://i.tochka.com/bank/myprofile/pfvmusic" target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-purple-700 underline hover:text-purple-900 text-xs font-medium transition-colors">
+                className="inline-flex items-center gap-1.5 text-purple-700 underline hover:text-purple-900 text-xs font-medium">
                 <ExternalLink className="w-3 h-3" /> Профиль в Точка Банке
               </a>
             </div>
@@ -312,7 +312,7 @@ export function StepFour({ data, onChange }: StepFourProps) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <a href="https://t.me/pfvmusic_support" target="_blank" rel="noopener noreferrer"
-            className="flex items-center justify-center gap-3 rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-50/30 px-5 py-4 text-sm font-semibold text-blue-700 hover:border-blue-300 transition-colors group">
+            className="flex items-center justify-center gap-3 rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-50/30 px-5 py-4 text-sm font-semibold text-blue-700 hover:border-blue-300 group">
             <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center shadow-md">
               <Send className="w-5 h-5 text-white" />
             </div>
@@ -322,7 +322,7 @@ export function StepFour({ data, onChange }: StepFourProps) {
             </div>
           </a>
           <a href="https://vk.com/pfvmusic" target="_blank" rel="noopener noreferrer"
-            className="flex items-center justify-center gap-3 rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-50/30 px-5 py-4 text-sm font-semibold text-blue-700 hover:border-blue-300 transition-colors group">
+            className="flex items-center justify-center gap-3 rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-50/30 px-5 py-4 text-sm font-semibold text-blue-700 hover:border-blue-300 group">
             <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shadow-md">
               <MessageCircle className="w-5 h-5 text-white" />
             </div>
@@ -470,7 +470,7 @@ function BankCard({ name, number, color, emoji }: { name: string; number: string
   };
 
   return (
-    <div className="flex items-center gap-3 rounded-xl bg-white border border-gray-200 px-4 py-3 transition-colors">
+    <div className="flex items-center gap-3 rounded-xl bg-white border border-gray-200 px-4 py-3">
       <div className={`w-8 h-8 rounded-lg ${color} flex items-center justify-center flex-shrink-0 shadow-sm`}>
         <span className="text-sm">{emoji}</span>
       </div>
@@ -479,7 +479,7 @@ function BankCard({ name, number, color, emoji }: { name: string; number: string
         <p className="font-mono font-bold text-gray-900 text-sm tracking-wide">{number}</p>
       </div>
       <button type="button" onClick={handleCopy}
-        className="text-[10px] text-purple-600 hover:text-purple-800 font-medium px-2 py-1 rounded-md hover:bg-purple-50 transition-colors flex-shrink-0">
+        className="text-[10px] text-purple-600 hover:text-purple-800 font-medium px-2 py-1 rounded-md hover:bg-purple-50 flex-shrink-0">
         Копировать
       </button>
     </div>

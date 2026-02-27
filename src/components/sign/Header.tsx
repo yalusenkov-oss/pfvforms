@@ -15,7 +15,7 @@ export function Header() {
         </div>
         <a
           href="/"
-          className="inline-flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-2 rounded-xl text-[11px] sm:text-sm font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 transition-colors duration-200"
+          className="inline-flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-2 rounded-xl text-[11px] sm:text-sm font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100"
         >
           <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
           На главную

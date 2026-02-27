@@ -21,7 +21,7 @@ export function StepTwo({ data, onChange }: StepTwoProps) {
             href="https://disk.yandex.ru/i/pvZXPt4B7t5FIA"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-xs font-semibold text-white hover:bg-purple-700 transition-colors shadow-sm"
+            className="inline-flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-xs font-semibold text-white hover:bg-purple-700 shadow-sm"
           >
             <FileText className="w-3.5 h-3.5" />
             Открыть договор

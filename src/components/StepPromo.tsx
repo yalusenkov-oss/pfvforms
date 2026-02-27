@@ -35,7 +35,7 @@ export const StepPromo: React.FC<StepPromoProps> = ({ data, onChange }) => {
             {/* Detailed Promo Card */}
             <div
               onClick={() => onChange('promoType', 'detailed')}
-              className={`relative p-5 rounded-xl border-2 cursor-pointer transition-colors ${
+              className={`relative p-5 rounded-xl border-2 cursor-pointer ${
                 promoType === 'detailed'
                   ? 'border-purple-500 bg-purple-50 shadow-lg'
                   : 'border-gray-200 bg-white hover:border-purple-300'
@@ -68,7 +68,7 @@ export const StepPromo: React.FC<StepPromoProps> = ({ data, onChange }) => {
             {/* Weekly Promo Card */}
             <div
               onClick={() => onChange('promoType', 'weekly')}
-              className={`relative p-5 rounded-xl border-2 cursor-pointer transition-colors ${
+              className={`relative p-5 rounded-xl border-2 cursor-pointer ${
                 promoType === 'weekly'
                   ? 'border-indigo-500 bg-indigo-50 shadow-lg'
                   : 'border-gray-200 bg-white hover:border-indigo-300'

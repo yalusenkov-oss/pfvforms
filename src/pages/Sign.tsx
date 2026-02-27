@@ -311,7 +311,7 @@ export default function SignPage() {
                 <p className="text-sm text-red-800">{error}</p>
                 <button
                   onClick={fetchContract}
-                  className="mt-3 px-4 py-2 rounded-lg bg-red-100 text-red-700 font-medium text-sm hover:bg-red-200 transition-colors"
+                  className="mt-3 px-4 py-2 rounded-lg bg-red-100 text-red-700 font-medium text-sm hover:bg-red-200"
                 >
                   Попробовать снова
                 </button>
