@@ -316,10 +316,25 @@ export function App() {
       }
       setCurrentStep(3);
 
-      // Restore paymentId from localStorage into formData
-      const savedPaymentId = localStorage.getItem('pfv_paymentId');
-      if (savedPaymentId) {
-        setFormData((prev) => ({ ...prev, paymentId: savedPaymentId, paymentStatus: 'pending' }));
+      // Restore full formData from localStorage (state is lost after redirect)
+      const savedFormData = localStorage.getItem('pfv_formData');
+      if (savedFormData) {
+        try {
+          const parsed = JSON.parse(savedFormData);
+          setFormData(parsed);
+        } catch {
+          // Fallback: restore just paymentId
+          const savedPaymentId = localStorage.getItem('pfv_paymentId');
+          if (savedPaymentId) {
+            setFormData((prev) => ({ ...prev, paymentId: savedPaymentId, paymentStatus: 'pending' }));
+          }
+        }
+      } else {
+        // Fallback: restore just paymentId
+        const savedPaymentId = localStorage.getItem('pfv_paymentId');
+        if (savedPaymentId) {
+          setFormData((prev) => ({ ...prev, paymentId: savedPaymentId, paymentStatus: 'pending' }));
+        }
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -371,6 +386,51 @@ export function App() {
 
   const handleChange = useCallback((key: string, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
+  }, []);
+
+  // DEV: Fill all form fields for testing
+  const fillTestData = useCallback(() => {
+    const testTrack = {
+      name: 'Тестовый трек',
+      version: '',
+      artists: [{ name: 'Тест Артист', type: 'main' }],
+      lyricists: ['Тест Автор'],
+      composers: ['Тест Композитор'],
+      explicitContent: 'Нет',
+      substanceMention: 'confirmed',
+      lyrics: 'Это тестовый текст песни для проверки формы дистрибуции PFVMUSIC.',
+    };
+    setFormData({
+      // Step 1 — Release
+      tariff: 'Премиум',
+      releaseType: 'Single',
+      singleTrackCount: '1',
+      releaseName: 'Тестовый Релиз',
+      mainArtist: 'Тест Артист',
+      releaseVersion: '',
+      releaseLink: 'https://drive.google.com/test-release',
+      genre: 'Поп',
+      language: 'Русский',
+      releaseDate: '2026-04-01',
+      coverLink: 'https://drive.google.com/test-cover',
+      tiktokExcerpt: '00:15-00:45',
+      tiktokFull: 'Да',
+      yandexPreSave: 'Да',
+      karaokeAddition: 'Нет',
+      platforms: 'Все площадки',
+      _tracks: JSON.stringify([testTrack]),
+      // Step 2 — Contract
+      fullName: 'Тестов Тест Тестович',
+      passportNumber: '1234 567890',
+      issueDate: '2020-01-15',
+      issuedBy: 'ОВД по г. Тула',
+      email: 'o.danil150806@gmail.com',
+      // Step 3 — Payment
+      contactInfo: '@test_telegram',
+      artistProfileLinks: 'https://vk.com/test',
+    });
+    setAgreed(true);
+    setCurrentStep(1);
   }, []);
   
   const handlePromoChange = useCallback((key: string, value: string) => {
@@ -1810,6 +1870,14 @@ export function App() {
 
       {/* Step Content */}
       <div className="mx-auto max-w-4xl px-4 pb-8">
+        {/* DEV: Test fill button */}
+        <button
+          type="button"
+          onClick={fillTestData}
+          className="mb-4 px-4 py-2 text-xs font-mono bg-yellow-100 border border-yellow-300 text-yellow-800 rounded-lg hover:bg-yellow-200 transition-colors"
+        >
+          🧪 Заполнить тестовые данные
+        </button>
         <div key={currentStep} className="animate-in">
           {currentStep === 1 && <StepOne data={formData} onChange={handleChange} />}
           {currentStep === 2 && <StepTwo data={formData} onChange={handleChange} agreed={agreed} onAgree={setAgreed} />}

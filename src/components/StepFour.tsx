@@ -195,9 +195,14 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
       onChange('paymentId', result.paymentId);
       onChange('paymentStatus', 'pending');
 
-      // Persist paymentId to localStorage before redirect
+      // Persist paymentId AND full formData to localStorage before redirect
       // (React state will be lost when navigating away)
       localStorage.setItem('pfv_paymentId', result.paymentId);
+      localStorage.setItem('pfv_formData', JSON.stringify({
+        ...data,
+        paymentId: result.paymentId,
+        paymentStatus: 'pending',
+      }));
 
       // Redirect user to YooKassa payment page
       window.location.href = result.confirmationUrl;
@@ -251,6 +256,7 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
             onChange('paymentStatus', 'succeeded');
             onChange('paymentProof', `yookassa:${paymentId}`);
             localStorage.removeItem('pfv_paymentId');
+            localStorage.removeItem('pfv_formData');
             setPaymentPolling(false);
             onPaymentSuccess?.();
             return;
@@ -258,6 +264,7 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
           if (status.status === 'canceled') {
             onChange('paymentStatus', 'canceled');
             localStorage.removeItem('pfv_paymentId');
+            localStorage.removeItem('pfv_formData');
             setPaymentError('Платёж был отменён. Попробуйте оплатить ещё раз.');
             setPaymentPolling(false);
             return;
