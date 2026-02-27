@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { Input, StepCard, InfoBox, Divider } from './UI';
-import { CreditCard, MessageCircle, Send, ExternalLink, Building2, Heart, Calculator, ReceiptText, MessageSquare, UserCheck, TicketPercent, CheckCircle2, XCircle } from 'lucide-react';
+import { CreditCard, ExternalLink, Building2, Calculator, ReceiptText, MessageSquare, UserCheck, TicketPercent, CheckCircle2, XCircle, Send, MessageCircle } from 'lucide-react';
 import { calcTotal, getTrackCount } from './StepOne';
 import { fetchPromoCodes, PromoCodeRecord } from '@/services/googleSheets';
 
@@ -205,6 +205,23 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady 
 
   return (
     <div className="space-y-6">
+      {/* ═══ Contacts & Extras — FIRST ═══ */}
+      <StepCard
+        title="Дополнительно"
+        subtitle="Дополнительная информация"
+        icon={<MessageSquare className="w-5 h-5" />}
+      >
+        <Input label="Контакты для связи" required icon={<MessageSquare className="w-4 h-4" />}
+          hint="Оставьте свой Telegram или VK для обратной связи."
+          value={data.contactInfo || ''} onChange={(e) => onChange('contactInfo', e.target.value)}
+          placeholder="@username или ссылка" />
+
+        <Input label="Ссылки на профиль артиста на площадках" icon={<UserCheck className="w-4 h-4" />}
+          hint="Чтобы релиз попал в нужную картотеку, оставьте ссылки на профиль."
+          value={data.artistProfileLinks || ''} onChange={(e) => onChange('artistProfileLinks', e.target.value)}
+          placeholder="Ссылки на профили" />
+      </StepCard>
+
       {/* ═══ Payment Details ═══ */}
       <StepCard
         title="Информация для приёма платежей"
@@ -247,77 +264,6 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady 
         </div>
       </StepCard>
 
-      {/* ═══ Contacts & Extras (moved from StepOne) ═══ */}
-      <StepCard
-        title="Дополнительно"
-        subtitle="Дополнительная информация"
-        icon={<MessageSquare className="w-5 h-5" />}
-      >
-        <Input label="Контакты для связи" required icon={<MessageSquare className="w-4 h-4" />}
-          hint="Оставьте свой Telegram или VK для обратной связи."
-          value={data.contactInfo || ''} onChange={(e) => onChange('contactInfo', e.target.value)}
-          placeholder="@username или ссылка" />
-
-        <Input label="Ссылки на профиль артиста на площадках" icon={<UserCheck className="w-4 h-4" />}
-          hint="Чтобы релиз попал в нужную картотеку, оставьте ссылки на профиль."
-          value={data.artistProfileLinks || ''} onChange={(e) => onChange('artistProfileLinks', e.target.value)}
-          placeholder="Ссылки на профили" />
-      </StepCard>
-
-      {/* ═══ After Submission ═══ */}
-      <StepCard
-        title="После отправки"
-        subtitle="Важная информация и контакты"
-        icon={<Send className="w-5 h-5" />}
-      >
-        <InfoBox variant="purple">
-          <div>
-            <p className="font-semibold mb-1">📌 Что делать после отправки?</p>
-            <p className="text-xs">Подпишите договор и свяжитесь с нами для подтверждения данных.</p>
-          </div>
-        </InfoBox>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <a href="https://t.me/pfvmusic_support" target="_blank" rel="noopener noreferrer"
-            className="flex items-center justify-center gap-3 rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-50/30 px-5 py-4 text-sm font-semibold text-blue-700 hover:border-blue-300 group">
-            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center shadow-md">
-              <Send className="w-5 h-5 text-white" />
-            </div>
-            <div className="text-left">
-              <p className="text-xs text-blue-500">Telegram</p>
-              <p className="text-sm font-bold">PFVMUSIC Support</p>
-            </div>
-          </a>
-          <a href="https://vk.com/pfvmusic" target="_blank" rel="noopener noreferrer"
-            className="flex items-center justify-center gap-3 rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-50/30 px-5 py-4 text-sm font-semibold text-blue-700 hover:border-blue-300 group">
-            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shadow-md">
-              <MessageCircle className="w-5 h-5 text-white" />
-            </div>
-            <div className="text-left">
-              <p className="text-xs text-blue-500">ВКонтакте</p>
-              <p className="text-sm font-bold">PFVMUSIC</p>
-            </div>
-          </a>
-        </div>
-
-        <div className="rounded-xl bg-gradient-to-r from-purple-50 to-purple-100/30 border border-purple-200/60 p-5 text-center space-y-2">
-          <div className="flex justify-center">
-            <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
-              <Heart className="w-6 h-6 text-purple-600" />
-            </div>
-          </div>
-          <p className="font-bold text-purple-800 text-sm">
-            ⚠️ Не забудьте отправить форму!
-          </p>
-          <p className="text-xs text-purple-600/80">
-            В противном случае мы не сможем получить информацию о вашем релизе.
-          </p>
-          <p className="text-sm font-semibold text-purple-700 pt-1">
-            Спасибо, что выбрали нас! Мы ценим ваше доверие 💜
-          </p>
-        </div>
-      </StepCard>
-
       {/* ═══ Promo Code ═══ */}
       <StepCard
         title="Промокод"
@@ -357,7 +303,7 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady 
         )}
       </StepCard>
 
-      {/* ═══ TOTAL PRICE — at the very end ═══ */}
+      {/* ═══ TOTAL PRICE + After Submission ═══ */}
       {hasSelection ? (
         <div className="rounded-2xl border-2 border-purple-400 bg-gradient-to-br from-purple-50 via-white to-purple-50/30 p-6 md:p-8 shadow-xl shadow-purple-200/30 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-40 h-40 bg-purple-200/20 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
@@ -456,6 +402,26 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady 
                   />
                 </div>
               )}
+            </div>
+
+            {/* After submission — compact */}
+            <div className="pt-4 mt-2 border-t border-purple-200/60 space-y-3">
+              <p className="text-xs font-semibold text-gray-700">📌 После отправки — подпишите договор и свяжитесь с нами:</p>
+              <div className="grid grid-cols-2 gap-2">
+                <a href="https://t.me/pfvmusic_support" target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50/60 px-3 py-2 text-xs font-semibold text-blue-700 hover:border-blue-300">
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Telegram</span>
+                </a>
+                <a href="https://vk.com/pfvmusic" target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50/60 px-3 py-2 text-xs font-semibold text-blue-700 hover:border-blue-300">
+                  <MessageCircle className="w-3.5 h-3.5" />
+                  <span>ВКонтакте</span>
+                </a>
+              </div>
+              <p className="text-[11px] text-purple-600/80 text-center">
+                ⚠️ Не забудьте отправить форму! Спасибо, что выбрали нас 💜
+              </p>
             </div>
           </div>
         </div>
