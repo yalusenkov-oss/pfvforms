@@ -163,14 +163,14 @@ export function StepThree({ agreed, onAgree }: StepThreeProps) {
           type="button"
           onClick={() => onAgree(!agreed)}
           className={cn(
-            'w-full rounded-xl border-2 px-6 py-4 text-sm font-bold transition-all duration-300 flex items-center justify-center gap-3',
+            'w-full rounded-xl border-2 px-6 py-4 text-sm font-bold transition-colors duration-200 flex items-center justify-center gap-3',
             agreed
-              ? 'border-emerald-400 bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-700 shadow-md shadow-emerald-100 hover:shadow-lg'
-              : 'border-purple-300 bg-white text-purple-700 hover:bg-purple-50 hover:border-purple-400 hover:shadow-md hover:shadow-purple-100'
+              ? 'border-emerald-400 bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-700 shadow-md shadow-emerald-100'
+              : 'border-purple-300 bg-white text-purple-700 hover:bg-purple-50 hover:border-purple-400'
           )}
         >
           <div className={cn(
-            'w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300',
+            'w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-200',
             agreed ? 'bg-emerald-500' : 'bg-purple-100'
           )}>
             <ShieldCheck className={cn('w-4 h-4', agreed ? 'text-white' : 'text-purple-600')} />

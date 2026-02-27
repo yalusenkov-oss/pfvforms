@@ -86,7 +86,7 @@ export function SignatureBlock({
           {isSigned ? (
             <button
               onClick={() => onDownload?.('pdf')}
-              className="w-full py-2.5 sm:py-4 rounded-xl text-xs sm:text-base font-bold text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg shadow-green-200/50 transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-2"
+              className="w-full py-2.5 sm:py-4 rounded-xl text-xs sm:text-base font-bold text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg shadow-green-200/50 transition-colors duration-200 flex items-center justify-center gap-1.5 sm:gap-2"
             >
               <Download className="w-5 h-5" />
               Скачать договор
@@ -95,7 +95,7 @@ export function SignatureBlock({
             <button
               onClick={handleSign}
               disabled={!signatureData}
-              className="w-full py-2.5 sm:py-4 rounded-xl text-xs sm:text-base font-bold text-white bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 shadow-lg shadow-purple-200/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-purple-600 disabled:hover:to-purple-700 flex items-center justify-center gap-1.5 sm:gap-2"
+              className="w-full py-2.5 sm:py-4 rounded-xl text-xs sm:text-base font-bold text-white bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 shadow-lg shadow-purple-200/50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-purple-600 disabled:hover:to-purple-700 flex items-center justify-center gap-1.5 sm:gap-2"
             >
               🖊️ Подписать договор
             </button>

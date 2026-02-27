@@ -312,8 +312,8 @@ export function StepFour({ data, onChange }: StepFourProps) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <a href="https://t.me/pfvmusic_support" target="_blank" rel="noopener noreferrer"
-            className="flex items-center justify-center gap-3 rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-50/30 px-5 py-4 text-sm font-semibold text-blue-700 hover:shadow-md hover:border-blue-300 transition-all group">
-            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+            className="flex items-center justify-center gap-3 rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-50/30 px-5 py-4 text-sm font-semibold text-blue-700 hover:border-blue-300 transition-colors group">
+            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center shadow-md">
               <Send className="w-5 h-5 text-white" />
             </div>
             <div className="text-left">
@@ -322,8 +322,8 @@ export function StepFour({ data, onChange }: StepFourProps) {
             </div>
           </a>
           <a href="https://vk.com/pfvmusic" target="_blank" rel="noopener noreferrer"
-            className="flex items-center justify-center gap-3 rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-50/30 px-5 py-4 text-sm font-semibold text-blue-700 hover:shadow-md hover:border-blue-300 transition-all group">
-            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+            className="flex items-center justify-center gap-3 rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-50/30 px-5 py-4 text-sm font-semibold text-blue-700 hover:border-blue-300 transition-colors group">
+            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shadow-md">
               <MessageCircle className="w-5 h-5 text-white" />
             </div>
             <div className="text-left">
@@ -470,7 +470,7 @@ function BankCard({ name, number, color, emoji }: { name: string; number: string
   };
 
   return (
-    <div className="flex items-center gap-3 rounded-xl bg-white border border-gray-200 px-4 py-3 hover:shadow-sm transition-shadow">
+    <div className="flex items-center gap-3 rounded-xl bg-white border border-gray-200 px-4 py-3 transition-colors">
       <div className={`w-8 h-8 rounded-lg ${color} flex items-center justify-center flex-shrink-0 shadow-sm`}>
         <span className="text-sm">{emoji}</span>
       </div>
@@ -479,7 +479,7 @@ function BankCard({ name, number, color, emoji }: { name: string; number: string
         <p className="font-mono font-bold text-gray-900 text-sm tracking-wide">{number}</p>
       </div>
       <button type="button" onClick={handleCopy}
-        className="text-[10px] text-purple-600 hover:text-purple-800 font-medium px-2 py-1 rounded-md hover:bg-purple-50 transition-colors flex-shrink-0 active:scale-95">
+        className="text-[10px] text-purple-600 hover:text-purple-800 font-medium px-2 py-1 rounded-md hover:bg-purple-50 transition-colors flex-shrink-0">
         Копировать
       </button>
     </div>
