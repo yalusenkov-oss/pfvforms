@@ -1,88 +1,402 @@
+import { useState } from 'react';
 import { Input, InfoBox, StepCard, Divider, DatePicker } from './UI';
-import { FileText, User, Mail, Calendar, Shield, MapPin } from 'lucide-react';
+import { FileText, User, Mail, Calendar, Shield, MapPin, ShieldCheck, Lock, Users, Database, Target, Clock, XCircle } from 'lucide-react';
+import { cn } from '@/utils/cn';
 
 interface StepTwoProps {
   data: Record<string, string>;
   onChange: (key: string, value: string) => void;
+  agreed: boolean;
+  onAgree: (v: boolean) => void;
 }
 
-export function StepTwo({ data, onChange }: StepTwoProps) {
+export function StepTwo({ data, onChange, agreed, onAgree }: StepTwoProps) {
+  const [showOfferModal, setShowOfferModal] = useState(false);
+  const [showConsentModal, setShowConsentModal] = useState(false);
+  const [offerAccepted, setOfferAccepted] = useState(agreed);
+  const [consentAccepted, setConsentAccepted] = useState(agreed);
+
+  const updateAgreed = (offer: boolean, consent: boolean) => {
+    onAgree(offer && consent);
+  };
+
   return (
-    <StepCard
-      title="Договор"
-      subtitle="Заполните данные для оформления договора"
-      icon={<FileText className="w-5 h-5" />}
-    >
-      <InfoBox variant="purple">
-        <div>
-          <p className="font-semibold mb-2">📋 Дистрибуция на договорной основе</p>
-          <p className="text-xs mb-3">В настоящее время мы запускаем дистрибуцию на договорной основе. Пожалуйста, ознакомьтесь с договором перед заполнением.</p>
-          <a
-            href="https://disk.yandex.ru/i/pvZXPt4B7t5FIA"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-xs font-semibold text-white hover:bg-purple-700 shadow-sm"
-          >
-            <FileText className="w-3.5 h-3.5" />
-            Открыть договор
-          </a>
-        </div>
-      </InfoBox>
+    <>
+      <div className="space-y-6">
+        <StepCard
+          title="Договор"
+          subtitle="Заполните данные для оформления договора"
+          icon={<FileText className="w-5 h-5" />}
+        >
+          <InfoBox variant="purple">
+            <div>
+              <p className="font-semibold mb-2">📋 Дистрибуция на договорной основе</p>
+              <p className="text-xs mb-3">В настоящее время мы запускаем дистрибуцию на договорной основе. Пожалуйста, ознакомьтесь с договором перед заполнением.</p>
+              <a
+                href="https://disk.yandex.ru/i/pvZXPt4B7t5FIA"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-xs font-semibold text-white hover:bg-purple-700 shadow-sm"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                Открыть договор
+              </a>
+            </div>
+          </InfoBox>
 
-      <Divider label="Личные данные" />
+          <Divider label="Личные данные" />
 
-      <Input
-        label="ФИО"
-        required
-        icon={<User className="w-4 h-4" />}
-        value={data.fullName || ''}
-        onChange={(e) => onChange('fullName', e.target.value)}
-        placeholder="Иванов Иван Иванович"
-      />
+          <Input
+            label="ФИО"
+            required
+            icon={<User className="w-4 h-4" />}
+            value={data.fullName || ''}
+            onChange={(e) => onChange('fullName', e.target.value)}
+            placeholder="Иванов Иван Иванович"
+          />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Input
-          label="Серия и номер паспорта"
-          required
-          icon={<Shield className="w-4 h-4" />}
-          value={data.passportNumber || ''}
-          onChange={(e) => onChange('passportNumber', e.target.value)}
-          placeholder="0000 000000"
-        />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Серия и номер паспорта"
+              required
+              icon={<Shield className="w-4 h-4" />}
+              value={data.passportNumber || ''}
+              onChange={(e) => onChange('passportNumber', e.target.value)}
+              placeholder="0000 000000"
+            />
 
-        <DatePicker
-          label="Дата выдачи"
-          required
-          icon={<Calendar className="w-4 h-4" />}
-          value={data.issueDate || ''}
-          onChange={(e) => onChange('issueDate', e.target.value)}
-        />
+            <DatePicker
+              label="Дата выдачи"
+              required
+              icon={<Calendar className="w-4 h-4" />}
+              value={data.issueDate || ''}
+              onChange={(e) => onChange('issueDate', e.target.value)}
+            />
+          </div>
+
+          <Input
+            label="Кем выдан"
+            required
+            icon={<MapPin className="w-4 h-4" />}
+            value={data.issuedBy || ''}
+            onChange={(e) => onChange('issuedBy', e.target.value)}
+            placeholder="Отделением УФМС России по..."
+          />
+
+          <Input
+            label="Электронная почта"
+            required
+            type="email"
+            icon={<Mail className="w-4 h-4" />}
+            value={data.email || ''}
+            onChange={(e) => onChange('email', e.target.value)}
+            placeholder="your@email.com"
+          />
+        </StepCard>
+
+        {/* ═══ Оферта и согласие ═══ */}
+        <StepCard
+          title="Публичная оферта и согласие"
+          subtitle="Ознакомьтесь с документами и подтвердите согласие"
+          icon={<ShieldCheck className="w-5 h-5" />}
+        >
+          {/* Публичная оферта checkbox */}
+          <label className={cn(
+            'flex items-start gap-3 rounded-xl border-2 p-4 cursor-pointer select-none',
+            offerAccepted
+              ? 'border-emerald-400 bg-emerald-50/50'
+              : 'border-gray-200 bg-white hover:border-purple-200'
+          )}>
+            <input
+              type="checkbox"
+              checked={offerAccepted}
+              onChange={(e) => {
+                setOfferAccepted(e.target.checked);
+                updateAgreed(e.target.checked, consentAccepted);
+              }}
+              className="mt-0.5 w-5 h-5 rounded border-gray-300 text-purple-600 focus:ring-purple-500 flex-shrink-0"
+            />
+            <div className="text-sm text-gray-700">
+              Я ознакомился(ась) и принимаю условия{' '}
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); setShowOfferModal(true); }}
+                className="text-purple-600 font-semibold underline underline-offset-2 hover:text-purple-800"
+              >
+                Публичной оферты
+              </button>
+            </div>
+          </label>
+
+          {/* Согласие на обработку ПД checkbox */}
+          <label className={cn(
+            'flex items-start gap-3 rounded-xl border-2 p-4 cursor-pointer select-none',
+            consentAccepted
+              ? 'border-emerald-400 bg-emerald-50/50'
+              : 'border-gray-200 bg-white hover:border-purple-200'
+          )}>
+            <input
+              type="checkbox"
+              checked={consentAccepted}
+              onChange={(e) => {
+                setConsentAccepted(e.target.checked);
+                updateAgreed(offerAccepted, e.target.checked);
+              }}
+              className="mt-0.5 w-5 h-5 rounded border-gray-300 text-purple-600 focus:ring-purple-500 flex-shrink-0"
+            />
+            <div className="text-sm text-gray-700">
+              Я даю согласие на обработку персональных данных в соответствии с{' '}
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); setShowConsentModal(true); }}
+                className="text-purple-600 font-semibold underline underline-offset-2 hover:text-purple-800"
+              >
+                Политикой обработки персональных данных
+              </button>
+            </div>
+          </label>
+
+          {agreed && (
+            <div className="flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <span className="text-sm font-medium text-emerald-700">Согласие подтверждено ✓</span>
+            </div>
+          )}
+        </StepCard>
       </div>
 
-      <Input
-        label="Кем выдан"
-        required
-        icon={<MapPin className="w-4 h-4" />}
-        value={data.issuedBy || ''}
-        onChange={(e) => onChange('issuedBy', e.target.value)}
-        placeholder="Отделением УФМС России по..."
-      />
+      {/* ═══ Offer Modal ═══ */}
+      {showOfferModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl">
+            <div className="flex items-center justify-between px-8 py-6 border-b border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-900">Публичная оферта</h2>
+              <button
+                type="button"
+                onClick={() => setShowOfferModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+              >
+                <XCircle className="w-6 h-6 text-gray-500" />
+              </button>
+            </div>
 
-      <Input
-        label="Электронная почта"
-        required
-        type="email"
-        icon={<Mail className="w-4 h-4" />}
-        value={data.email || ''}
-        onChange={(e) => onChange('email', e.target.value)}
-        placeholder="your@email.com"
-      />
+            <div className="overflow-y-auto flex-1 px-8 py-6 text-sm text-gray-700 leading-relaxed space-y-4">
+              <p><strong className="text-lg">ПУБЛИЧНАЯ ОФЕРТА</strong></p>
+              <p><strong className="text-base">о заключении договора об оказании услуг</strong></p>
 
-      <InfoBox variant="info">
-        <p className="text-xs">
-          🔒 Все персональные данные защищены и используются исключительно для оформления договора в соответствии с ФЗ-152.
-        </p>
-      </InfoBox>
-    </StepCard>
+              <div className="space-y-3">
+                <p><strong>1. Общие положения</strong></p>
+                <p>В настоящей Публичной оферте содержатся условия заключения Договора об оказании услуг (далее по тексту - «Договор об оказании услуг» и/или «Договор»).</p>
+                <p>Настоящей офертой признается предложение, адресованное одному или нескольким конкретным лицам, которое достаточно определенно и выражает намерение лица, сделавшего предложение, считать себя заключившим Договор с адресатом, которым будет принято предложение.</p>
+                <p>Совершение указанных в настоящей Оферте действий является подтверждением согласия обеих Сторон заключить Договор об оказании услуг на условиях, в порядке и объеме, изложенных в настоящей Оферте.</p>
+                <p>Нижеизложенный текст Публичной оферты является официальным публичным предложением Исполнителя, адресованный заинтересованному кругу лиц заключить Договор об оказании услуг в соответствии с положениями пункта 2 статьи 437 Гражданского кодекса РФ.</p>
+              </div>
+
+              <div className="space-y-3">
+                <p><strong>Термины и определения:</strong></p>
+                <p>Договор – текст настоящей Оферты с Приложениями, являющимися неотъемлемой частью настоящей Оферты, акцептованный Заказчиком путем совершения конклюдентных действий, предусмотренных настоящей Офертой.</p>
+                <p>Конклюдентные действия — это поведение, которое выражает согласие с предложением контрагента заключить, изменить или расторгнуть договор.</p>
+                <p>Сайт Исполнителя в сети «Интернет» – совокупность программ для электронных вычислительных машин и иной информации, доступ к которой обеспечивается посредством сети «Интернет» по адресу: http://pfvmusic.digital</p>
+                <p>Услуга – услуга, оказываемая Исполнителем Заказчику в порядке и на условиях, установленных настоящей Офертой.</p>
+              </div>
+
+              <div className="space-y-3">
+                <p><strong>2. Предмет Договора</strong></p>
+                <p>2.1. Исполнитель обязуется оказать Заказчику Услуги, а Заказчик обязуется оплатить их в размере, порядке и сроки, установленные настоящим Договором.</p>
+                <p>2.2. Наименование, количество, порядок и иные условия оказания Услуг определяются на основании сведений Исполнителя при оформлении заявки Заказчиком, либо устанавливаются на сайте Исполнителя.</p>
+                <p>2.3. Исполнитель оказывает Услуги по настоящему Договору лично, либо с привлечением третьих лиц, при этом за действия третьих лиц Исполнитель отвечает перед Заказчиком как за свои собственные.</p>
+                <p>2.4. Договор заключается путем акцепта настоящей Оферты через совершение конклюдентных действий, выраженных в: действиях, связанных с регистрацией учетной записи; оформлении и направлении Заказчиком заявки; действиях, связанных с оплатой Услуг; действиях, связанных с оказанием Услуг Исполнителем.</p>
+              </div>
+
+              <div className="space-y-3">
+                <p><strong>3. Права и обязанности Сторон</strong></p>
+                <p><strong>3.1. Права и обязанности Исполнителя:</strong></p>
+                <p>3.1.1. Исполнитель обязуется оказать Услуги в соответствии с положениями настоящего Договора, в сроки и объеме, указанные в настоящем Договоре и в порядке, указанном на Сайте Исполнителя.</p>
+                <p>3.1.2. Исполнитель обязуется предоставлять Заказчику доступ к разделам Сайта, необходимым для получения информации согласно пункту 2.1. Договора.</p>
+                <p>3.1.3. Исполнитель несет ответственность за хранение и обработку персональных данных Заказчика, обеспечивает сохранение конфиденциальности этих данных и использует их исключительно для качественного оказания Услуг Заказчику.</p>
+                <p>3.1.4. Исполнитель оставляет за собой право изменять сроки оказания Услуг и условия настоящей Оферты в одностороннем порядке без предварительного уведомления Заказчика, публикуя указанные изменения на Сайте Исполнителя.</p>
+                <p><strong>3.2. Права и обязанности Заказчика:</strong></p>
+                <p>3.2.1. Заказчик обязан предоставлять достоверную информацию о себе при получении соответствующих Услуг.</p>
+                <p>3.2.2. Заказчик обязуется не воспроизводить, не копировать, не продавать, а также не использовать информацию и материалы, ставшие ему доступными в связи с оказанием Услуг, за исключением личного использования непосредственно самим Заказчиком.</p>
+                <p>3.2.3. Заказчик обязуется принять Услуги, оказанные Исполнителем.</p>
+                <p>3.2.4. Заказчик гарантирует, что все условия Договора ему понятны и принимает их без оговорок в полном объеме.</p>
+              </div>
+
+              <div className="space-y-3">
+                <p><strong>4. Цена и порядок расчетов</strong></p>
+                <p>4.1. Стоимость услуг Исполнителя, оказываемых Заказчиком и порядок их оплаты, определяются на основании сведений Исполнителя при оформлении заявки Заказчиком либо устанавливаются на Сайте Исполнителя в сети «Интернет»: http://pfvmusic.digital</p>
+                <p>Все расчеты по Договору производятся в безналичном порядке.</p>
+              </div>
+
+              <div className="space-y-3">
+                <p><strong>5. Конфиденциальность и безопасность</strong></p>
+                <p>5.1. При реализации настоящего Договора Стороны обеспечивают конфиденциальность и безопасность персональных данных в соответствии с ФЗ от 27.07.2006 г. № 152-ФЗ «О персональных данных» и ФЗ от 27.07.2006 г. № 149-ФЗ «Об информации, информационных технологиях и о защите информации».</p>
+                <p>5.2. Стороны обязуются сохранять конфиденциальность информации, полученной в ходе исполнения настоящего Договора, и принять все возможные меры, чтобы предохранить полученную информацию от разглашения.</p>
+                <p>5.3. Под конфиденциальной информацией понимается любая информация, передаваемая Исполнителем и Заказчиком в процессе реализации Договора и подлежащая защите.</p>
+                <p>5.4. Такая информация может содержаться в предоставляемых локальных нормативных актах, договорах, письмах, отчетах, аналитических материалах, результатах исследований, схемах, графиках, спецификациях и других документах, оформленных как на бумажных, так и на электронных носителях.</p>
+              </div>
+
+              <div className="space-y-3">
+                <p><strong>6. Форс-мажор</strong></p>
+                <p>6.1. Стороны освобождаются от ответственности за неисполнение или ненадлежащее исполнение обязательств по Договору, если надлежащее исполнение оказалось невозможным вследствие непреодолимой силы, то есть чрезвычайных и непредотвратимых при данных условиях обстоятельств.</p>
+                <p>6.2. В случае наступления этих обстоятельств Сторона обязана в течение 30 (Тридцати) рабочих дней уведомить об этом другую Сторону.</p>
+                <p>6.3. Документ, выданный уполномоченным государственным органом, является достаточным подтверждением наличия и продолжительности действия непреодолимой силы.</p>
+                <p>6.4. Если обстоятельства непреодолимой силы продолжают действовать более 60 (Шестидесяти) рабочих дней, то каждая Сторона вправе отказаться от настоящего Договора в одностороннем порядке.</p>
+              </div>
+
+              <div className="space-y-3">
+                <p><strong>7. Ответственность Сторон</strong></p>
+                <p>7.1. В случае неисполнения и/или ненадлежащего исполнения своих обязательств по Договору, Стороны несут ответственность в соответствии с условиями настоящей Оферты.</p>
+                <p>7.2. Исполнитель не несет ответственности за неисполнение и/или ненадлежащее исполнение обязательств по Договору, если такое неисполнение произошло по вине Заказчика.</p>
+                <p>7.3. Сторона, не исполнившая или ненадлежащим образом исполнившая обязательства по Договору, обязана возместить другой Стороне причиненные такими нарушениями убытки.</p>
+              </div>
+
+              <div className="space-y-3">
+                <p><strong>8. Срок действия настоящей Оферты</strong></p>
+                <p>8.1. Оферта вступает в силу с момента размещения на Сайте Исполнителя и действует до момента её отзыва Исполнителем.</p>
+                <p>8.2. Исполнитель оставляет за собой право внести изменения в условия Оферты и/или отозвать Оферту в любой момент по своему усмотрению. Сведения об изменении или отзыве Оферты доводятся до Заказчика посредством размещения на сайте, в Личном кабинете Заказчика, либо путем направления соответствующего уведомления на электронный или почтовый адрес.</p>
+                <p>8.3. Договор вступает в силу с момента Акцепта условий Оферты Заказчиком и действует до полного исполнения Сторонами обязательств по Договору.</p>
+                <p>8.4. Изменения, внесенные Исполнителем в Договор и опубликованные на сайте в форме актуализированной Оферты, считаются принятыми Заказчиком в полном объеме.</p>
+              </div>
+
+              <div className="space-y-3">
+                <p><strong>9. Дополнительные условия</strong></p>
+                <p>9.1. Договор, его заключение и исполнение регулируется действующим законодательством Российской Федерации. Все вопросы, не урегулированные настоящей Офертой, регулируются в соответствии с материальным правом Российской Федерации.</p>
+                <p>9.2. В случае возникновения спора между Сторонами в ходе исполнения ими своих обязательств по Договору, Стороны обязаны урегулировать спор мирным путем до начала судебного разбирательства. Досудебный порядок урегулирования спора является обязательным.</p>
+                <p>9.3. В качестве языка Договора Стороны определили русский язык.</p>
+                <p>9.4. Все документы, подлежащие предоставлению в соответствии с условиями настоящей Оферты, должны быть составлены на русском языке либо иметь перевод на русский язык, удостоверенный в установленном порядке.</p>
+                <p>9.5. Бездействие одной из Сторон в случае нарушения условий настоящей Оферты не лишает права заинтересованной Стороны осуществлять защиту своих интересов позднее.</p>
+                <p>9.6. Если на Сайте Исполнителя есть ссылки на другие веб-сайты и материалы третьих лиц, такие ссылки размещены исключительно в целях информирования. Исполнитель не несет ответственность за любые убытки или ущерб, которые могут возникнуть в результате использования таких ссылок.</p>
+              </div>
+
+              <div className="space-y-3">
+                <p><strong>10. Реквизиты Исполнителя</strong></p>
+                <p><strong>Полное наименование:</strong> Орехов Данила Александрович</p>
+                <p><strong>ИНН:</strong> 711613056345</p>
+                <p><strong>ОГРНИП:</strong> 324710000080681</p>
+                <p><strong>Контактный e-mail:</strong> support@pfvmusic.digital</p>
+              </div>
+            </div>
+
+            <div className="px-8 py-6 border-t border-gray-200 flex justify-end gap-3 bg-gray-50 rounded-b-3xl">
+              <button
+                type="button"
+                onClick={() => setShowOfferModal(false)}
+                className="px-6 py-2.5 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700"
+              >
+                Закрыть
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ Consent Modal ═══ */}
+      {showConsentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl">
+            <div className="flex items-center justify-between px-8 py-6 border-b border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-900">Согласие на обработку персональных данных</h2>
+              <button
+                type="button"
+                onClick={() => setShowConsentModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+              >
+                <XCircle className="w-6 h-6 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto flex-1 px-8 py-6 text-sm text-gray-700 leading-relaxed space-y-4">
+              <p className="text-gray-600 italic">
+                В соответствии с Федеральным законом № 152-ФЗ «О персональных данных» от 27.07.2006 года, я свободно, своей волей и в своем интересе выражаю согласие на обработку моих персональных данных Оператором — Индивидуальный предприниматель Орехов Данила Александрович (ОГРНИП 324710000080681).
+              </p>
+
+              <ConsentSection icon={<Users className="w-4 h-4" />} title="Персональные данные, которые могут быть обработаны">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                  {[
+                    'Имя, фамилия', 'Псевдоним артиста/группы', 'Название трека',
+                    'ФИО авторов текста и музыки', 'ФИО исполнителей', 'Жанр/поджанр',
+                    'Наличие ненормативной лексики', 'Текст трека (по желанию)', 'Отрывок TikTok',
+                    'Желаемая дата релиза', 'Промо-план', 'Карточка артиста (по желанию)',
+                    'UPC / ISRC код (при наличии)', 'Паспортные данные', 'Банковские реквизиты',
+                    'Электронная почта', 'Telegram / VK',
+                  ].map((item) => (
+                    <div key={item} className="flex items-center gap-1.5 py-0.5">
+                      <span className="w-1 h-1 rounded-full bg-purple-400 flex-shrink-0" />
+                      <span className="text-[11px]">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </ConsentSection>
+
+              <ConsentSection icon={<Database className="w-4 h-4" />} title="Действия оператора">
+                <p>Сбор, запись, систематизация, накопление, хранение, уточнение (обновление, изменение), извлечение, использование, блокирование, удаление, уничтожение.</p>
+              </ConsentSection>
+
+              <ConsentSection icon={<Lock className="w-4 h-4" />} title="Способы обработки">
+                <ul className="space-y-1.5">
+                  <li className="flex items-start gap-2">
+                    <span className="w-1 h-1 rounded-full bg-gray-400 mt-1.5 flex-shrink-0" />
+                    <span>Передача третьим лицам — только в рамках законодательства РФ и заключённых договоров</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-1 h-1 rounded-full bg-gray-400 mt-1.5 flex-shrink-0" />
+                    <span>Передача осуществляется исключительно в целях исполнения договора при наличии гарантий защиты</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-1 h-1 rounded-full bg-gray-400 mt-1.5 flex-shrink-0" />
+                    <span>С использованием средств автоматизации и без них</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-1 h-1 rounded-full bg-gray-400 mt-1.5 flex-shrink-0" />
+                    <span>Обработка через Google Документы с соблюдением требований законодательства</span>
+                  </li>
+                </ul>
+              </ConsentSection>
+
+              <ConsentSection icon={<Target className="w-4 h-4" />} title="Цель обработки">
+                <p>Предоставление услуг/работ, включая уведомления, подготовку ответов на запросы, информирование о мероприятиях/товарах/услугах Оператора.</p>
+              </ConsentSection>
+
+              <ConsentSection icon={<ShieldCheck className="w-4 h-4" />} title="Меры защиты">
+                <p>Оператор принимает все необходимые правовые, организационные и технические меры для защиты персональных данных от неправомерного доступа, уничтожения, изменения, блокирования, копирования и распространения.</p>
+              </ConsentSection>
+
+              <ConsentSection icon={<Clock className="w-4 h-4" />} title="Срок действия">
+                <p className="mb-2">Согласие действует до момента его отзыва. После отзыва данные подлежат удалению в установленные сроки, за исключением случаев, когда хранение необходимо для исполнения обязательств.</p>
+                <p>
+                  Отзыв — уведомление на{' '}
+                  <a href="mailto:support@pfvmusic.digital" className="text-purple-700 underline font-medium">support@pfvmusic.digital</a>
+                </p>
+              </ConsentSection>
+            </div>
+
+            <div className="px-8 py-6 border-t border-gray-200 flex justify-end gap-3 bg-gray-50 rounded-b-3xl">
+              <button
+                type="button"
+                onClick={() => setShowConsentModal(false)}
+                className="px-6 py-2.5 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700"
+              >
+                Закрыть
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function ConsentSection({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-lg bg-gray-50/80 border border-gray-100 p-3">
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-purple-500">{icon}</span>
+        <h4 className="font-semibold text-gray-800 text-[11px] uppercase tracking-wide">{title}</h4>
+      </div>
+      <div className="text-[11px] text-gray-600 leading-relaxed">
+        {children}
+      </div>
+    </div>
   );
 }

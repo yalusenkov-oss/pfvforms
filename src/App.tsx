@@ -1,9 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
-import { ChevronRight, ChevronLeft, Send, CheckCircle2, FileText, Shield, CreditCard, Disc3, Sparkles, AlertCircle, Megaphone, ArrowLeft, XCircle, Clock, ExternalLink, Home, Loader2, Wallet, Clipboard, FileCheck, Phone } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Send, CheckCircle2, FileText, CreditCard, Disc3, Sparkles, AlertCircle, Megaphone, ArrowLeft, XCircle, Clock, ExternalLink, Home, Loader2, Wallet, Clipboard, FileCheck, Phone } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { StepOne, getTrackCount } from './components/StepOne';
 import { StepTwo } from './components/StepTwo';
-import { StepThree } from './components/StepThree';
 import { StepFour } from './components/StepFour';
 import { StepPromo } from './components/StepPromo';
 import { submitToGoogleSheets, fetchPromoCodes, PromoCodeRecord } from './services/googleSheets';
@@ -14,8 +13,7 @@ type AppMode = 'home' | 'distribution' | 'promo' | 'success' | 'fail' | 'result'
 const DISTRIBUTION_STEPS = [
   { id: 1, label: 'Релиз', icon: Disc3 },
   { id: 2, label: 'Договор', icon: FileText },
-  { id: 3, label: 'Оферта', icon: Shield },
-  { id: 4, label: 'Оплата', icon: CreditCard },
+  { id: 3, label: 'Оплата', icon: CreditCard },
 ];
 
 type TariffInfo = {
@@ -203,7 +201,7 @@ function normalizeDistributionData(data: Record<string, string>): Record<string,
   };
 }
 
-function validateStep2(data: Record<string, string>): ValidationResult {
+function validateStep2(data: Record<string, string>, agreed: boolean): ValidationResult {
   const errors: string[] = [];
   
   if (!data.fullName?.trim()) errors.push('Укажите ФИО');
@@ -211,18 +209,12 @@ function validateStep2(data: Record<string, string>): ValidationResult {
   if (!data.issuedBy?.trim()) errors.push('Укажите кем выдан паспорт');
   if (!data.issueDate) errors.push('Укажите дату выдачи паспорта');
   if (!data.email?.trim()) errors.push('Укажите электронную почту');
+  if (!agreed) errors.push('Необходимо принять условия публичной оферты и согласие на обработку персональных данных');
   
   return { valid: errors.length === 0, errors };
 }
 
-function validateStep3(agreed: boolean): ValidationResult {
-  if (!agreed) {
-    return { valid: false, errors: ['Необходимо согласие на обработку персональных данных'] };
-  }
-  return { valid: true, errors: [] };
-}
-
-function validateStep4(data: Record<string, string>): ValidationResult {
+function validateStep3(data: Record<string, string>): ValidationResult {
   const errors: string[] = [];
   
   if (!data.contactInfo?.trim()) errors.push('Укажите контакты для связи');
@@ -361,9 +353,7 @@ export function App() {
     if (currentStep === 1) {
       validation = validateStep1(normalized);
     } else if (currentStep === 2) {
-      validation = validateStep2(normalized);
-    } else if (currentStep === 3) {
-      validation = validateStep3(agreed);
+      validation = validateStep2(normalized, agreed);
     }
     
     if (!validation.valid) {
@@ -373,7 +363,7 @@ export function App() {
     }
     
     setValidationErrors([]);
-    setCurrentStep((s) => Math.min(s + 1, 4));
+    setCurrentStep((s) => Math.min(s + 1, 3));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -386,11 +376,10 @@ export function App() {
   const handleDistributionSubmit = async () => {
     const normalized = normalizeDistributionData(formData);
     const step1 = validateStep1(normalized);
-    const step2 = validateStep2(normalized);
-    const step3 = validateStep3(agreed);
-    const step4 = validateStep4(normalized);
+    const step2 = validateStep2(normalized, agreed);
+    const step3 = validateStep3(normalized);
     
-    const allErrors = [...step1.errors, ...step2.errors, ...step3.errors, ...step4.errors];
+    const allErrors = [...step1.errors, ...step2.errors, ...step3.errors];
     
     if (allErrors.length > 0) {
       setValidationErrors(allErrors);
@@ -1658,9 +1647,8 @@ export function App() {
       <div className="mx-auto max-w-4xl px-4 pb-8">
         <div key={currentStep} className="animate-in">
           {currentStep === 1 && <StepOne data={formData} onChange={handleChange} />}
-          {currentStep === 2 && <StepTwo data={formData} onChange={handleChange} />}
-          {currentStep === 3 && <StepThree agreed={agreed} onAgree={setAgreed} />}
-          {currentStep === 4 && <StepFour data={formData} onChange={handleChange} preloadedPromoCodes={preloadedPromoCodes} promoCodesReady={promoCodesReady} />}
+          {currentStep === 2 && <StepTwo data={formData} onChange={handleChange} agreed={agreed} onAgree={setAgreed} />}
+          {currentStep === 3 && <StepFour data={formData} onChange={handleChange} preloadedPromoCodes={preloadedPromoCodes} promoCodesReady={promoCodesReady} />}
         </div>
 
         {/* Navigation Buttons */}
@@ -1678,7 +1666,7 @@ export function App() {
             <div />
           )}
 
-          {currentStep < 4 ? (
+          {currentStep < 3 ? (
             <button
               type="button"
               onClick={goNext}
