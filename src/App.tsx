@@ -569,7 +569,7 @@ export function App() {
               <p><strong>Полное наименование:</strong> Орехов Данила Александрович</p>
               <p><strong>ИНН:</strong> 711613056345</p>
               <p><strong>ОГРНИП:</strong> 324710000080681</p>
-              <p><strong>Контактный e-mail:</strong> booking@pfvmusic.ru</p>
+              <p><strong>Контактный e-mail:</strong> support@pfvmusic.digital</p>
             </div>
           </div>
 
@@ -754,7 +754,7 @@ export function App() {
             </div>
 
             {/* Tariff Cards Grid - 2 основных сверху, 2 дополнительных снизу */}
-            <div className="grid gap-5 md:grid-cols-2">
+            <div className="grid items-start gap-5 md:grid-cols-2">
               {TARIFFS.map((tariff, tariffIndex) => (
                 <div
                   key={tariff.name}
@@ -980,7 +980,7 @@ export function App() {
                   <p className="text-sm font-semibold text-gray-900">Контакты и реквизиты</p>
                 </div>
                 <div className="space-y-1.5 text-xs text-gray-700">
-                  <p><span className="font-semibold">Email:</span> booking@pfvmusic.ru</p>
+                  <p><span className="font-semibold">Email:</span> support@pfvmusic.digital</p>
                   <p><span className="font-semibold">Telegram:</span> @pfvmusic_support</p>
                   <p><span className="font-semibold">ВКонтакте:</span> vk.ru/pfvmusic</p>
                   <p className="pt-2 border-t border-gray-200 mt-2">
@@ -1648,7 +1648,7 @@ export function App() {
           {currentStep === 1 && <StepOne data={formData} onChange={handleChange} />}
           {currentStep === 2 && <StepTwo data={formData} onChange={handleChange} />}
           {currentStep === 3 && <StepThree agreed={agreed} onAgree={setAgreed} />}
-          {currentStep === 4 && <StepFour data={formData} onChange={handleChange} onGoToPromo={() => navigateTo('promo')} />}
+          {currentStep === 4 && <StepFour data={formData} onChange={handleChange} />}
         </div>
 
         {/* Navigation Buttons */}
@@ -1657,7 +1657,7 @@ export function App() {
             <button
               type="button"
               onClick={goPrev}
-              className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 hover:border-gray-300 hover:shadow-md transition-all duration-200 active:scale-[0.98]"
+              className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 hover:border-gray-300 transition-colors duration-200 active:scale-[0.98]"
             >
               <ChevronLeft className="w-4 h-4" />
               Назад
@@ -1670,7 +1670,7 @@ export function App() {
             <button
               type="button"
               onClick={goNext}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-7 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-200/50 hover:from-purple-700 hover:to-purple-800 transition-all duration-200 active:scale-[0.98]"
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-7 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-200/50 hover:from-purple-700 hover:to-purple-800 transition-colors duration-200 active:scale-[0.98]"
             >
               Далее
               <ChevronRight className="w-4 h-4" />
@@ -1680,7 +1680,7 @@ export function App() {
               type="button"
               onClick={handleDistributionSubmit}
               disabled={submitting || !canSubmitDistribution}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-200/50 transition-all duration-200 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-200/50 transition-colors duration-200 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {submitting ? (
                 <>
@@ -1766,8 +1766,8 @@ function Footer() {
             <p className="text-xs text-gray-400">
               © {new Date().getFullYear()} PFVMUSIC. Все права защищены.
             </p>
-            <a href="mailto:booking@pfvmusic.ru" className="text-xs text-purple-500 hover:text-purple-700 transition-colors">
-              booking@pfvmusic.ru
+            <a href="mailto:support@pfvmusic.digital" className="text-xs text-purple-500 hover:text-purple-700 transition-colors">
+              support@pfvmusic.digital
             </a>
           </div>
         </div>

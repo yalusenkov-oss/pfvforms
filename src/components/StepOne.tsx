@@ -3,7 +3,7 @@ import { Input, TextArea, RadioGroup, InfoBox, StepCard, Divider, NumberStepper,
 import {
   Music2, User, Link2, Disc3, Calendar, Image, Globe, Clock,
   Mic2, PenTool, Hash, Bookmark, TicketPercent, Type, Banknote,
-  AlertCircle, ChevronDown, ChevronUp, Plus, X, Users, ChevronRight
+  AlertCircle, ChevronDown, ChevronUp, Plus, X, Users, ChevronRight, Radio
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
@@ -873,7 +873,46 @@ export function StepOne({ data, onChange }: StepOneProps) {
         </div>
       </StepCard>
 
-      {/* ═══ CARD 5: TikTok ═══ */}
+      {/* ═══ CARD 5: Площадки ═══ */}
+      <StepCard
+        title="Площадки"
+        subtitle="Выберите набор площадок для дистрибуции"
+        icon={<Radio className="w-5 h-5" />}
+      >
+        <RadioGroup
+          label="Площадки для дистрибуции" required
+          icon={<Radio className="w-4 h-4" />}
+          name="platforms"
+          options={[
+            { label: 'Все площадки', description: 'Spotify, Apple Music, VK Музыка, Яндекс Музыка и другие' },
+            { label: 'Без Apple Music', description: 'Все площадки кроме Apple Music' },
+          ]}
+          value={data.platforms || ''}
+          onChange={(v) => onChange('platforms', v)}
+        />
+
+        <InfoBox variant="info">
+          <div>
+            <p className="font-semibold mb-1">ℹ️ Зачем выпускать без Apple Music?</p>
+            <ul className="text-xs space-y-1.5 mt-2">
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 flex-shrink-0" />
+                <span>Релизы без Apple Music проходят модерацию <strong>значительно быстрее</strong></span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 flex-shrink-0" />
+                <span>Вероятность непрохождения модерации <strong>существенно ниже</strong></span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 flex-shrink-0" />
+                <span>После выпуска релиза можно <strong>написать в поддержку</strong> и направить запрос на добавление Apple Music</span>
+              </li>
+            </ul>
+          </div>
+        </InfoBox>
+      </StepCard>
+
+      {/* ═══ CARD 6: TikTok ═══ */}
       <StepCard
         title="TikTok"
         subtitle="Настройки отображения в TikTok"
@@ -904,7 +943,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
         )}
       </StepCard>
 
-      {/* ═══ CARD 6: Premium / Platinum Features ═══ */}
+      {/* ═══ CARD 7: Premium / Platinum Features ═══ */}
       {isPremiumOrPlatinum && (
         <StepCard
           title={`Возможности тарифа «${tariff}»`}
@@ -933,7 +972,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
         </StepCard>
       )}
 
-      {/* ═══ CARD 7: Karaoke ═══ */}
+      {/* ═══ CARD 8: Karaoke ═══ */}
       <StepCard
         title="Караоке"
         subtitle="Добавление караоке-версии к релизу"

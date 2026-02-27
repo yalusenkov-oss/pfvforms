@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { Input, StepCard, InfoBox, Divider } from './UI';
-import { CreditCard, MessageCircle, Send, ExternalLink, Building2, Smartphone, Heart, Calculator, ReceiptText, MessageSquare, UserCheck, Megaphone, TicketPercent, CheckCircle2, XCircle } from 'lucide-react';
+import { CreditCard, MessageCircle, Send, ExternalLink, Building2, Smartphone, Heart, Calculator, ReceiptText, MessageSquare, UserCheck, TicketPercent, CheckCircle2, XCircle } from 'lucide-react';
 import { calcTotal, getTrackCount } from './StepOne';
 import { fetchPromoCodes, PromoCodeRecord } from '@/services/googleSheets';
 
 interface StepFourProps {
   data: Record<string, string>;
   onChange: (key: string, value: string) => void;
-  onGoToPromo?: () => void;
 }
 
 const KARAOKE_PRICES: Record<string, number> = {
@@ -18,7 +17,7 @@ const KARAOKE_PRICES: Record<string, number> = {
   'Платинум': 0,
 };
 
-export function StepFour({ data, onChange, onGoToPromo }: StepFourProps) {
+export function StepFour({ data, onChange }: StepFourProps) {
   const tariff = data.tariff || '';
   const releaseType = data.releaseType || '';
   const trackCount = getTrackCount(data);
@@ -307,17 +306,7 @@ export function StepFour({ data, onChange, onGoToPromo }: StepFourProps) {
         <InfoBox variant="purple">
           <div>
             <p className="font-semibold mb-1">📌 Что делать после отправки?</p>
-            <p className="text-xs mb-2">Свяжитесь с нами для подтверждения данных.</p>
-            {onGoToPromo && (
-              <button
-                type="button"
-                onClick={onGoToPromo}
-                className="inline-flex items-center gap-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 text-xs font-semibold transition-colors shadow-sm"
-              >
-                <Megaphone className="w-3.5 h-3.5" />
-                Перейти к форме промо
-              </button>
-            )}
+            <p className="text-xs">Свяжитесь с нами для подтверждения данных.</p>
           </div>
         </InfoBox>
 
