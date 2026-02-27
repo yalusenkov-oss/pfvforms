@@ -6,7 +6,7 @@ import { StepTwo } from './components/StepTwo';
 import { StepThree } from './components/StepThree';
 import { StepFour } from './components/StepFour';
 import { StepPromo } from './components/StepPromo';
-import { submitToGoogleSheets } from './services/googleSheets';
+import { submitToGoogleSheets, fetchPromoCodes, PromoCodeRecord } from './services/googleSheets';
 import SignPage from './pages/Sign';
 
 type AppMode = 'home' | 'distribution' | 'promo' | 'success' | 'fail' | 'result' | 'sign';
@@ -324,6 +324,18 @@ export function App() {
   
   // Offer modal state
   const [showOfferModal, setShowOfferModal] = useState(false);
+
+  // Preload promo codes as soon as user enters distribution form
+  const [preloadedPromoCodes, setPreloadedPromoCodes] = useState<PromoCodeRecord[]>([]);
+  const [promoCodesReady, setPromoCodesReady] = useState(false);
+  useEffect(() => {
+    if (mode !== 'distribution') return;
+    if (promoCodesReady) return; // already loaded
+    fetchPromoCodes()
+      .then((rows) => setPreloadedPromoCodes(rows || []))
+      .catch(() => setPreloadedPromoCodes([]))
+      .finally(() => setPromoCodesReady(true));
+  }, [mode, promoCodesReady]);
 
   // Hard reset scroll after mode/form state switches to prevent blank viewport on mobile browsers.
   useEffect(() => {
@@ -1648,7 +1660,7 @@ export function App() {
           {currentStep === 1 && <StepOne data={formData} onChange={handleChange} />}
           {currentStep === 2 && <StepTwo data={formData} onChange={handleChange} />}
           {currentStep === 3 && <StepThree agreed={agreed} onAgree={setAgreed} />}
-          {currentStep === 4 && <StepFour data={formData} onChange={handleChange} />}
+          {currentStep === 4 && <StepFour data={formData} onChange={handleChange} preloadedPromoCodes={preloadedPromoCodes} promoCodesReady={promoCodesReady} />}
         </div>
 
         {/* Navigation Buttons */}

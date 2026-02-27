@@ -8,6 +8,8 @@ import { fetchPromoCodes, PromoCodeRecord } from '@/services/googleSheets';
 interface StepFourProps {
   data: Record<string, string>;
   onChange: (key: string, value: string) => void;
+  preloadedPromoCodes?: PromoCodeRecord[];
+  promoCodesReady?: boolean;
 }
 
 const KARAOKE_PRICES: Record<string, number> = {
@@ -17,7 +19,7 @@ const KARAOKE_PRICES: Record<string, number> = {
   'Платинум': 0,
 };
 
-export function StepFour({ data, onChange }: StepFourProps) {
+export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady }: StepFourProps) {
   const tariff = data.tariff || '';
   const releaseType = data.releaseType || '';
   const trackCount = getTrackCount(data);
@@ -47,6 +49,18 @@ export function StepFour({ data, onChange }: StepFourProps) {
   const totalAfterDiscount = Math.max(0, totalBeforeDiscount - (data.promoApplied === 'yes' ? appliedDiscount : 0));
 
   useEffect(() => {
+    // If promo codes were preloaded in the parent, use them directly
+    if (preloadedPromoCodes && preloadedPromoCodes.length > 0) {
+      setPromoCodes(preloadedPromoCodes);
+      setPromoLoading(false);
+      return;
+    }
+    // If parent says codes are ready (even if empty array), don't fetch
+    if (promoCodesReady) {
+      setPromoLoading(false);
+      return;
+    }
+    // Fallback: fetch ourselves
     let mounted = true;
     setPromoLoading(true);
     fetchPromoCodes()
@@ -65,7 +79,7 @@ export function StepFour({ data, onChange }: StepFourProps) {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [preloadedPromoCodes, promoCodesReady]);
 
   // Restore promo success message when remounting with already-applied promo
   useEffect(() => {
@@ -191,45 +205,6 @@ export function StepFour({ data, onChange }: StepFourProps) {
 
   return (
     <div className="space-y-6">
-      {/* ═══ Promo Code ═══ */}
-      <StepCard
-        title="Промокод"
-        subtitle="Введите промокод перед оплатой"
-        icon={<TicketPercent className="w-5 h-5" />}
-      >
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1">
-            <Input
-              label="Промокод"
-              icon={<TicketPercent className="w-4 h-4" />}
-              placeholder="PFV10, WELCOME20..."
-              value={data.promoCode || ''}
-              onChange={(e) => onChange('promoCode', e.target.value.toUpperCase())}
-            />
-          </div>
-          <div className="sm:pt-7">
-            <button
-              type="button"
-              onClick={applyPromo}
-              disabled={promoLoading}
-              className="w-full sm:w-auto inline-flex items-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 text-sm font-semibold shadow-sm disabled:opacity-60"
-            >
-              <TicketPercent className="w-4 h-4" />
-              {promoLoading ? 'Загрузка...' : 'Применить'}
-            </button>
-          </div>
-        </div>
-
-        {(promoMessage || promoError) && (
-          <div className={`mt-3 rounded-xl px-4 py-3 text-sm ${promoError ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-green-50 border border-green-200 text-green-700'}`}>
-            <div className="flex items-center gap-2">
-              {promoError ? <XCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
-              <span>{promoError || promoMessage}</span>
-            </div>
-          </div>
-        )}
-      </StepCard>
-
       {/* ═══ Payment Details ═══ */}
       <StepCard
         title="Информация для приёма платежей"
@@ -298,7 +273,7 @@ export function StepFour({ data, onChange }: StepFourProps) {
         <InfoBox variant="purple">
           <div>
             <p className="font-semibold mb-1">📌 Что делать после отправки?</p>
-            <p className="text-xs">Свяжитесь с нами для подтверждения данных.</p>
+            <p className="text-xs">Подпишите договор и свяжитесь с нами для подтверждения данных.</p>
           </div>
         </InfoBox>
 
@@ -341,6 +316,45 @@ export function StepFour({ data, onChange }: StepFourProps) {
             Спасибо, что выбрали нас! Мы ценим ваше доверие 💜
           </p>
         </div>
+      </StepCard>
+
+      {/* ═══ Promo Code ═══ */}
+      <StepCard
+        title="Промокод"
+        subtitle="Введите промокод перед оплатой"
+        icon={<TicketPercent className="w-5 h-5" />}
+      >
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1">
+            <Input
+              label="Промокод"
+              icon={<TicketPercent className="w-4 h-4" />}
+              placeholder="PFV10, WELCOME20..."
+              value={data.promoCode || ''}
+              onChange={(e) => onChange('promoCode', e.target.value.toUpperCase())}
+            />
+          </div>
+          <div className="sm:pt-7">
+            <button
+              type="button"
+              onClick={applyPromo}
+              disabled={promoLoading}
+              className="w-full sm:w-auto inline-flex items-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 text-sm font-semibold shadow-sm disabled:opacity-60"
+            >
+              <TicketPercent className="w-4 h-4" />
+              {promoLoading ? 'Загрузка...' : 'Применить'}
+            </button>
+          </div>
+        </div>
+
+        {(promoMessage || promoError) && (
+          <div className={`mt-3 rounded-xl px-4 py-3 text-sm ${promoError ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-green-50 border border-green-200 text-green-700'}`}>
+            <div className="flex items-center gap-2">
+              {promoError ? <XCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+              <span>{promoError || promoMessage}</span>
+            </div>
+          </div>
+        )}
       </StepCard>
 
       {/* ═══ TOTAL PRICE — at the very end ═══ */}
@@ -457,8 +471,11 @@ export function StepFour({ data, onChange }: StepFourProps) {
 }
 
 function BankCard({ name, number, color, emoji }: { name: string; number: string; color: string; emoji: string }) {
+  const [copied, setCopied] = useState(false);
   const handleCopy = () => {
     navigator.clipboard?.writeText(number.replace(/\s/g, ''));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -471,8 +488,8 @@ function BankCard({ name, number, color, emoji }: { name: string; number: string
         <p className="font-mono font-bold text-gray-900 text-sm tracking-wide">{number}</p>
       </div>
       <button type="button" onClick={handleCopy}
-        className="text-[10px] text-purple-600 hover:text-purple-800 font-medium px-2 py-1 rounded-md hover:bg-purple-50 flex-shrink-0">
-        Копировать
+        className={`text-[10px] font-medium px-2 py-1 rounded-md flex-shrink-0 min-w-[76px] text-center ${copied ? 'text-green-700 bg-green-50' : 'text-purple-600 hover:text-purple-800 hover:bg-purple-50'}`}>
+        {copied ? '✓ Скопировано' : 'Копировать'}
       </button>
     </div>
   );
