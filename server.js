@@ -1,7 +1,14 @@
-import 'dotenv/config';
-import express from 'express';
+import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load .env from the project root (works regardless of cwd)
+dotenv.config({ path: join(__dirname, '.env') });
+
+import express from 'express';
 import { createServer } from 'http';
 
 import submitHandler from './api/submit.js';
@@ -10,9 +17,6 @@ import sendContractHandler from './api/send-contract.js';
 import listHandler from './api/list.js';
 import paymentCreateHandler from './api/payment/create.js';
 import paymentStatusHandler from './api/payment/status.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 const app = express();
 
@@ -49,6 +53,36 @@ app.all('/api/send-contract', vercelHandler(sendContractHandler));
 app.all('/api/list', vercelHandler(listHandler));
 app.all('/api/payment/create', vercelHandler(paymentCreateHandler));
 app.all('/api/payment/status', vercelHandler(paymentStatusHandler));
+
+// Proxy for Google Apps Script (avoids CORS on localhost)
+app.all('/api/gas-proxy', async (req, res) => {
+  try {
+    const gasUrl = process.env.VITE_GOOGLE_SCRIPT_URL;
+    if (!gasUrl) return res.status(500).json({ error: 'GAS URL not configured' });
+
+    if (req.method === 'GET') {
+      const params = new URLSearchParams(req.query);
+      const url = `${gasUrl}?${params.toString()}`;
+      const response = await fetch(url, { redirect: 'follow' });
+      const text = await response.text();
+      res.setHeader('Content-Type', 'application/json');
+      res.status(response.ok ? 200 : response.status).send(text);
+    } else {
+      // POST — forward body to GAS
+      const response = await fetch(gasUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(req.body),
+        redirect: 'follow',
+      });
+      const text = await response.text();
+      res.setHeader('Content-Type', 'application/json');
+      res.status(response.ok ? 200 : response.status).send(text);
+    }
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
 
 // Serve built frontend (dist/) for all other routes (SPA fallback)
 const distPath = join(__dirname, 'dist');

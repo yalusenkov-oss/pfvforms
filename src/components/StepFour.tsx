@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Input, StepCard, InfoBox } from './UI';
-import { CreditCard, Calculator, ReceiptText, MessageSquare, UserCheck, TicketPercent, CheckCircle2, XCircle, Send, MessageCircle, Loader2, Wallet, ShieldCheck } from 'lucide-react';
+import { CreditCard, Calculator, ReceiptText, MessageSquare, UserCheck, TicketPercent, CheckCircle2, XCircle, Loader2, Wallet, ShieldCheck } from 'lucide-react';
 import { calcTotal, getTrackCount } from './StepOne';
 import { fetchPromoCodes, PromoCodeRecord } from '@/services/googleSheets';
 import { createPayment, checkPaymentStatus } from '@/services/payment';
@@ -10,6 +10,8 @@ interface StepFourProps {
   onChange: (key: string, value: string) => void;
   preloadedPromoCodes?: PromoCodeRecord[];
   promoCodesReady?: boolean;
+  onPaymentSuccess?: () => void;
+  validationErrors?: string[];
 }
 
 const KARAOKE_PRICES: Record<string, number> = {
@@ -19,7 +21,7 @@ const KARAOKE_PRICES: Record<string, number> = {
   'Платинум': 0,
 };
 
-export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady }: StepFourProps) {
+export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady, onPaymentSuccess, validationErrors = [] }: StepFourProps) {
   const tariff = data.tariff || '';
   const releaseType = data.releaseType || '';
   const trackCount = getTrackCount(data);
@@ -174,6 +176,7 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady 
       const result = await createPayment({
         amount: totalAfterDiscount,
         description: `Дистрибуция PFVMUSIC — ${tariff}, ${releaseType}`,
+        email: data.email || '',
         metadata: {
           tariff,
           releaseType,
@@ -249,6 +252,7 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady 
             onChange('paymentProof', `yookassa:${paymentId}`);
             localStorage.removeItem('pfv_paymentId');
             setPaymentPolling(false);
+            onPaymentSuccess?.();
             return;
           }
           if (status.status === 'canceled') {
@@ -288,6 +292,45 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady 
           hint="Чтобы релиз попал в нужную картотеку, оставьте ссылки на профиль."
           value={data.artistProfileLinks || ''} onChange={(e) => onChange('artistProfileLinks', e.target.value)}
           placeholder="Ссылки на профили" />
+      </StepCard>
+
+      {/* ═══ Promo Code — BEFORE payment ═══ */}
+      <StepCard
+        title="Промокод"
+        subtitle="Введите промокод перед оплатой"
+        icon={<TicketPercent className="w-5 h-5" />}
+      >
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1">
+            <Input
+              label="Промокод"
+              icon={<TicketPercent className="w-4 h-4" />}
+              placeholder="PFV10, WELCOME20..."
+              value={data.promoCode || ''}
+              onChange={(e) => onChange('promoCode', e.target.value.toUpperCase())}
+            />
+          </div>
+          <div className="sm:pt-7">
+            <button
+              type="button"
+              onClick={applyPromo}
+              disabled={promoLoading}
+              className="w-full sm:w-auto inline-flex items-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 text-sm font-semibold shadow-sm disabled:opacity-60"
+            >
+              <TicketPercent className="w-4 h-4" />
+              {promoLoading ? 'Загрузка...' : 'Применить'}
+            </button>
+          </div>
+        </div>
+
+        {(promoMessage || promoError) && (
+          <div className={`mt-3 rounded-xl px-4 py-3 text-sm ${promoError ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-green-50 border border-green-200 text-green-700'}`}>
+            <div className="flex items-center gap-2">
+              {promoError ? <XCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+              <span>{promoError || promoMessage}</span>
+            </div>
+          </div>
+        )}
       </StepCard>
 
       {/* ═══ Payment Info ═══ */}
@@ -344,45 +387,6 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady 
           <div className="mt-3 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 flex items-center gap-2">
             <XCircle className="w-4 h-4 flex-shrink-0" />
             <span>{paymentError}</span>
-          </div>
-        )}
-      </StepCard>
-
-      {/* ═══ Promo Code ═══ */}
-      <StepCard
-        title="Промокод"
-        subtitle="Введите промокод перед оплатой"
-        icon={<TicketPercent className="w-5 h-5" />}
-      >
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1">
-            <Input
-              label="Промокод"
-              icon={<TicketPercent className="w-4 h-4" />}
-              placeholder="PFV10, WELCOME20..."
-              value={data.promoCode || ''}
-              onChange={(e) => onChange('promoCode', e.target.value.toUpperCase())}
-            />
-          </div>
-          <div className="sm:pt-7">
-            <button
-              type="button"
-              onClick={applyPromo}
-              disabled={promoLoading}
-              className="w-full sm:w-auto inline-flex items-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 text-sm font-semibold shadow-sm disabled:opacity-60"
-            >
-              <TicketPercent className="w-4 h-4" />
-              {promoLoading ? 'Загрузка...' : 'Применить'}
-            </button>
-          </div>
-        </div>
-
-        {(promoMessage || promoError) && (
-          <div className={`mt-3 rounded-xl px-4 py-3 text-sm ${promoError ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-green-50 border border-green-200 text-green-700'}`}>
-            <div className="flex items-center gap-2">
-              {promoError ? <XCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
-              <span>{promoError || promoMessage}</span>
-            </div>
           </div>
         )}
       </StepCard>
@@ -458,15 +462,33 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady 
                   <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0" />
                   <div>
                     <p className="text-sm font-bold text-green-800">Оплата подтверждена ✓</p>
-                    <p className="text-xs text-green-600">Нажмите «Отправить» для завершения</p>
+                    <p className="text-xs text-green-600">Данные отправляются автоматически</p>
                   </div>
                 </div>
               ) : (
                 <>
+                  {validationErrors.length > 0 && (
+                    <div className="mb-3 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
+                      <p className="text-xs font-semibold text-amber-800 mb-1.5">⚠️ Заполните все обязательные поля перед оплатой:</p>
+                      <ul className="space-y-0.5">
+                        {validationErrors.slice(0, 5).map((err, i) => (
+                          <li key={i} className="text-xs text-amber-700 flex items-start gap-1.5">
+                            <span className="w-1 h-1 rounded-full bg-amber-400 mt-1.5 flex-shrink-0" />
+                            {err}
+                          </li>
+                        ))}
+                        {validationErrors.length > 5 && (
+                          <li className="text-xs text-amber-600 font-medium mt-1">
+                            ... и ещё {validationErrors.length - 5}
+                          </li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
                   <button
                     type="button"
                     onClick={handlePayment}
-                    disabled={paymentCreating || paymentPolling || totalAfterDiscount <= 0}
+                    disabled={paymentCreating || paymentPolling || totalAfterDiscount <= 0 || validationErrors.length > 0}
                     className="w-full flex items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 px-6 py-4 text-base font-bold text-white shadow-lg shadow-purple-300/50 hover:from-purple-700 hover:via-purple-800 hover:to-purple-900 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
                   >
                     {paymentCreating ? (
@@ -491,26 +513,6 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady 
                   </p>
                 </>
               )}
-            </div>
-
-            {/* After submission — compact */}
-            <div className="pt-4 mt-2 border-t border-purple-200/60 space-y-3">
-              <p className="text-xs font-semibold text-gray-700">📌 После отправки — подпишите договор и свяжитесь с нами:</p>
-              <div className="grid grid-cols-2 gap-2">
-                <a href="https://t.me/pfvmusic_support" target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50/60 px-3 py-2 text-xs font-semibold text-blue-700 hover:border-blue-300">
-                  <Send className="w-3.5 h-3.5" />
-                  <span>Telegram</span>
-                </a>
-                <a href="https://vk.com/pfvmusic" target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50/60 px-3 py-2 text-xs font-semibold text-blue-700 hover:border-blue-300">
-                  <MessageCircle className="w-3.5 h-3.5" />
-                  <span>ВКонтакте</span>
-                </a>
-              </div>
-              <p className="text-[11px] text-purple-600/80 text-center">
-                ⚠️ Не забудьте отправить форму! Спасибо, что выбрали нас 💜
-              </p>
             </div>
           </div>
         </div>

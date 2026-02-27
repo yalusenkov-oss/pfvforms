@@ -2,13 +2,14 @@
 // Creates a YooKassa payment and returns the confirmation URL
 import crypto from 'crypto';
 
-const YOOKASSA_SHOP_ID = process.env.YOOKASSA_SHOP_ID || '';
-const YOOKASSA_SECRET_KEY = process.env.YOOKASSA_SECRET_KEY || '';
 const YOOKASSA_API_URL = 'https://api.yookassa.ru/v3/payments';
 
-const SITE_URL = process.env.SITE_URL || 'https://pfvmusic.digital';
-
 export default async function handler(req, res) {
+  // Read env vars lazily (after dotenv.config() has run in server.js)
+  const YOOKASSA_SHOP_ID = process.env.YOOKASSA_SHOP_ID || '';
+  const YOOKASSA_SECRET_KEY = process.env.YOOKASSA_SECRET_KEY || '';
+  const SITE_URL = process.env.SITE_URL || 'https://pfvmusic.digital';
+
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -25,7 +26,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { amount, description, metadata } = req.body;
+    const { amount, description, metadata, email } = req.body;
 
     if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
       return res.status(400).json({ success: false, error: 'Invalid amount' });
@@ -46,6 +47,25 @@ export default async function handler(req, res) {
       capture: true, // Auto-capture (one-stage payment)
       description: description || 'Оплата дистрибуции PFVMUSIC',
       metadata: metadata || {},
+      // Чек (обязательно для ИП) — 54-ФЗ
+      receipt: {
+        customer: {
+          email: email || metadata?.email || 'support@pfvmusic.digital',
+        },
+        items: [
+          {
+            description: (description || 'Услуга дистрибуции PFVMUSIC').slice(0, 128),
+            quantity: '1.00',
+            amount: {
+              value: Number(amount).toFixed(2),
+              currency: 'RUB',
+            },
+            vat_code: 1,               // Без НДС (ИП на УСН)
+            payment_subject: 'service', // Услуга
+            payment_mode: 'full_payment',
+          },
+        ],
+      },
     };
 
     console.log('[payment/create] Creating payment:', JSON.stringify(paymentData, null, 2));

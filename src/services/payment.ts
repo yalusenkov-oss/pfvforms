@@ -5,6 +5,7 @@ export interface CreatePaymentParams {
   amount: number;
   description?: string;
   metadata?: Record<string, string>;
+  email?: string;
 }
 
 export interface CreatePaymentResult {
@@ -37,6 +38,7 @@ export async function createPayment(params: CreatePaymentParams): Promise<Create
         amount: params.amount,
         description: params.description || 'Оплата дистрибуции PFVMUSIC',
         metadata: params.metadata || {},
+        email: params.email || '',
       }),
     });
 

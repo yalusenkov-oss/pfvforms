@@ -262,17 +262,23 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
 }
 
 export async function fetchPromoCodes(): Promise<PromoCodeRecord[] | null> {
-  const url = await getGoogleScriptUrl();
-  if (!url) return null;
+  const isLocal = typeof window !== 'undefined' && /localhost|127\.0\.0\.1/.test(window.location.hostname);
 
-  let final = url;
-  try {
-    const u = new URL(url);
-    u.searchParams.set('action', 'list');
-    u.searchParams.set('sheet', 'promocodes');
-    final = u.toString();
-  } catch {
-    final = `${url}${url.includes('?') ? '&' : '?'}action=list&sheet=promocodes`;
+  let final: string;
+  if (isLocal) {
+    // On localhost, use server-side proxy to avoid CORS with GAS
+    final = `/api/gas-proxy?action=list&sheet=promocodes`;
+  } else {
+    const url = await getGoogleScriptUrl();
+    if (!url) return null;
+    try {
+      const u = new URL(url);
+      u.searchParams.set('action', 'list');
+      u.searchParams.set('sheet', 'promocodes');
+      final = u.toString();
+    } catch {
+      final = `${url}${url.includes('?') ? '&' : '?'}action=list&sheet=promocodes`;
+    }
   }
 
   const res = await fetch(final, { method: 'GET', redirect: 'follow' });
@@ -407,6 +413,7 @@ export async function submitToGoogleSheets(
   }
 
   const isProd = typeof window !== 'undefined' && !/localhost|127\\.0\\.0\\.1/.test(window.location.hostname);
+  const isLocal = !isProd && typeof window !== 'undefined';
 
   const isTestEnv = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test';
 
@@ -430,7 +437,8 @@ export async function submitToGoogleSheets(
 
   // Без ретраев — GAS не идемпотентен (повторные попытки дублируют строки и письма)
   try {
-      if (isProd) {
+      // Both prod and localhost use /api/submit (server-side proxy avoids CORS)
+      if (isProd || isLocal) {
         const res = await fetchWithTimeout('/api/submit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

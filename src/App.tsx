@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { ChevronRight, ChevronLeft, Send, CheckCircle2, FileText, CreditCard, Disc3, Sparkles, AlertCircle, Megaphone, ArrowLeft, XCircle, Clock, ExternalLink, Home, Loader2, Wallet, Clipboard, FileCheck, Phone } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Send, CheckCircle2, FileText, CreditCard, Disc3, Sparkles, AlertCircle, Megaphone, ArrowLeft, XCircle, Clock, ExternalLink, Home, Loader2, Wallet, Clipboard, FileCheck, Phone, MessageCircle } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { StepOne, getTrackCount } from './components/StepOne';
 import { StepTwo } from './components/StepTwo';
@@ -405,6 +405,7 @@ export function App() {
   };
 
   const handleDistributionSubmit = async () => {
+    // Kept as fallback in case auto-submit fails after payment
     const normalized = normalizeDistributionData(formData);
     const step1 = validateStep1(normalized);
     const step2 = validateStep2(normalized, agreed);
@@ -481,7 +482,43 @@ export function App() {
     setPromoErrors([]);
   };
 
-  const canSubmitDistribution = formData.paymentStatus === 'succeeded';
+  // Compute validation errors from steps 1, 2, 3 (excluding payment) for payment button
+  const paymentBlockErrors = (() => {
+    const normalized = normalizeDistributionData(formData);
+    const s1 = validateStep1(normalized);
+    const s2 = validateStep2(normalized, agreed);
+    // Step 3: only contactInfo (skip payment status check)
+    const s3errs: string[] = [];
+    if (!normalized.contactInfo?.trim()) s3errs.push('Укажите контакты для связи');
+    return [...s1.errors, ...s2.errors, ...s3errs];
+  })();
+
+  // Called by StepFour when payment polling confirms success
+  const handlePaymentSuccess = useCallback(async () => {
+    // Auto-submit the form after successful payment
+    const normalized = normalizeDistributionData(formData);
+    
+    setSubmitting(true);
+    scrollToTopInstant();
+    
+    try {
+      const result = await submitToGoogleSheets('distribution', normalized);
+      if (result.success) {
+        setSubmittedSignLink(result.signLink || '');
+        setSubmitting(false);
+        setSubmitted(true);
+      } else {
+        // If submission fails, still show step 3 so user can retry manually
+        setValidationErrors([result.message]);
+        setSubmitting(false);
+      }
+    } catch (error) {
+      console.error('Auto-submit after payment error:', error);
+      setValidationErrors(['Оплата прошла успешно, но произошла ошибка при отправке формы. Нажмите «Отправить» вручную.']);
+      setSubmitting(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData]);
 
   const renderOfferModal = () => {
     if (!showOfferModal) return null;
@@ -1547,10 +1584,20 @@ export function App() {
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50/30 flex flex-col">
         <Header onBack={undefined} />
         <div className="flex-1 flex items-center justify-center px-4">
-          <div className="text-center space-y-4">
-            <Loader2 className="w-10 h-10 text-purple-600 animate-spin mx-auto" />
-            <p className="text-sm font-semibold text-gray-600">Отправка формы...</p>
-            <p className="text-xs text-gray-400">Пожалуйста, подождите</p>
+          <div className="text-center space-y-6 max-w-md">
+            {/* Success checkmark */}
+            <div className="relative mx-auto">
+              <div className="absolute inset-0 rounded-full bg-emerald-200 animate-ping opacity-20" style={{ animationDuration: '2s' }} />
+              <div className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-xl shadow-emerald-200/50">
+                <CheckCircle2 className="h-10 w-10 text-white" />
+              </div>
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">Оплата прошла успешно!</h2>
+              <p className="text-sm text-gray-500">Отправляем данные для оформления...</p>
+            </div>
+            <Loader2 className="w-8 h-8 text-purple-600 animate-spin mx-auto" />
+            <p className="text-xs text-gray-400">Пожалуйста, не закрывайте страницу</p>
           </div>
         </div>
       </div>
@@ -1559,56 +1606,103 @@ export function App() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50/30 flex flex-col">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-emerald-50/30 flex flex-col">
         <Header onBack={goHome} />
         <div className="flex-1 flex items-center justify-center px-4 py-8">
-          <div className="rounded-2xl border border-emerald-200 bg-white p-10 text-center shadow-xl shadow-emerald-100/20">
-            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100">
-              <CheckCircle2 className="h-10 w-10 text-emerald-600" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Форма успешно отправлена!</h2>
-            <p className="text-gray-600 mb-2 leading-relaxed">
-              Спасибо за отправку релиза на дистрибуцию!
-            </p>
-            <p className="text-gray-500 text-sm mb-4">
-              Следующий шаг — подписание лицензионного договора.
-            </p>
-
-            {/* ═══ Sign Contract Button ═══ */}
-            {submittedSignLink && (
-              <a
-                href={submittedSignLink}
-                className="mb-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-8 py-3.5 text-sm font-bold text-white shadow-lg shadow-purple-200/50 hover:from-purple-700 hover:to-purple-800"
-              >
-                <FileCheck className="w-5 h-5" />
-                Подписать договор
-              </a>
-            )}
-
-            <p className="text-gray-400 text-xs mb-6">
-              Ссылка для подписания также отправлена на вашу почту
-            </p>
-
-            <div className="inline-flex items-center gap-2 rounded-lg bg-purple-50 px-4 py-2 text-sm text-purple-700 font-medium mb-4">
-              <Send className="w-4 h-4" />
-              Не забудьте связаться с нами в Telegram или VK
+          <div className="rounded-3xl border-2 border-emerald-200 bg-white p-10 text-center shadow-2xl shadow-emerald-100/30 max-w-2xl w-full">
+            {/* Success Animation */}
+            <div className="relative mx-auto mb-8">
+              <div className="absolute inset-0 rounded-full bg-emerald-200 animate-ping opacity-20" style={{ animationDuration: '2s' }} />
+              <div className="relative mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-xl shadow-emerald-200/50">
+                <CheckCircle2 className="h-12 w-12 text-white" />
+              </div>
             </div>
 
+            <h2 className="text-3xl font-extrabold text-gray-900 mb-3">
+              Оплата и заявка{' '}
+              <span className="bg-gradient-to-r from-emerald-500 to-emerald-600 bg-clip-text text-transparent">
+                приняты!
+              </span>
+            </h2>
+            <p className="text-gray-600 mb-2 leading-relaxed text-lg">
+              Благодарим за оплату и отправку заявки!
+            </p>
+            <p className="text-gray-500 text-sm mb-6 max-w-md mx-auto">
+              Осталось подписать лицензионный договор — без него релиз не будет опубликован.
+            </p>
+
+            {/* Step: Sign Contract */}
+            <div className="bg-purple-50 rounded-2xl p-6 mb-6 border-2 border-purple-200">
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center shadow-lg shadow-purple-200">
+                  <FileCheck className="w-6 h-6 text-white" />
+                </div>
+                <div className="text-left">
+                  <p className="font-bold text-purple-900 text-lg">Подпишите договор</p>
+                  <p className="text-xs text-purple-600">Следующий и последний шаг</p>
+                </div>
+              </div>
+
+              {submittedSignLink ? (
+                <a
+                  href={submittedSignLink}
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-8 py-4 text-base font-bold text-white shadow-lg shadow-purple-200/50 hover:from-purple-700 hover:to-purple-800"
+                >
+                  <FileCheck className="w-5 h-5" />
+                  Перейти к подписанию договора
+                </a>
+              ) : (
+                <p className="text-sm text-purple-700">
+                  Ссылка для подписания будет отправлена на вашу почту
+                </p>
+              )}
+            </div>
+
+            {/* Warning */}
             <div className="rounded-xl bg-red-50 border border-red-200 px-5 py-3 mb-6">
               <p className="text-sm font-bold text-red-700">
                 ⚠️ Без подписанного договора релиз не будет опубликован
               </p>
             </div>
 
+            {/* Contact */}
+            <div className="bg-gray-50 rounded-2xl p-5 mb-6 border border-gray-100">
+              <p className="text-sm text-gray-600 mb-3">
+                После подписания свяжитесь с нами для уточнения деталей:
+              </p>
+              <div className="flex flex-wrap justify-center gap-3">
+                <a
+                  href="https://t.me/pfvmusic_support"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-xl bg-sky-50 border border-sky-100 px-5 py-3 text-sm font-semibold text-sky-700 hover:bg-sky-100"
+                >
+                  <Send className="w-4 h-4" />
+                  Telegram
+                </a>
+                <a
+                  href="https://vk.com/pfvmusic"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-xl bg-blue-50 border border-blue-100 px-5 py-3 text-sm font-semibold text-blue-700 hover:bg-blue-100"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  ВКонтакте
+                </a>
+              </div>
+            </div>
+
             <button
               type="button"
               onClick={goHome}
-              className="rounded-xl border border-gray-200 bg-white px-6 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-6 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
             >
+              <Home className="w-4 h-4" />
               На главную
             </button>
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -1719,7 +1813,7 @@ export function App() {
         <div key={currentStep} className="animate-in">
           {currentStep === 1 && <StepOne data={formData} onChange={handleChange} />}
           {currentStep === 2 && <StepTwo data={formData} onChange={handleChange} agreed={agreed} onAgree={setAgreed} />}
-          {currentStep === 3 && <StepFour data={formData} onChange={handleChange} preloadedPromoCodes={preloadedPromoCodes} promoCodesReady={promoCodesReady} />}
+          {currentStep === 3 && <StepFour data={formData} onChange={handleChange} preloadedPromoCodes={preloadedPromoCodes} promoCodesReady={promoCodesReady} onPaymentSuccess={handlePaymentSuccess} validationErrors={paymentBlockErrors} />}
         </div>
 
         {/* Navigation Buttons */}
@@ -1747,24 +1841,8 @@ export function App() {
               <ChevronRight className="w-4 h-4" />
             </button>
           ) : (
-            <button
-              type="button"
-              onClick={handleDistributionSubmit}
-              disabled={submitting || !canSubmitDistribution}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-200/50 disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Отправка...
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4" />
-                  Отправить
-                </>
-              )}
-            </button>
+            /* На шаге 3 кнопки «Отправить» нет — отправка автоматическая после оплаты */
+            <div />
           )}
         </div>
 

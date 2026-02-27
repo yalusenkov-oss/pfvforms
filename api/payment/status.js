@@ -1,11 +1,13 @@
 // GET /api/payment/status?paymentId=xxx
 // Checks the status of a YooKassa payment
 
-const YOOKASSA_SHOP_ID = process.env.YOOKASSA_SHOP_ID || '';
-const YOOKASSA_SECRET_KEY = process.env.YOOKASSA_SECRET_KEY || '';
 const YOOKASSA_API_URL = 'https://api.yookassa.ru/v3/payments';
 
 export default async function handler(req, res) {
+  // Read env vars lazily (after dotenv.config() has run in server.js)
+  const YOOKASSA_SHOP_ID = process.env.YOOKASSA_SHOP_ID || '';
+  const YOOKASSA_SECRET_KEY = process.env.YOOKASSA_SECRET_KEY || '';
+
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
