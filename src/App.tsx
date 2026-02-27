@@ -27,6 +27,7 @@ type TariffInfo = {
   features: string[];
   monetization: string[];
   restrictions?: string[];
+  highlights?: string[];
   icon: 'music' | 'trending' | 'star' | 'crown';
   emoji: string;
   badge?: string;
@@ -87,6 +88,7 @@ const TARIFFS: TariffInfo[] = [
       'Бесплатные консультации на всех этапах',
     ],
     monetization: ['Доля артиста: 70%', 'Минимальная выплата: от 1000 ₽'],
+    highlights: ['Можно подать на промо'],
   },
   {
     name: 'Премиум',
@@ -117,6 +119,7 @@ const TARIFFS: TariffInfo[] = [
       'Оперативная техподдержка',
     ],
     monetization: ['Доля артиста: 90%', 'Минимальная выплата: от 500 ₽'],
+    highlights: ['Можно подать на промо'],
   },
   {
     name: 'Платинум',
@@ -143,6 +146,7 @@ const TARIFFS: TariffInfo[] = [
       'Премиальная техподдержка',
     ],
     monetization: ['Доля артиста: 100%', 'Выплаты: с любой суммы'],
+    highlights: ['Можно подать на промо'],
   },
 ];
 
@@ -817,6 +821,16 @@ export function App() {
                             <p key={r} className="text-[11px] font-bold text-red-600 flex items-center gap-1.5">
                               <XCircle className="w-3 h-3 flex-shrink-0" />
                               {r}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                      {tariff.highlights && tariff.highlights.length > 0 && (
+                        <div className="pt-2.5 border-t border-emerald-200">
+                          {tariff.highlights.map((h) => (
+                            <p key={h} className="text-[11px] font-bold text-emerald-600 flex items-center gap-1.5">
+                              <CheckCircle2 className="w-3 h-3 flex-shrink-0" />
+                              {h}
                             </p>
                           ))}
                         </div>
