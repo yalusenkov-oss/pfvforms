@@ -450,15 +450,6 @@ export function App() {
     setPromoErrors([]);
   };
   
-  const resetDistribution = () => {
-    setSubmitted(false);
-    setSubmittedSignLink('');
-    setCurrentStep(1);
-    setFormData({});
-    setAgreed(false);
-    setValidationErrors([]);
-  };
-  
   const resetPromo = () => {
     setPromoSubmitted(false);
     setPromoData({});
@@ -1553,26 +1544,24 @@ export function App() {
               Ссылка для подписания также отправлена на вашу почту
             </p>
 
-            <div className="inline-flex items-center gap-2 rounded-lg bg-purple-50 px-4 py-2 text-sm text-purple-700 font-medium mb-6">
+            <div className="inline-flex items-center gap-2 rounded-lg bg-purple-50 px-4 py-2 text-sm text-purple-700 font-medium mb-4">
               <Send className="w-4 h-4" />
               Не забудьте связаться с нами в Telegram или VK
             </div>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <button
-                type="button"
-                onClick={resetDistribution}
-                className="rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-200 hover:from-purple-700 hover:to-purple-800"
-              >
-                Отправить ещё один релиз
-              </button>
-              <button
-                type="button"
-                onClick={goHome}
-                className="rounded-xl border border-gray-200 bg-white px-6 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-              >
-                На главную
-              </button>
+
+            <div className="rounded-xl bg-red-50 border border-red-200 px-5 py-3 mb-6">
+              <p className="text-sm font-bold text-red-700">
+                ⚠️ Без подписанного договора релиз не будет опубликован
+              </p>
             </div>
+
+            <button
+              type="button"
+              onClick={goHome}
+              className="rounded-xl border border-gray-200 bg-white px-6 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            >
+              На главную
+            </button>
           </div>
         </div>
       </div>
