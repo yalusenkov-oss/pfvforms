@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Input, TextArea, RadioGroup, InfoBox, StepCard, Divider, NumberStepper, DatePicker, Select } from './UI';
 import {
   Music2, User, Link2, Disc3, Calendar, Image, Globe, Clock,
-  Mic2, PenTool, Hash, Bookmark, TicketPercent, Pill, Type, Banknote,
+  Mic2, PenTool, Hash, Bookmark, TicketPercent, Type, Banknote,
   AlertCircle, ChevronDown, ChevronUp, Plus, X, Users, ChevronRight
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
@@ -179,13 +179,13 @@ export function StepOne({ data, onChange }: StepOneProps) {
         <div className="grid gap-4 sm:grid-cols-2 mb-6">
           {/* Базовый */}
           <div className={cn(
-            'relative rounded-2xl border-2 p-5 transition-all duration-300 overflow-hidden hover:shadow-lg hover:-translate-y-1',
+            'relative rounded-2xl border-2 p-5 transition-all duration-300 overflow-hidden hover:shadow-lg',
             tariff === 'Базовый'
-              ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-blue-50/50 ring-2 ring-blue-100 shadow-lg'
+              ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-blue-50/50 ring-2 ring-blue-100 shadow-lg pt-10'
               : 'border-gray-200 bg-gradient-to-br from-white to-gray-50/50 hover:border-gray-300'
           )}>
             {tariff === 'Базовый' && (
-              <div className="absolute top-3 left-3">
+              <div className="absolute top-3 right-3">
                 <span className="text-[10px] font-bold text-white px-2.5 py-1 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 shadow-md">✓ ВЫБРАНО</span>
               </div>
             )}
@@ -214,13 +214,13 @@ export function StepOne({ data, onChange }: StepOneProps) {
 
           {/* Продвинутый */}
           <div className={cn(
-            'relative rounded-2xl border-2 p-5 transition-all duration-300 overflow-hidden hover:shadow-lg hover:-translate-y-1',
+            'relative rounded-2xl border-2 p-5 transition-all duration-300 overflow-hidden hover:shadow-lg',
             tariff === 'Продвинутый'
-              ? 'border-purple-500 bg-gradient-to-br from-purple-50 to-purple-50/50 ring-2 ring-purple-100 shadow-lg'
+              ? 'border-purple-500 bg-gradient-to-br from-purple-50 to-purple-50/50 ring-2 ring-purple-100 shadow-lg pt-10'
               : 'border-gray-200 bg-gradient-to-br from-white to-gray-50/50 hover:border-gray-300'
           )}>
             {tariff === 'Продвинутый' && (
-              <div className="absolute top-3 left-3">
+              <div className="absolute top-3 right-3">
                 <span className="text-[10px] font-bold text-white px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500 to-purple-600 shadow-md">✓ ВЫБРАНО</span>
               </div>
             )}
@@ -249,13 +249,13 @@ export function StepOne({ data, onChange }: StepOneProps) {
 
           {/* Премиум */}
           <div className={cn(
-            'relative rounded-2xl border-2 p-5 transition-all duration-300 overflow-hidden hover:shadow-lg hover:-translate-y-1',
+            'relative rounded-2xl border-2 p-5 transition-all duration-300 overflow-hidden hover:shadow-lg',
             tariff === 'Премиум'
-              ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-emerald-50/50 ring-2 ring-emerald-100 shadow-lg'
+              ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-emerald-50/50 ring-2 ring-emerald-100 shadow-lg pt-10'
               : 'border-emerald-300 bg-gradient-to-br from-emerald-50/80 to-emerald-50/30 hover:border-emerald-400'
           )}>
             {tariff === 'Премиум' && (
-              <div className="absolute top-3 left-3">
+              <div className="absolute top-3 right-3">
                 <span className="text-[10px] font-bold text-white px-2.5 py-1 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-md">✓ ВЫБРАНО</span>
               </div>
             )}
@@ -289,13 +289,13 @@ export function StepOne({ data, onChange }: StepOneProps) {
 
           {/* Платинум */}
           <div className={cn(
-            'relative rounded-2xl border-2 p-5 transition-all duration-300 overflow-hidden hover:shadow-lg hover:-translate-y-1',
+            'relative rounded-2xl border-2 p-5 transition-all duration-300 overflow-hidden hover:shadow-lg',
             tariff === 'Платинум'
-              ? 'border-orange-500 bg-gradient-to-br from-orange-50 to-orange-50/50 ring-2 ring-orange-100 shadow-lg'
+              ? 'border-orange-500 bg-gradient-to-br from-orange-50 to-orange-50/50 ring-2 ring-orange-100 shadow-lg pt-10'
               : 'border-orange-300 bg-gradient-to-br from-orange-50/80 to-orange-50/30 hover:border-orange-400'
           )}>
             {tariff === 'Платинум' && (
-              <div className="absolute top-3 left-3">
+              <div className="absolute top-3 right-3">
                 <span className="text-[10px] font-bold text-white px-2.5 py-1 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 shadow-md">✓ ВЫБРАНО</span>
               </div>
             )}
@@ -808,36 +808,63 @@ export function StepOne({ data, onChange }: StepOneProps) {
 
                     <Divider label="Контент" />
 
-                    {/* Explicit & Substances */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <RadioGroup
-                        label="Ненормативная лексика" required
-                        icon={<AlertCircle className="w-4 h-4" />}
-                        name={`explicit_${i}`}
-                        options={['Да', 'Нет']}
-                        value={track.explicitContent}
-                        onChange={(v) => updateTrack(i, 'explicitContent', v)}
-                        horizontal
-                      />
-                      <RadioGroup
-                        label="Запрещённые вещества" required
-                        icon={<Pill className="w-4 h-4" />}
-                        name={`substance_${i}`}
-                        options={['Да', 'Нет']}
-                        value={track.substanceMention}
-                        onChange={(v) => updateTrack(i, 'substanceMention', v)}
-                        horizontal
-                      />
-                    </div>
+                    {/* Explicit */}
+                    <RadioGroup
+                      label="Ненормативная лексика" required
+                      icon={<AlertCircle className="w-4 h-4" />}
+                      name={`explicit_${i}`}
+                      options={['Да', 'Нет']}
+                      value={track.explicitContent}
+                      onChange={(v) => updateTrack(i, 'explicitContent', v)}
+                      horizontal
+                    />
 
                     {/* Lyrics */}
                     <TextArea
-                      label="Текст трека" icon={<PenTool className="w-4 h-4" />}
+                      label="Текст трека" required icon={<PenTool className="w-4 h-4" />}
                       value={track.lyrics}
                       onChange={(e) => updateTrack(i, 'lyrics', e.target.value)}
                       placeholder="Текст трека..."
                       className="min-h-[100px]"
                     />
+
+                    {/* Drug content consent checkbox */}
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => updateTrack(i, 'substanceMention', track.substanceMention === 'confirmed' ? '' : 'confirmed')}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); updateTrack(i, 'substanceMention', track.substanceMention === 'confirmed' ? '' : 'confirmed'); } }}
+                      className={cn(
+                        'flex items-start gap-3 rounded-xl border-2 px-4 py-3.5 cursor-pointer transition-all duration-200 text-sm select-none',
+                        track.substanceMention === 'confirmed'
+                          ? 'border-emerald-400 bg-emerald-50/50 ring-1 ring-emerald-200'
+                          : 'border-gray-200 bg-white hover:border-purple-200'
+                      )}
+                    >
+                      <div className={cn(
+                        'w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all duration-200',
+                        track.substanceMention === 'confirmed'
+                          ? 'border-emerald-600 bg-emerald-600'
+                          : 'border-gray-300'
+                      )}>
+                        {track.substanceMention === 'confirmed' && (
+                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      <div>
+                        <p className={cn(
+                          'font-medium',
+                          track.substanceMention === 'confirmed' ? 'text-emerald-800' : 'text-gray-700'
+                        )}>
+                          Подтверждаю отсутствие пропаганды наркотических веществ
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Я подтверждаю, что в данном треке отсутствует пропаганда наркотических и запрещённых веществ.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

@@ -68,6 +68,14 @@ export function StepFour({ data, onChange, onGoToPromo }: StepFourProps) {
     };
   }, []);
 
+  // Restore promo success message when remounting with already-applied promo
+  useEffect(() => {
+    if (data.promoApplied === 'yes' && data.promoDiscountAmount) {
+      setPromoMessage(`Промокод применён: -${parseFloat(data.promoDiscountAmount).toLocaleString('ru-RU')} ₽`);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const validatePromo = (code: string) => {
     const normalized = code.trim().toUpperCase();
     if (!normalized) return { ok: false, error: 'Введите промокод' };
@@ -129,6 +137,9 @@ export function StepFour({ data, onChange, onGoToPromo }: StepFourProps) {
   useEffect(() => {
     if (data.promoApplied !== 'yes') return;
     if (!data.promoCode) return;
+    // Don't re-validate while promo codes are still loading — prevents
+    // resetting a previously-applied code when StepFour remounts.
+    if (promoLoading || promoCodes.length === 0) return;
     const result = validatePromo(data.promoCode);
     if (!result.ok) {
       onChange('promoApplied', 'no');
@@ -139,7 +150,7 @@ export function StepFour({ data, onChange, onGoToPromo }: StepFourProps) {
       setPromoError(result.error || 'Промокод неактуален');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tariff, releaseType, base, karaoke, promoCodes]);
+  }, [tariff, releaseType, base, karaoke, promoCodes, promoLoading]);
 
   const handlePaymentProofChange = (e: ChangeEvent<HTMLInputElement>) => {
     setPaymentProofError('');
@@ -272,8 +283,8 @@ export function StepFour({ data, onChange, onGoToPromo }: StepFourProps) {
 
       {/* ═══ Contacts & Extras (moved from StepOne) ═══ */}
       <StepCard
-        title="Контакты и дополнительно"
-        subtitle="Информация для обратной связи"
+        title="Дополнительно"
+        subtitle="Дополнительная информация"
         icon={<MessageSquare className="w-5 h-5" />}
       >
         <Input label="Контакты для связи" required icon={<MessageSquare className="w-4 h-4" />}

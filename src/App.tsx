@@ -38,7 +38,7 @@ const TARIFFS: TariffInfo[] = [
   {
     name: 'Базовый',
     subtitle: 'Старт для начинающих',
-    turnaround: '7 рабочих дней',
+    turnaround: '7+ дней',
     cardClass: 'border-purple-200 bg-white hover:border-purple-300',
     titleClass: 'text-purple-900',
     icon: 'music',
@@ -63,7 +63,7 @@ const TARIFFS: TariffInfo[] = [
   {
     name: 'Продвинутый',
     subtitle: 'Баланс цены и возможностей',
-    turnaround: '4 рабочих дня',
+    turnaround: '5 дней',
     cardClass: 'border-sky-200 bg-white hover:border-sky-300',
     titleClass: 'text-sky-900',
     icon: 'trending',
@@ -91,7 +91,7 @@ const TARIFFS: TariffInfo[] = [
   {
     name: 'Премиум',
     subtitle: 'Оптимальный выбор для развития',
-    turnaround: '2 рабочих дня',
+    turnaround: '3 дня',
     recommended: true,
     cardClass: 'border-emerald-300 bg-white hover:border-emerald-400 ring-2 ring-emerald-200 ring-offset-2',
     titleClass: 'text-emerald-900',
@@ -121,7 +121,7 @@ const TARIFFS: TariffInfo[] = [
   {
     name: 'Платинум',
     subtitle: 'Максимум без компромиссов',
-    turnaround: '1 рабочий день (до 24 часов в рабочие дни)',
+    turnaround: 'Индивидуально',
     cardClass: 'border-amber-300 bg-white hover:border-amber-400',
     titleClass: 'text-amber-900',
     icon: 'crown',
@@ -185,7 +185,8 @@ function validateStep1(data: Record<string, string>): ValidationResult {
       if (!track?.lyricists?.some((l: string) => l?.trim())) errors.push(`Трек ${i + 1}: укажите автора текста`);
       if (!track?.composers?.some((c: string) => c?.trim())) errors.push(`Трек ${i + 1}: укажите композитора`);
       if (!track?.explicitContent) errors.push(`Трек ${i + 1}: укажите наличие ненормативной лексики`);
-      if (!track?.substanceMention) errors.push(`Трек ${i + 1}: укажите упоминание запрещённых веществ`);
+      if (track?.substanceMention !== 'confirmed') errors.push(`Трек ${i + 1}: подтвердите отсутствие пропаганды наркотических веществ`);
+      if (!track?.lyrics?.trim()) errors.push(`Трек ${i + 1}: укажите текст трека`);
     }
   } catch {
     errors.push('Заполните информацию о треках');
@@ -704,7 +705,7 @@ export function App() {
             <div className="mb-6 grid gap-3 md:grid-cols-3">
               <div className="h-11 rounded-full border border-purple-200 bg-purple-100/40 px-5 py-3 text-sm font-semibold text-purple-700 text-center inline-flex items-center justify-center gap-2">
                 <span>⚡</span>
-                <span>Отгрузка: 7 / 4 / 2 / 1 дня</span>
+                <span>Обработка: 7+ / 5 / 3 дня</span>
               </div>
               <div className="h-11 rounded-full border border-emerald-300 bg-emerald-500 px-5 py-3 text-sm font-semibold text-white text-center inline-flex items-center justify-center gap-2 shadow-md shadow-emerald-200">
                 <span>⭐</span>
@@ -753,12 +754,12 @@ export function App() {
             </div>
 
             {/* Tariff Cards Grid - 2 основных сверху, 2 дополнительных снизу */}
-            <div className="grid items-start gap-5 md:grid-cols-2">
+            <div className="grid gap-5 md:grid-cols-2">
               {TARIFFS.map((tariff, tariffIndex) => (
                 <div
                   key={tariff.name}
                   className={cn(
-                    'rounded-2xl border-2 p-6 bg-white transition-all duration-300 hover:shadow-lg hover:-translate-y-1',
+                    'rounded-2xl border-2 p-6 bg-white transition-all duration-300 hover:shadow-lg',
                     tariff.cardClass
                   )}
                 >
@@ -1454,7 +1455,7 @@ export function App() {
               type="button"
               onClick={handlePromoSubmit}
               disabled={promoSubmitting}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-orange-600 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-200/50 hover:shadow-amber-300/50 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-orange-600 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-200/50 transition-all duration-200 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {promoSubmitting ? (
                 <>
@@ -1503,7 +1504,7 @@ export function App() {
             {submittedSignLink && (
               <a
                 href={submittedSignLink}
-                className="mb-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 px-8 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-200/50 hover:from-emerald-700 hover:to-emerald-800 hover:shadow-emerald-300/50 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                className="mb-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 px-8 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-200/50 hover:from-emerald-700 hover:to-emerald-800 transition-all duration-200 active:scale-[0.98]"
               >
                 <FileCheck className="w-5 h-5" />
                 Подписать договор
@@ -1669,7 +1670,7 @@ export function App() {
             <button
               type="button"
               onClick={goNext}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-7 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-200/50 hover:from-purple-700 hover:to-purple-800 hover:shadow-purple-300/50 transition-all duration-200 active:scale-[0.98]"
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-7 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-200/50 hover:from-purple-700 hover:to-purple-800 transition-all duration-200 active:scale-[0.98]"
             >
               Далее
               <ChevronRight className="w-4 h-4" />
@@ -1679,7 +1680,7 @@ export function App() {
               type="button"
               onClick={handleDistributionSubmit}
               disabled={submitting || !canSubmitDistribution}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-200/50 hover:shadow-purple-300/50 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-200/50 transition-all duration-200 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {submitting ? (
                 <>
