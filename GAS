@@ -494,6 +494,25 @@ function processDistributionBackground(data) {
     
     Logger.log('🔄 Background processing started for contract: ' + contractNumber + ' | row: ' + lastRow);
 
+    // ── Загрузка скриншота оплаты на Drive (до Telegram, чтобы ссылка была в уведомлении) ──
+    let paymentProofUrl = '';
+    if (data.paymentProof && lastRow > 1) {
+      try {
+        const proofFile = storePaymentProof(data.paymentProof, contractNumber, data.fullName || '');
+        if (proofFile) {
+          paymentProofUrl = proofFile.getUrl();
+          const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+          const proofColIdx = headers.indexOf('payment_proof_url');
+          if (proofColIdx >= 0) {
+            sheet.getRange(lastRow, proofColIdx + 1).setValue(paymentProofUrl);
+          }
+          Logger.log('✅ Payment proof uploaded: ' + paymentProofUrl);
+        }
+      } catch (e) {
+        Logger.log('❌ Background paymentProof error: ' + e);
+      }
+    }
+
     // ── Telegram #1: уведомление о дистрибуции ──
     const distCfg = getTelegramConfig('distribution');
     if (TELEGRAM_CONFIG.NOTIFY_DISTRIBUTION && distCfg.ENABLED && distCfg.BOT_TOKEN && distCfg.CHAT_ID) {
@@ -511,6 +530,7 @@ function processDistributionBackground(data) {
           platforms:      data.platforms || '',
           email:          data.email || '',
           contact:        data.contactInfo || data.contact || '',
+          paymentProofUrl: paymentProofUrl,
           sheetUrl:       SpreadsheetApp.openById(SPREADSHEET_ID).getUrl()
         });
         Logger.log('✅ Telegram distribution notification sent');
@@ -538,24 +558,6 @@ function processDistributionBackground(data) {
         }
       } catch (tgErr) {
         Logger.log('❌ Telegram document error: ' + tgErr);
-      }
-    }
-
-    // ── Загрузка скриншота оплаты на Drive ──
-    if (data.paymentProof && lastRow > 1) {
-      try {
-        const proofFile = storePaymentProof(data.paymentProof, contractNumber, data.fullName || '');
-        if (proofFile) {
-          const proofUrl = proofFile.getUrl();
-          const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-          const proofColIdx = headers.indexOf('payment_proof_url');
-          if (proofColIdx >= 0) {
-            sheet.getRange(lastRow, proofColIdx + 1).setValue(proofUrl);
-          }
-          Logger.log('✅ Payment proof uploaded: ' + proofUrl);
-        }
-      } catch (e) {
-        Logger.log('❌ Background paymentProof error: ' + e);
       }
     }
 
@@ -905,6 +907,9 @@ function buildDistributionMessage(data) {
     `▸ Email: ${escapeMd(data.email || 'не указан')}`,
     `▸ Связь: ${escapeMd(data.contact || 'не указан')}`,
     "",
+    data.paymentProofUrl
+      ? `💳 [Фото оплаты](${escapeUrl(data.paymentProofUrl)})`
+      : `💳 Фото оплаты: _не загружено_`,
     `📄 [Открыть таблицу](${escapeUrl(data.sheetUrl)})`
   ];
 
@@ -1210,7 +1215,8 @@ function sendPendingNotifications() {
         musicAuthor: headers.indexOf('music_author'),
         lyricsAuthor: headers.indexOf('lyrics_author'),
         email: headers.indexOf('email'),
-        contact: headers.indexOf('contact')
+        contact: headers.indexOf('contact'),
+        paymentProofUrl: headers.indexOf('payment_proof_url')
       };
 
       const telegramCol = getOrCreateColumn(sheet, 'telegram_status');
@@ -1233,6 +1239,7 @@ function sendPendingNotifications() {
             lyricsAuthor: row[idx.lyricsAuthor] || row[idx.licensorName] || '',
             email: row[idx.email] || '',
             contact: row[idx.contact] || '',
+            paymentProofUrl: idx.paymentProofUrl >= 0 ? (row[idx.paymentProofUrl] || '') : '',
             sheetUrl: SpreadsheetApp.getActiveSpreadsheet().getUrl()
           });
 

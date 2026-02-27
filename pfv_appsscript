@@ -450,6 +450,7 @@ function saveDistribution(data) {
         lyricsAuthor: lyricsAuthorValue || '',
         email: data.email || '',
         contact: data.contactInfo || '',
+        paymentProofUrl: paymentProofUrl || '',
         sheetUrl: SpreadsheetApp.getActiveSpreadsheet().getUrl()
       });
     }
@@ -787,6 +788,9 @@ function buildDistributionMessage(data) {
     `▸ Email: ${escapeMd(data.email || 'не указан')}`,
     `▸ Связь: ${escapeMd(data.contact || 'не указан')}`,
     "",
+    data.paymentProofUrl
+      ? `💳 [Фото оплаты](${escapeMd(data.paymentProofUrl)})`
+      : `💳 Фото оплаты: _не загружено_`,
     `📄 [Открыть таблицу](${escapeMd(data.sheetUrl)})`
   ];
 
