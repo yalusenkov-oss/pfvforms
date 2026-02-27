@@ -11,6 +11,19 @@ const PROMO_CODES_SHEET_NAME = 'Промокоды';
 const WEB_LOG_SHEET_NAME = 'WebLogs';
 const DEBUG_LOGGING = true; // временное полное логирование
 
+// Кэш подписи ОР (6 часов) — чтобы не грузить с Drive каждый раз
+function getCachedOwnerSignatureBase64() {
+  const cache = CacheService.getScriptCache();
+  const cacheKey = 'owner_sig_b64_' + SIGNATURE_FILE_ID;
+  let cached = cache.get(cacheKey);
+  if (cached) return cached;
+  const blob = DriveApp.getFileById(SIGNATURE_FILE_ID).getBlob();
+  const b64 = Utilities.base64Encode(blob.getBytes());
+  // CacheService limit: 100KB per value. base64 signature should fit easily.
+  cache.put(cacheKey, b64, 21600); // 6 hours
+  return b64;
+}
+
 // ID шаблона документа
 const TEMPLATE_ID = '1MD0F4Ie0WQMCbZxHuwa0v23p836TFNV36MSEVbhBY7g';
 // ID файла подписи в Google Drive
@@ -204,6 +217,8 @@ function doPost(e) {
       result = submitSignature(data);
     } else if (data.action === 'update_contract_tg_status') {
       result = updateContractTgStatus(data);
+    } else if (data.action === 'distribution_background') {
+      result = processDistributionBackground(data);
     } else if (data.formType === 'promo_code') {
       savePromoCode(data);
     } else if (data.formType === 'distribution') {
@@ -354,7 +369,8 @@ function saveDistribution(data) {
     const signBaseUrl     = 'https://pfvmusic.digital';
     const signUrl         = signBaseUrl + '/#sign?token=' + signToken;
 
-    // Генерируем HTML договора прямо здесь
+    // ── КРИТИЧЕСКИЙ ПУТЬ: генерация HTML договора + сохранение на Drive ──
+    // Это нужно до ответа клиенту, т.к. страница подписания загружает contract_html
     const contractHtml = generateContractHTMLInGAS({
       contractNumber:       contractNumber,
       licensorName:         data.fullName || '',
@@ -372,7 +388,7 @@ function saveDistribution(data) {
       releaseType:          releaseTypeName
     });
 
-    // Встраиваем подпись лицензиата (ОР) в HTML и сохраняем на Drive
+    // Встраиваем подпись лицензиата (ОР) в HTML (используем кэш) и сохраняем на Drive
     const htmlWithOwnerSig = embedOwnerSignatureInHtml(contractHtml);
     const licensorName_    = data.fullName || 'Без имени';
     const fileName_        = 'Договор №' + contractNumber + ' - ' + licensorName_;
@@ -407,7 +423,7 @@ function saveDistribution(data) {
       Number(data.basePrice || 0),
       Number(data.karaokePrice || 0),
       Number(data.totalPrice || 0),
-      '',                              // payment_proof_url — заполним ниже асинхронно
+      '',                              // payment_proof_url — заполним фоном
       contractNumber,
       percentage + '%',
       '',                              // contract_status
@@ -416,7 +432,7 @@ function saveDistribution(data) {
       collectLyricsFromTracks(tracksArray) || '',
       '',                              // document_status
       '',                              // telegram_status
-      'pending',                       // sign_status ← выставляем сразу
+      'pending',                       // sign_status
       signToken,                       // sign_token
       expiresAt.toISOString(),         // sign_expires_at
       signUrl,                         // sign_link
@@ -436,82 +452,18 @@ function saveDistribution(data) {
       sheet.getRange(lastRow, 1, 1, row.length).setBackground('#F9F9F9');
     }
 
-    Logger.log('Distribution data saved successfully. Contract: ' + contractNumber);
-    Logger.log('Sign link auto-generated: ' + signUrl);
+    Logger.log('✅ Distribution saved (fast path). Contract: ' + contractNumber + ' | Row: ' + lastRow);
+    Logger.log('Sign link: ' + signUrl);
 
-    // ── Telegram-уведомление — ПЕРВЫМ, до медленных операций ────────────────
-    const distCfg = getTelegramConfig('distribution');
-    if (TELEGRAM_CONFIG.NOTIFY_DISTRIBUTION && distCfg.ENABLED && distCfg.BOT_TOKEN && distCfg.CHAT_ID) {
-      try {
-      sendDistributionNotification({
-        contractNumber: contractNumber,
-        licensorName:   data.fullName || '',
-        pseudonym:      data.mainArtist || '',
-        tariff:         tariffName,
-        releaseType:    releaseTypeName,
-        releaseDate:    data.releaseDate || '',
-        workTitle:      data.releaseName || '',
-        musicAuthor:    musicAuthorValue || '',
-        lyricsAuthor:   lyricsAuthorValue || '',
-        platforms:      data.platforms || '',
-        email:          data.email || '',
-        contact:        data.contactInfo || '',
-        sheetUrl:       SpreadsheetApp.getActiveSpreadsheet().getUrl()
-      });
-      } catch (tgErr) {
-        Logger.log('❌ Telegram distribution error: ' + tgErr);
-      }
-    }
-
-    // ── Telegram-уведомление: договор создан и отправлен ──────────────────────
-    const docCfgDist = getTelegramConfig('document');
-    if (TELEGRAM_CONFIG.NOTIFY_DOC_GENERATED && docCfgDist.ENABLED && docCfgDist.BOT_TOKEN && docCfgDist.CHAT_ID) {
-      try {
-        const tgMsgId = sendDocumentGeneratedNotification({
-          contractNumber: contractNumber,
-          licensorName:   data.fullName || '',
-          pseudonym:      data.mainArtist || '',
-          workTitle:      data.releaseName || '',
-          docUrl:         signUrl
-        });
-        Logger.log('✅ Telegram: уведомление о договоре отправлено');
-        if (tgMsgId) {
-          const tgMsgIdCol = getOrCreateColumn(sheet, 'tg_contract_msg_id');
-          sheet.getRange(lastRow, tgMsgIdCol).setValue(tgMsgId);
-          Logger.log('✅ Сохранён tg_contract_msg_id: ' + tgMsgId);
-        }
-      } catch (tgErr) {
-        Logger.log('❌ Telegram document error: ' + tgErr);
-      }
-    }
-
-    // ── Email-данные возвращаем в ответе — Vercel отправит через Yandex SMTP ──
-    if (data.email) {
-      Logger.log('📧 Email-данные переданы Vercel для отправки через Yandex SMTP');
-    }
-
-    // ── Загрузка скриншота оплаты на Drive (медленная операция — после уведомлений) ──
-    if (data.paymentProof) {
-      try {
-        const proofFile = storePaymentProof(data.paymentProof, contractNumber, data.fullName || '');
-        if (proofFile) {
-          const proofUrl = proofFile.getUrl();
-          const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-          const proofColIdx = headers.indexOf('payment_proof_url');
-          if (proofColIdx >= 0) {
-            sheet.getRange(lastRow, proofColIdx + 1).setValue(proofUrl);
-          }
-          Logger.log('✅ Скриншот оплаты загружен: ' + proofUrl);
-        }
-      } catch (e) {
-        Logger.log('saveDistribution paymentProof error: ' + e);
-      }
-    }
-
+    // ── Возвращаем ответ СРАЗУ — без Telegram, без paymentProof ──
+    // Фоновые задачи будут вызваны сервером отдельным запросом
     return {
       success: true,
       message: 'Данные успешно сохранены',
       formType: 'distribution',
+      row: lastRow,
+      contractNumber: contractNumber,
+      signLink: signUrl,
       emailData: data.email ? {
         email:          data.email,
         name:           data.fullName || '',
@@ -525,6 +477,94 @@ function saveDistribution(data) {
   } catch (error) {
     Logger.log('saveDistribution error: ' + error.toString());
     throw error;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Фоновая обработка дистрибуции (Telegram, paymentProof)
+// Вызывается сервером ПОСЛЕ ответа клиенту — fire-and-forget
+// ═══════════════════════════════════════════════════════════════════════════
+function processDistributionBackground(data) {
+  try {
+    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(DISTRIBUTION_SHEET_NAME);
+    if (!sheet) throw new Error('Sheet not found');
+
+    const contractNumber = data.contractNumber || '';
+    const lastRow = data.row ? parseInt(String(data.row), 10) : 0;
+    
+    Logger.log('🔄 Background processing started for contract: ' + contractNumber + ' | row: ' + lastRow);
+
+    // ── Telegram #1: уведомление о дистрибуции ──
+    const distCfg = getTelegramConfig('distribution');
+    if (TELEGRAM_CONFIG.NOTIFY_DISTRIBUTION && distCfg.ENABLED && distCfg.BOT_TOKEN && distCfg.CHAT_ID) {
+      try {
+        sendDistributionNotification({
+          contractNumber: contractNumber,
+          licensorName:   data.fullName || '',
+          pseudonym:      data.mainArtist || data.pseudonym || '',
+          tariff:         data.tariff || '',
+          releaseType:    data.releaseType || '',
+          releaseDate:    data.releaseDate || '',
+          workTitle:      data.releaseName || data.workTitle || '',
+          musicAuthor:    data.musicAuthor || '',
+          lyricsAuthor:   data.lyricsAuthor || '',
+          platforms:      data.platforms || '',
+          email:          data.email || '',
+          contact:        data.contactInfo || data.contact || '',
+          sheetUrl:       SpreadsheetApp.openById(SPREADSHEET_ID).getUrl()
+        });
+        Logger.log('✅ Telegram distribution notification sent');
+      } catch (tgErr) {
+        Logger.log('❌ Telegram distribution error: ' + tgErr);
+      }
+    }
+
+    // ── Telegram #2: уведомление о договоре ──
+    const docCfg = getTelegramConfig('document');
+    if (TELEGRAM_CONFIG.NOTIFY_DOC_GENERATED && docCfg.ENABLED && docCfg.BOT_TOKEN && docCfg.CHAT_ID) {
+      try {
+        const tgMsgId = sendDocumentGeneratedNotification({
+          contractNumber: contractNumber,
+          licensorName:   data.fullName || '',
+          pseudonym:      data.mainArtist || data.pseudonym || '',
+          workTitle:      data.releaseName || data.workTitle || '',
+          docUrl:         data.signLink || ''
+        });
+        Logger.log('✅ Telegram document notification sent');
+        if (tgMsgId && lastRow > 1) {
+          const tgMsgIdCol = getOrCreateColumn(sheet, 'tg_contract_msg_id');
+          sheet.getRange(lastRow, tgMsgIdCol).setValue(tgMsgId);
+          Logger.log('✅ Saved tg_contract_msg_id: ' + tgMsgId);
+        }
+      } catch (tgErr) {
+        Logger.log('❌ Telegram document error: ' + tgErr);
+      }
+    }
+
+    // ── Загрузка скриншота оплаты на Drive ──
+    if (data.paymentProof && lastRow > 1) {
+      try {
+        const proofFile = storePaymentProof(data.paymentProof, contractNumber, data.fullName || '');
+        if (proofFile) {
+          const proofUrl = proofFile.getUrl();
+          const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+          const proofColIdx = headers.indexOf('payment_proof_url');
+          if (proofColIdx >= 0) {
+            sheet.getRange(lastRow, proofColIdx + 1).setValue(proofUrl);
+          }
+          Logger.log('✅ Payment proof uploaded: ' + proofUrl);
+        }
+      } catch (e) {
+        Logger.log('❌ Background paymentProof error: ' + e);
+      }
+    }
+
+    Logger.log('✅ Background processing complete for contract: ' + contractNumber);
+    return { success: true, message: 'Background processing complete' };
+
+  } catch (error) {
+    Logger.log('processDistributionBackground error: ' + error.toString());
+    return { success: false, error: error.toString() };
   }
 }
 
@@ -2415,9 +2455,8 @@ function resolveContractHtml(value) {
 
 function embedOwnerSignatureInHtml(html) {
   try {
-    const blob = DriveApp.getFileById(SIGNATURE_FILE_ID).getBlob();
-    const contentType = blob.getContentType() || 'image/png';
-    const b64 = Utilities.base64Encode(blob.getBytes());
+    const b64 = getCachedOwnerSignatureBase64();
+    const contentType = 'image/png';
     const imgTag = `<img src="data:${contentType};base64,${b64}" style="height:60px;width:auto;" />`;
     const markers = [
       '{{signature_or}}',

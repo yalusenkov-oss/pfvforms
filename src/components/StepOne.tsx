@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Input, TextArea, RadioGroup, InfoBox, StepCard, Divider, NumberStepper, DatePicker, Select } from './UI';
 import {
   Music2, User, Link2, Disc3, Calendar, Image, Globe, Clock,
-  Mic2, PenTool, Hash, Bookmark, TicketPercent, Type, Banknote,
+  Mic2, PenTool, Hash, Bookmark, TicketPercent, Pill, Type, Banknote,
   AlertCircle, ChevronDown, ChevronUp, Plus, X, Users, ChevronRight
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
@@ -14,10 +14,10 @@ interface StepOneProps {
 
 /* ═══ Pricing data ═══ */
 const PRICES: Record<string, Record<string, number>> = {
-  'Базовый': { 'Single': 500, 'EP': 700, 'Album': 900 },
-  'Продвинутый': { 'Single': 690, 'EP': 890, 'Album': 1200 },
-  'Премиум': { 'Single': 1200, 'EP': 1690, 'Album': 2290 },
-  'Платинум': { 'Single': 4990, 'EP': 6490, 'Album': 7990 },
+  'Базовый':      { 'Single': 500,  'EP': 700,  'Album': 900  },
+  'Продвинутый':  { 'Single': 690,  'EP': 890,  'Album': 1200 },
+  'Премиум':      { 'Single': 1200, 'EP': 1690, 'Album': 2290 },
+  'Платинум':     { 'Single': 4990, 'EP': 6490, 'Album': 7990 },
 };
 
 const KARAOKE_PRICES: Record<string, number> = {
@@ -60,7 +60,7 @@ interface TrackData {
   lyricists: string[];
   composers: string[];
   explicitContent: string;
-  noSubstances: boolean;
+  substanceMention: string;
   lyrics: string;
 }
 
@@ -72,7 +72,7 @@ function getDefaultTrack(): TrackData {
     lyricists: [''],
     composers: [''],
     explicitContent: '',
-    noSubstances: false,
+    substanceMention: '',
     lyrics: '',
   };
 }
@@ -185,7 +185,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
               : 'border-gray-200 bg-gradient-to-br from-white to-gray-50/50 hover:border-gray-300'
           )}>
             {tariff === 'Базовый' && (
-              <div className="absolute top-3 right-3">
+              <div className="absolute top-3 left-3">
                 <span className="text-[10px] font-bold text-white px-2.5 py-1 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 shadow-md">✓ ВЫБРАНО</span>
               </div>
             )}
@@ -210,7 +210,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
                 <span className="font-bold text-blue-700">900 ₽</span>
               </div>
             </div>
-        </div>
+          </div>
 
           {/* Продвинутый */}
           <div className={cn(
@@ -220,16 +220,16 @@ export function StepOne({ data, onChange }: StepOneProps) {
               : 'border-gray-200 bg-gradient-to-br from-white to-gray-50/50 hover:border-gray-300'
           )}>
             {tariff === 'Продвинутый' && (
-              <div className="absolute top-3 right-3">
+              <div className="absolute top-3 left-3">
                 <span className="text-[10px] font-bold text-white px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500 to-purple-600 shadow-md">✓ ВЫБРАНО</span>
-            </div>
+              </div>
             )}
             <div className="flex items-start gap-3 mb-5">
               <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center flex-shrink-0 text-xl shadow-md">🚀</div>
               <div className="flex-1 pt-1">
                 <h4 className="font-bold text-sm text-gray-900">Продвинутый</h4>
                 <p className="text-xs text-gray-600 mt-1.5 font-medium">Расширенные возможности</p>
-          </div>
+              </div>
             </div>
             <div className="space-y-2.5 text-xs border-t border-gray-200/50 pt-4">
               <div className="flex justify-between items-center">
@@ -255,7 +255,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
               : 'border-emerald-300 bg-gradient-to-br from-emerald-50/80 to-emerald-50/30 hover:border-emerald-400'
           )}>
             {tariff === 'Премиум' && (
-              <div className="absolute top-3 right-3">
+              <div className="absolute top-3 left-3">
                 <span className="text-[10px] font-bold text-white px-2.5 py-1 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-md">✓ ВЫБРАНО</span>
               </div>
             )}
@@ -295,7 +295,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
               : 'border-orange-300 bg-gradient-to-br from-orange-50/80 to-orange-50/30 hover:border-orange-400'
           )}>
             {tariff === 'Платинум' && (
-              <div className="absolute top-3 right-3">
+              <div className="absolute top-3 left-3">
                 <span className="text-[10px] font-bold text-white px-2.5 py-1 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 shadow-md">✓ ВЫБРАНО</span>
               </div>
             )}
@@ -808,8 +808,8 @@ export function StepOne({ data, onChange }: StepOneProps) {
 
                     <Divider label="Контент" />
 
-                    {/* Explicit */}
-                    <div className="flex flex-col gap-4">
+                    {/* Explicit & Substances */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <RadioGroup
                         label="Ненормативная лексика" required
                         icon={<AlertCircle className="w-4 h-4" />}
@@ -819,71 +819,31 @@ export function StepOne({ data, onChange }: StepOneProps) {
                         onChange={(v) => updateTrack(i, 'explicitContent', v)}
                         horizontal
                       />
+                      <RadioGroup
+                        label="Запрещённые вещества" required
+                        icon={<Pill className="w-4 h-4" />}
+                        name={`substance_${i}`}
+                        options={['Да', 'Нет']}
+                        value={track.substanceMention}
+                        onChange={(v) => updateTrack(i, 'substanceMention', v)}
+                        horizontal
+                      />
                     </div>
 
                     {/* Lyrics */}
-                    <div className="mt-4">
                     <TextArea
-                        label="Текст трека" required
-                        icon={<PenTool className="w-4 h-4" />}
+                      label="Текст трека" icon={<PenTool className="w-4 h-4" />}
                       value={track.lyrics}
                       onChange={(e) => updateTrack(i, 'lyrics', e.target.value)}
                       placeholder="Текст трека..."
                       className="min-h-[100px]"
                     />
-                      <p className="text-xs text-gray-500 mt-2">
-                        Добавление текста является обязательным для проверки трека на упоминание наркотических веществ.
-                      </p>
-                    </div>
-
-                    {/* Checkbox No Substances */}
-                    <label className="flex items-start gap-3 p-4 rounded-xl border cursor-pointer border-gray-200 bg-white hover:border-purple-300 transition-all group mt-4">
-                      <div className="flex-shrink-0 mt-0.5">
-                        <div className={cn(
-                          "w-5 h-5 rounded border flex items-center justify-center transition-colors",
-                          track.noSubstances ? "bg-purple-600 border-purple-600 text-white" : "border-gray-300 bg-white group-hover:border-purple-400"
-                        )}>
-                          {track.noSubstances && <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <span className="text-sm font-medium text-gray-900 block group-hover:text-purple-900 transition-colors">
-                          Я подтверждаю, что в треке нет упоминаний наркотических веществ <span className="text-red-500">*</span>
-                        </span>
-                      </div>
-                      <input
-                        type="checkbox"
-                        className="hidden"
-                        checked={track.noSubstances}
-                        onChange={(e) => updateTrack(i, 'noSubstances', e.target.checked)}
-                      />
-                    </label>
                   </div>
                 )}
               </div>
             );
           })}
         </div>
-      </StepCard>
-
-      {/* ═══ CARD 4.5: Platforms ═══ */}
-      <StepCard
-        title="Площадки дистрибуции"
-        subtitle="Выберите площадки для размещения релиза"
-        icon={<Globe className="w-5 h-5" />}
-      >
-        <RadioGroup
-          label="Размещение" required
-          icon={<Globe className="w-4 h-4" />}
-          name="platforms"
-          options={['Все площадки', 'Без Apple Music']}
-          value={data.platforms === 'no-apple' ? 'Без Apple Music' : data.platforms === 'all' ? 'Все площадки' : ''}
-          onChange={(v) => onChange('platforms', v === 'Без Apple Music' ? 'no-apple' : 'all')}
-          horizontal
-        />
-        <p className="text-xs text-gray-500 mt-2">
-          Прохождение модерации без Apple Music осуществляется быстрее. После выпуска можно добавить релиз на данную площадку, написав в поддержку.
-        </p>
       </StepCard>
 
       {/* ═══ CARD 5: TikTok ═══ */}

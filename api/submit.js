@@ -40,6 +40,73 @@ async function readJsonBody(req) {
   });
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Background tasks: email, Telegram, paymentProof upload
+// Runs AFTER response is sent to client — fire-and-forget
+// ═══════════════════════════════════════════════════════════════════════════
+function runBackgroundTasks(scriptUrl, cleanPayload, gasJson) {
+  const isDistribution = cleanPayload.formType === 'distribution' && cleanPayload.email;
+  const emailData = gasJson?.emailData || null;
+
+  // 1. Send email (fire-and-forget)
+  if (emailData?.email && emailData?.signLink) {
+    sendContractEmail(emailData)
+      .then(() => console.log('[bg] ✅ Email sent to', emailData.email))
+      .catch(err => {
+        console.error('[bg] ❌ Email error:', err.message);
+        // Update Telegram message about email failure
+        if (isDistribution && emailData.contractNumber) {
+          fetch(scriptUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'update_contract_tg_status',
+              contractNumber: emailData.contractNumber,
+              status: 'email_failed',
+              emailError: String(err.message || '').substring(0, 120)
+            })
+          }).catch(e => console.error('[bg] GAS update_contract_tg_status failed:', e.message));
+        }
+      });
+  } else {
+    console.log('[bg] ⚠️ No emailData — email not sent');
+  }
+
+  // 2. Fire GAS background processing (Telegram notifications + paymentProof upload)
+  if (isDistribution && gasJson?.success) {
+    const bgPayload = {
+      action: 'distribution_background',
+      contractNumber: gasJson.contractNumber || emailData?.contractNumber || '',
+      row: gasJson.row || 0,
+      signLink: gasJson.signLink || emailData?.signLink || '',
+      fullName: cleanPayload.fullName || '',
+      mainArtist: cleanPayload.mainArtist || '',
+      pseudonym: cleanPayload.mainArtist || '',
+      tariff: cleanPayload.tariff || '',
+      releaseType: cleanPayload.releaseType || '',
+      releaseDate: cleanPayload.releaseDate || '',
+      releaseName: cleanPayload.releaseName || '',
+      workTitle: cleanPayload.releaseName || '',
+      musicAuthor: cleanPayload.musicAuthor || '',
+      lyricsAuthor: cleanPayload.lyricsAuthor || '',
+      platforms: cleanPayload.platforms || '',
+      email: cleanPayload.email || '',
+      contactInfo: cleanPayload.contactInfo || '',
+      paymentProof: cleanPayload.paymentProof || '',
+    };
+
+    fetch(scriptUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bgPayload),
+      redirect: 'follow'
+    })
+      .then(r => r.text())
+      .then(t => console.log('[bg] ✅ GAS background complete:', t.substring(0, 200)))
+      .catch(e => console.error('[bg] ❌ GAS background error:', e.message));
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -72,42 +139,26 @@ export default async function handler(req, res) {
     }
 
     // Remove or truncate large fields to avoid Google Sheets 50000 char limit per cell
-    // Fields to exclude: contract HTML, full contract text, signature images, etc.
     const fieldsToExclude = [
-      'contractHTML',
-      'contract_html',
-      'contractText',
-      'contract_text',
-      'signableContractHTML',
-      'signable_contract_html',
-      'signPreviewHTML',
-      'sign_preview_html',
-      'signatureImage',
-      'signature_image',
-      'fullContractHTML',
-      'full_contract_html',
+      'contractHTML', 'contract_html', 'contractText', 'contract_text',
+      'signableContractHTML', 'signable_contract_html',
+      'signPreviewHTML', 'sign_preview_html',
+      'signatureImage', 'signature_image',
+      'fullContractHTML', 'full_contract_html',
     ];
 
     // Fields that can be large but must be passed through without truncation
-    // (GAS handles them directly, e.g. uploads to Drive — they never end up in a cell)
     const fieldsNoTruncate = ['paymentProof', 'payment_proof'];
 
-    const maxFieldLength = 45000; // Leave 5000 char margin for safety
+    const maxFieldLength = 45000;
     const cleanPayload = {};
 
     for (const [key, value] of Object.entries(payload)) {
-      // Skip excluded fields entirely
-      if (fieldsToExclude.includes(key)) {
-        continue;
-      }
-
-      // Pass through without truncation (large binary/base64 fields handled by GAS)
+      if (fieldsToExclude.includes(key)) continue;
       if (fieldsNoTruncate.includes(key)) {
         cleanPayload[key] = value;
         continue;
       }
-
-      // Truncate string fields that exceed limit
       if (typeof value === 'string' && value.length > maxFieldLength) {
         cleanPayload[key] = value.substring(0, maxFieldLength) + '...[TRUNCATED]';
       } else {
@@ -115,140 +166,57 @@ export default async function handler(req, res) {
       }
     }
 
+    // ═══ For distribution: send GAS request WITHOUT paymentProof for speed ═══
+    // paymentProof will be sent in the background request separately
+    const isDistribution = cleanPayload.formType === 'distribution';
+    let gasPayload = cleanPayload;
+    if (isDistribution && cleanPayload.paymentProof) {
+      gasPayload = { ...cleanPayload };
+      delete gasPayload.paymentProof; // Don't send 8MB base64 in fast path
+    }
+
     const response = await fetch(scriptUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(cleanPayload),
+      body: JSON.stringify(gasPayload),
       redirect: 'follow'
     });
 
     const text = await response.text();
     console.log('[submit] GAS response status:', response.status, '| body length:', text.length);
 
-    // Parse GAS response once
     let gasJson = null;
     try { gasJson = text ? JSON.parse(text) : null; } catch {}
 
-    // After successful GAS response, send contract email via Yandex SMTP
-    let emailSent = false;
-    let emailError = '';
-    const isDistribution = cleanPayload.formType === 'distribution' && cleanPayload.email;
+    const resolvedSignLink = gasJson?.signLink || gasJson?.emailData?.signLink || '';
 
-    console.log('[submit] gasJson parsed:', gasJson !== null, '| success:', gasJson?.success, '| has emailData:', !!(gasJson?.emailData));
-    if (gasJson?.emailData) {
-      console.log('[submit] emailData keys:', Object.keys(gasJson.emailData), '| email:', gasJson.emailData.email, '| signLink:', gasJson.emailData.signLink ? 'present' : 'missing');
-    }
-
-    try {
-      let emailData = (gasJson?.success && gasJson?.emailData) ? gasJson.emailData : null;
-
-      // Fallback: if GAS didn't return emailData (old/undeployed GAS version),
-      // fetch distributions and find the row matching this email address
-      if (!emailData && isDistribution && gasJson?.success) {
-        console.log('[submit] No emailData in GAS response — running fallback: searching by email...');
-        try {
-          const listUrl = `${scriptUrl}?action=list&sheet=distributions&limit=10`;
-          const listRes = await fetch(listUrl, { redirect: 'follow' });
-          const listText = await listRes.text();
-          let listJson = null;
-          try { listJson = JSON.parse(listText); } catch {}
-          const rows = listJson?.rows;
-          console.log('[submit] Fallback fetched rows count:', Array.isArray(rows) ? rows.length : 'none');
-          if (Array.isArray(rows) && rows.length > 0) {
-            const match = [...rows].reverse().find(r => {
-              const rowEmail = r.email || r.Email || '';
-              const rowLink = r.signLink || r.sign_link || '';
-              return rowEmail === cleanPayload.email && rowLink;
-            });
-            if (match) {
-              emailData = {
-                email: cleanPayload.email,
-                name: cleanPayload.fullName || '',
-                contractNumber: match.contractNumber || match.contract_number || '',
-                signLink: match.signLink || match.sign_link || '',
-                workTitle: cleanPayload.releaseName || '',
-                releaseType: match.releaseType || match.release_type || ''
-              };
-              console.log('[submit] Fallback: found matching row for email', cleanPayload.email, '| signLink:', emailData.signLink);
-            } else {
-              console.log('[submit] Fallback: no matching row found for email', cleanPayload.email);
-            }
-          }
-        } catch (fallbackErr) {
-          console.error('[submit] Fallback row fetch failed:', fallbackErr.message);
-        }
-      }
-
-      if (emailData?.email && emailData?.signLink) {
-        console.log('[submit] Sending email to', emailData.email, '| contract:', emailData.contractNumber);
-        await sendContractEmail(emailData);
-        emailSent = true;
-        console.log('[submit] ✅ Email sent to', emailData.email);
-      } else {
-        console.log('[submit] ⚠️ No emailData available — email not sent. emailData:', JSON.stringify(emailData));
-      }
-    } catch (emailErr) {
-      emailError = String(emailErr.message || emailErr);
-      console.error('[submit] ❌ Email send error:', emailError);
-    }
-
-    // Resolve signLink from emailData or gasJson for passing to frontend
-    const resolvedSignLink = gasJson?.emailData?.signLink || '';
-
-    // Update existing Telegram contract message if email failed
-    if (isDistribution && !emailSent && gasJson?.success) {
-      try {
-        const contractNumber = gasJson?.emailData?.contractNumber || '';
-        const errShort = emailError ? emailError.substring(0, 120) : 'нет emailData';
-        const gasScriptUrl = getScriptUrl();
-        if (gasScriptUrl && contractNumber) {
-          // Fire-and-forget: edit the existing TG message via GAS
-          fetch(gasScriptUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              action: 'update_contract_tg_status',
-              contractNumber,
-              status: 'email_failed',
-              emailError: errShort
-            })
-          }).catch(e => console.error('[submit] GAS update_contract_tg_status failed:', e.message));
-          console.log('[submit] GAS update_contract_tg_status called for contract:', contractNumber);
-        }
-      } catch (tgErr) {
-        console.error('[submit] update_contract_tg_status error:', tgErr.message);
-      }
-    }
-
-    // Always return valid JSON with signLink for the success screen
-    const diag = {
-      emailSent,
+    // ═══ RESPOND TO CLIENT IMMEDIATELY ═══
+    const clientResponse = {
+      success: gasJson?.success ?? response.ok,
+      message: gasJson?.message || 'Данные успешно отправлены',
       signLink: resolvedSignLink,
-      emailError: emailError || undefined,
-      _debug: {
-        gasStatus: response.status,
-        gasBodyLen: text ? text.length : 0,
-        gasParsed: gasJson !== null,
-        gasSuccess: gasJson?.success,
-        gasHasEmailData: !!(gasJson?.emailData),
-        gasEmailDataKeys: gasJson?.emailData ? Object.keys(gasJson.emailData) : null,
-        isDistribution,
-      }
+      contractNumber: gasJson?.contractNumber || '',
+      emailSent: 'pending', // email will be sent in background
     };
-    console.log('[submit] final:', { emailSent, emailError, signLink: resolvedSignLink });
 
-    if (gasJson) {
-      const result = { ...gasJson, ...diag };
-      delete result.emailData;
-      res.status(response.status).json(result);
-    } else {
-      res.status(response.status).json({
-        success: response.ok,
-        message: text ? text.substring(0, 500) : 'Empty GAS response',
-        ...diag
-      });
+    if (!gasJson?.success && gasJson?.error) {
+      clientResponse.success = false;
+      clientResponse.message = gasJson.error;
     }
+
+    console.log('[submit] Responding to client:', { success: clientResponse.success, signLink: resolvedSignLink, contractNumber: clientResponse.contractNumber });
+    res.status(gasJson?.success ? 200 : (response.status || 500)).json(clientResponse);
+
+    // ═══ BACKGROUND: email + Telegram + paymentProof ═══
+    // This runs AFTER res.json() — client already has response
+    if (gasJson?.success && isDistribution) {
+      runBackgroundTasks(scriptUrl, cleanPayload, gasJson);
+    }
+
   } catch (err) {
-    res.status(500).json({ success: false, error: String(err) });
+    console.error('[submit] Fatal error:', err);
+    if (!res.headersSent) {
+      res.status(500).json({ success: false, error: String(err) });
+    }
   }
 }
