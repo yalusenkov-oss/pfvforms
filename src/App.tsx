@@ -26,6 +26,7 @@ type TariffInfo = {
   prices: string[];
   features: string[];
   monetization: string[];
+  restrictions?: string[];
   icon: 'music' | 'trending' | 'star' | 'crown';
   emoji: string;
   badge?: string;
@@ -51,13 +52,13 @@ const TARIFFS: TariffInfo[] = [
     ],
     features: [
       'Без промо-поддержки',
-      'Отсутствует возможность подачи на промо',
       'Тексты и караоке в VK Музыке и Apple Music',
       'Оперативная техподдержка',
       'Платное изменение/удаление релиза: 250 ₽',
       'Мульти-линк: 250 ₽',
     ],
     monetization: ['Доля артиста: 55%', 'Минимальная выплата: от 1500 ₽'],
+    restrictions: ['Отсутствует возможность подачи на промо'],
   },
   {
     name: 'Продвинутый',
@@ -812,6 +813,18 @@ export function App() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Restrictions */}
+                  {tariff.restrictions && tariff.restrictions.length > 0 && (
+                    <div className="mb-5 rounded-xl bg-red-50 border border-red-200 px-4 py-3">
+                      {tariff.restrictions.map((r) => (
+                        <p key={r} className="text-xs font-bold text-red-700 flex items-center gap-2">
+                          <XCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                          {r}
+                        </p>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Main Pricing - Single, EP, Album */}
                   <div className="mb-5 pb-5 border-b-2 border-gray-100">
