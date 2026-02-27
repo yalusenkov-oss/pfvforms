@@ -332,9 +332,19 @@ export function App() {
   // Hard reset scroll after mode/form state switches to prevent blank viewport on mobile browsers.
   useEffect(() => {
     if (submitted || promoSubmitted || mode === 'success' || mode === 'fail' || mode === 'result') {
+      // Force scroll multiple times to combat mobile browser rendering lag
+      scrollToTopInstant();
       requestAnimationFrame(() => {
         scrollToTopInstant();
+        requestAnimationFrame(() => {
+          scrollToTopInstant();
+        });
       });
+      // Final safety net for slow mobile browsers
+      const t1 = setTimeout(() => scrollToTopInstant(), 50);
+      const t2 = setTimeout(() => scrollToTopInstant(), 150);
+      const t3 = setTimeout(() => scrollToTopInstant(), 300);
+      return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
     }
   }, [mode, submitted, promoSubmitted, scrollToTopInstant]);
 
@@ -1505,7 +1515,7 @@ export function App() {
             {submittedSignLink && (
               <a
                 href={submittedSignLink}
-                className="mb-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 px-8 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-200/50 hover:from-emerald-700 hover:to-emerald-800"
+                className="mb-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-8 py-3.5 text-sm font-bold text-white shadow-lg shadow-purple-200/50 hover:from-purple-700 hover:to-purple-800"
               >
                 <FileCheck className="w-5 h-5" />
                 Подписать договор
