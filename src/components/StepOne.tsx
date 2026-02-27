@@ -910,6 +910,12 @@ export function StepOne({ data, onChange }: StepOneProps) {
             </ul>
           </div>
         </InfoBox>
+
+        <InfoBox variant="warning">
+          <p className="text-xs">
+            <strong>⚠️ Важно:</strong> с Apple Music обработка релиза может доходить до <strong>7 дней</strong> независимо от выбранного тарифа.
+          </p>
+        </InfoBox>
       </StepCard>
 
       {/* ═══ CARD 6: TikTok ═══ */}
