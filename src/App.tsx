@@ -1550,7 +1550,7 @@ export function App() {
       {/* Hero */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-purple-100/50 to-transparent pointer-events-none" />
-        <div className="mx-auto max-w-3xl px-4 pt-10 pb-8 text-center relative">
+        <div className="mx-auto max-w-4xl px-4 pt-10 pb-8 text-center relative">
           <div className="inline-flex items-center gap-2 rounded-full bg-purple-100/80 px-4 py-1.5 text-xs font-semibold text-purple-700 mb-5 backdrop-blur-sm border border-purple-200/50">
             <Sparkles className="w-3.5 h-3.5" />
             Музыкальное издательство PFVMUSIC
@@ -1568,7 +1568,7 @@ export function App() {
       </div>
 
       {/* Progress Bar */}
-      <div className="mx-auto max-w-3xl px-4 mb-2">
+      <div className="mx-auto max-w-4xl px-4 mb-2">
         <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-purple-500 to-purple-600 rounded-full duration-500 ease-out"
@@ -1578,7 +1578,7 @@ export function App() {
       </div>
 
       {/* Stepper */}
-      <div className="mx-auto max-w-3xl px-4 mb-8">
+      <div className="mx-auto max-w-4xl px-4 mb-8">
         <div className="flex items-center justify-between rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-100/80 p-1.5 shadow-sm">
           {DISTRIBUTION_STEPS.map((step, idx) => {
             const Icon = step.icon;
@@ -1643,7 +1643,7 @@ export function App() {
       )}
 
       {/* Step Content */}
-      <div className="mx-auto max-w-3xl px-4 pb-8">
+      <div className="mx-auto max-w-4xl px-4 pb-8">
         <div key={currentStep} className="animate-in">
           {currentStep === 1 && <StepOne data={formData} onChange={handleChange} />}
           {currentStep === 2 && <StepTwo data={formData} onChange={handleChange} />}
