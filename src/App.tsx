@@ -332,21 +332,17 @@ export function App() {
   // Hard reset scroll after mode/form state switches to prevent blank viewport on mobile browsers.
   useEffect(() => {
     if (submitted || promoSubmitted || mode === 'success' || mode === 'fail' || mode === 'result') {
-      // Force scroll multiple times to combat mobile browser rendering lag
-      scrollToTopInstant();
+      // Immediate + deferred scroll to handle mobile browser quirks
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
       requestAnimationFrame(() => {
-        scrollToTopInstant();
-        requestAnimationFrame(() => {
-          scrollToTopInstant();
-        });
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
       });
-      // Final safety net for slow mobile browsers
-      const t1 = setTimeout(() => scrollToTopInstant(), 50);
-      const t2 = setTimeout(() => scrollToTopInstant(), 150);
-      const t3 = setTimeout(() => scrollToTopInstant(), 300);
-      return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
     }
-  }, [mode, submitted, promoSubmitted, scrollToTopInstant]);
+  }, [mode, submitted, promoSubmitted]);
 
   const handleChange = useCallback((key: string, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -400,11 +396,14 @@ export function App() {
     setValidationErrors([]);
     setSubmitting(true);
     
+    // Scroll to top immediately so user sees loading state
+    scrollToTopInstant();
+    
     try {
       const result = await submitToGoogleSheets('distribution', normalized);
       if (result.success) {
-        scrollToTopInstant();
         setSubmittedSignLink(result.signLink || '');
+        // Set submitted BEFORE clearing submitting to avoid a flash of the form
         setSubmitted(true);
       } else {
         setValidationErrors([result.message]);
@@ -414,7 +413,6 @@ export function App() {
       setValidationErrors(['Ошибка при отправке формы. Попробуйте ещё раз.']);
     } finally {
       setSubmitting(false);
-      scrollToTopInstant();
     }
   };
   
@@ -429,11 +427,11 @@ export function App() {
     
     setPromoErrors([]);
     setPromoSubmitting(true);
+    scrollToTopInstant();
     
     try {
       const result = await submitToGoogleSheets('promo', promoData);
       if (result.success) {
-        scrollToTopInstant();
         setPromoSubmitted(true);
       } else {
         setPromoErrors([result.message]);
@@ -443,7 +441,6 @@ export function App() {
       setPromoErrors(['Ошибка при отправке формы. Попробуйте ещё раз.']);
     } finally {
       setPromoSubmitting(false);
-      scrollToTopInstant();
     }
   };
   
@@ -1365,12 +1362,27 @@ export function App() {
 
   // ═══ PROMO PAGE ═══
   if (mode === 'promo') {
+    if (promoSubmitting) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-amber-50/30 flex flex-col">
+          <Header onBack={undefined} />
+          <div className="flex-1 flex items-center justify-center px-4">
+            <div className="text-center space-y-4">
+              <Loader2 className="w-10 h-10 text-amber-600 animate-spin mx-auto" />
+              <p className="text-sm font-semibold text-gray-600">Отправка заявки...</p>
+              <p className="text-xs text-gray-400">Пожалуйста, подождите</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     if (promoSubmitted) {
       return (
-        <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-amber-50/30">
+        <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-amber-50/30 flex flex-col">
           <Header onBack={goHome} />
-          <div className="mx-auto max-w-2xl px-4 py-20">
-            <div className="rounded-2xl border border-emerald-200 bg-white p-10 text-center shadow-xl shadow-emerald-100/20">
+          <div className="flex-1 flex items-center justify-center px-4 py-8">
+            <div className="rounded-2xl border border-emerald-200 bg-white p-10 text-center shadow-xl shadow-emerald-100/20 max-w-2xl w-full">
               <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100">
                 <CheckCircle2 className="h-10 w-10 text-emerald-600" />
               </div>
@@ -1494,11 +1506,26 @@ export function App() {
   }
 
   // ═══ DISTRIBUTION PAGE ═══
+  if (submitting) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50/30 flex flex-col">
+        <Header onBack={undefined} />
+        <div className="flex-1 flex items-center justify-center px-4">
+          <div className="text-center space-y-4">
+            <Loader2 className="w-10 h-10 text-purple-600 animate-spin mx-auto" />
+            <p className="text-sm font-semibold text-gray-600">Отправка формы...</p>
+            <p className="text-xs text-gray-400">Пожалуйста, подождите</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50/30">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50/30 flex flex-col">
         <Header onBack={goHome} />
-        <div className="mx-auto max-w-2xl px-4 py-20">
+        <div className="flex-1 flex items-center justify-center px-4 py-8">
           <div className="rounded-2xl border border-emerald-200 bg-white p-10 text-center shadow-xl shadow-emerald-100/20">
             <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100">
               <CheckCircle2 className="h-10 w-10 text-emerald-600" />
