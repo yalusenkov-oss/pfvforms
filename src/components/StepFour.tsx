@@ -401,31 +401,58 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
         )}
 
         {paymentPolling && (
-          <div className="mt-3 rounded-xl bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-700 flex items-center gap-2">
-            <Loader2 className="w-5 h-5 text-blue-500 animate-spin flex-shrink-0" />
-            <div>
-              <p className="font-semibold">Проверяем статус платежа...</p>
-              <p className="text-xs text-blue-600 mt-0.5">Пожалуйста, подождите</p>
+          <div className="mt-3 space-y-3">
+            <div className="rounded-xl bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-700 flex items-center gap-2">
+              <Loader2 className="w-5 h-5 text-blue-500 animate-spin flex-shrink-0" />
+              <div>
+                <p className="font-semibold">Проверяем статус платежа...</p>
+                <p className="text-xs text-blue-600 mt-0.5">Пожалуйста, подождите</p>
+              </div>
             </div>
+            {/* Show "Return to payment" during polling so user can go back if needed */}
+            {savedConfirmationUrl && (
+              <button
+                type="button"
+                onClick={() => { window.location.href = savedConfirmationUrl; }}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-purple-200 bg-white px-4 py-2.5 text-sm font-semibold text-purple-700 hover:bg-purple-50"
+              >
+                <Wallet className="w-4 h-4" />
+                Вернуться к оплате
+              </button>
+            )}
           </div>
         )}
 
         {paymentError && (
-          <div className="mt-3 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 flex items-center gap-2">
-            <XCircle className="w-4 h-4 flex-shrink-0" />
-            <span>{paymentError}</span>
+          <div className="mt-3 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+            <div className="flex items-center gap-2">
+              <XCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{paymentError}</span>
+            </div>
+            {/* «Повторить платёж» — resets state so the main payment button becomes active again */}
+            {data.paymentStatus !== 'succeeded' && !paymentPolling && (
+              <button
+                type="button"
+                onClick={() => {
+                  // Reset ALL payment state so user can create a fresh payment
+                  onChange('paymentId', '');
+                  onChange('paymentStatus', '');
+                  onChange('paymentConfirmationUrl', '');
+                  onChange('paymentProof', '');
+                  localStorage.removeItem('pfv_paymentId');
+                  localStorage.removeItem('pfv_confirmationUrl');
+                  localStorage.removeItem('pfv_formData');
+                  setPaymentError('');
+                  setPaymentPolling(false);
+                  setPaymentCreating(false);
+                }}
+                className="mt-3 w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors"
+              >
+                <CreditCard className="w-4 h-4" />
+                Повторить платёж
+              </button>
+            )}
           </div>
-        )}
-
-        {savedConfirmationUrl && data.paymentStatus !== 'succeeded' && !paymentPolling && (
-          <button
-            type="button"
-            onClick={() => { window.location.href = savedConfirmationUrl; }}
-            className="mt-3 w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-purple-200 bg-white px-4 py-2.5 text-sm font-semibold text-purple-700 hover:bg-purple-50"
-          >
-            <Wallet className="w-4 h-4" />
-            Вернуться к оплате
-          </button>
         )}
       </StepCard>
 
@@ -538,6 +565,11 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
                         Проверка платежа...
+                      </>
+                    ) : data.paymentId && data.paymentStatus !== 'succeeded' && data.paymentStatus !== 'canceled' ? (
+                      <>
+                        <CreditCard className="w-5 h-5" />
+                        Повторить оплату {totalAfterDiscount.toLocaleString('ru-RU')} ₽
                       </>
                     ) : (
                       <>

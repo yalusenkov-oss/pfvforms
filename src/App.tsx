@@ -313,6 +313,8 @@ export function App() {
         try {
           const parsed = JSON.parse(savedFormData);
           setFormData(parsed);
+          // Restore agreed state from saved formData
+          if (parsed.agreed === 'yes') setAgreed(true);
         } catch {
           // Fallback: restore just paymentId
           const savedPaymentId = localStorage.getItem('pfv_paymentId');
@@ -331,6 +333,13 @@ export function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [agreed, setAgreed] = useState(false);
+
+  // Sync agreed state into formData so it persists in localStorage
+  const handleAgree = useCallback((val: boolean) => {
+    setAgreed(val);
+    setFormData((prev) => ({ ...prev, agreed: val ? 'yes' : 'no' }));
+  }, []);
+
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -419,6 +428,8 @@ export function App() {
       // Step 3 — Payment
       contactInfo: '@test_telegram',
       artistProfileLinks: 'https://vk.com/test',
+      // Agreement
+      agreed: 'yes',
     });
     setAgreed(true);
     setCurrentStep(1);
@@ -1827,7 +1838,7 @@ export function App() {
         )}
         <div key={currentStep} className="animate-in">
           {currentStep === 1 && <StepOne data={formData} onChange={handleChange} />}
-          {currentStep === 2 && <StepTwo data={formData} onChange={handleChange} agreed={agreed} onAgree={setAgreed} />}
+          {currentStep === 2 && <StepTwo data={formData} onChange={handleChange} agreed={agreed} onAgree={handleAgree} />}
           {currentStep === 3 && <StepFour data={formData} onChange={handleChange} preloadedPromoCodes={preloadedPromoCodes} promoCodesReady={promoCodesReady} onPaymentSuccess={handlePaymentSuccess} validationErrors={paymentBlockErrors} />}
         </div>
 
