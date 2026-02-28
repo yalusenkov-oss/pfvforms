@@ -638,6 +638,9 @@ function processDistributionBackground(data) {
           platforms:      data.platforms || '',
           email:          data.email || '',
           contact:        data.contactInfo || data.contact || '',
+          addVideoshot:   data.addVideoshot || 'no',
+          videoshotLink:  data.videoshotLink || '',
+          videoshotPrice: data.videoshotPrice || 0,
           paymentProofUrl: paymentProofUrl,
           sheetUrl:       SpreadsheetApp.openById(SPREADSHEET_ID).getUrl()
         });
@@ -1054,9 +1057,13 @@ function buildDistributionMessage(data) {
     `▸ Email: ${escapeMd(data.email || 'не указан')}`,
     `▸ Связь: ${escapeMd(data.contact || 'не указан')}`,
     "",
-    data.paymentProofUrl
-      ? `💳 [Фото оплаты](${escapeUrl(data.paymentProofUrl)})`
-      : `💳 Фото оплаты: _не загружено_`,
+    ...(data.addVideoshot === 'yes' ? [
+      "🎬 *Видеошот*",
+      `▸ Стоимость: ${escapeMd(String(data.videoshotPrice || 1000))} ₽`,
+      ...(data.videoshotLink ? [`▸ Ссылка: ${escapeUrl(data.videoshotLink)}`] : []),
+      "",
+    ] : []),
+    `💳 Статус оплаты: ✅ Оплата успешна`,
     `📄 [Открыть таблицу](${escapeUrl(data.sheetUrl)})`
   ];
 

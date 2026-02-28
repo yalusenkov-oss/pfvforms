@@ -1,6 +1,6 @@
 import { ArrowLeft, Disc3, FileText, Music2, ExternalLink, ChevronDown, Copy, Check, Send, Download } from 'lucide-react';
 import { useState } from 'react';
-import { DistributionData, TARIFF_LABELS, RELEASE_TYPE_LABELS, STATUS_LABELS, STATUS_COLORS, PRICES, KARAOKE_PRICES } from '../types';
+import { DistributionData, TARIFF_LABELS, RELEASE_TYPE_LABELS, STATUS_LABELS, STATUS_COLORS, PRICES, KARAOKE_PRICES, VIDEOSHOT_PRICE } from '../types';
 import { cn } from '../utils/cn';
 import { createSignLink } from '../services/googleSheetsAdmin';
 import { copyToClipboard } from '../utils/clipboard';
@@ -78,6 +78,7 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
   const basePrice = PRICES[data.tariff]?.[data.releaseType] || 0;
   const karaokePerTrack = KARAOKE_PRICES[data.tariff] || 0;
   const karaokeCost = data.karaoke ? karaokePerTrack * trackCount : 0;
+  const videoshotCost = data.videoshot ? (data.videoshotPrice ?? VIDEOSHOT_PRICE) : 0;
 
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailSuccess, setEmailSuccess] = useState('');
@@ -151,6 +152,8 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
       line('Полная версия TikTok', data.tiktokFull ? 'Да' : 'Нет'),
       line('Pre-Save Яндекс', data.preSaveYandex ? 'Да' : 'Нет'),
       line('Караоке', data.karaoke ? 'Да' : 'Нет'),
+      line('Видеошот', data.videoshot ? 'Да' : 'Нет'),
+      ...(data.videoshot && data.videoshotLink ? [line('Ссылка на видеошот', data.videoshotLink)] : []),
       sep('ДАННЫЕ ДОГОВОРА'),
       line('ФИО', data.fullName),
       line('Паспорт', data.passportSeries),
@@ -160,7 +163,7 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
       line('Email', data.email),
       line('Контакты', data.contacts),
       line('Профили артиста', data.artistProfileLinks),
-      line('Чек оплаты', data.paymentProofUrl),
+      line('Статус оплаты', 'Оплата успешна'),
       sep('ПОДПИСАНИЕ'),
       line('Статус подписания', data.signStatus === 'signed' || data.signedUrl ? 'Подписан' : data.signLink ? 'Ссылка создана' : 'Не создано'),
       line('Ссылка на подписание', data.signLink),
@@ -257,6 +260,12 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
               <p className="text-lg font-bold text-white">{formatPrice(karaokeCost)}</p>
             </div>
           )}
+          {data.videoshot && videoshotCost > 0 && (
+            <div>
+              <p className="text-xs text-primary-300/70">Видеошот</p>
+              <p className="text-lg font-bold text-white">{formatPrice(videoshotCost)}</p>
+            </div>
+          )}
           <div className="border-l border-primary-700/50 pl-6">
             <p className="text-xs text-primary-300/70">Итого к оплате</p>
             <p className="text-2xl font-bold text-primary-400">{formatPrice(data.totalPrice)}</p>
@@ -281,6 +290,10 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
           <InfoRow label="Полная версия TikTok" value={data.tiktokFull ? 'Да' : 'Нет'} />
           <InfoRow label="Pre-Save Яндекс" value={data.preSaveYandex ? 'Да' : 'Нет'} />
           <InfoRow label="Караоке" value={data.karaoke ? 'Да' : 'Нет'} />
+          <InfoRow label="Видеошот" value={data.videoshot ? 'Да' : 'Нет'} />
+          {data.videoshot && data.videoshotLink && (
+            <InfoRow label="Ссылка на видеошот" value={data.videoshotLink} link />
+          )}
         </Section>
 
         {/* Contract Info */}
@@ -290,7 +303,7 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
           <InfoRow label="Кем выдан" value={data.passportIssuedBy} />
           <InfoRow label="Дата выдачи" value={formatDate(data.passportIssuedDate)} />
           <InfoRow label="Банковские реквизиты" value={data.bankDetails} mono />
-          <InfoRow label="Чек оплаты" value={data.paymentProofUrl || ''} link />
+          <InfoRow label="Статус оплаты" value="✅ Оплата успешна" />
           <InfoRow label="Email" value={data.email} />
           <InfoRow label="Контакты" value={data.contacts} />
           <InfoRow label="Профили артиста" value={data.artistProfileLinks} link />

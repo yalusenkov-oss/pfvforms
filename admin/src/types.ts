@@ -34,6 +34,9 @@ export interface DistributionData {
   tiktokFull: boolean;
   preSaveYandex: boolean;
   karaoke: boolean;
+  videoshot: boolean;
+  videoshotLink?: string;
+  videoshotPrice?: number;
   // Step 2
   fullName: string;
   passportSeries: string;
@@ -175,6 +178,8 @@ export const KARAOKE_PRICES: Record<string, number> = {
   premium: 140,
   platinum: 0,
 };
+
+export const VIDEOSHOT_PRICE = 1000;
 
 export const TARIFF_PERCENTAGES: Record<string, number> = {
   basic: 55,
