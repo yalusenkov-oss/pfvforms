@@ -12,6 +12,7 @@ const PRICES = {
   platinum: { single: 4990, ep: 6490, album: 7990 },
 };
 const KARAOKE_PRICES = { basic: 350, advanced: 195, premium: 140, platinum: 0 };
+const VIDEOSHOT_PRICE = 1000;
 const TARIFF_MAP = { 'Базовый': 'basic', 'Продвинутый': 'advanced', 'Премиум': 'premium', 'Платинум': 'platinum' };
 const RELEASE_MAP = { 'Single': 'single', 'EP': 'ep', 'Album': 'album' };
 
@@ -24,7 +25,8 @@ function calculateExpectedPrice(metadata) {
   const trackCount = parseInt(metadata.trackCount || '1', 10) || 1;
   const base = PRICES[tariff][releaseType];
   const karaoke = metadata.addKaraoke === 'yes' ? (KARAOKE_PRICES[tariff] || 0) * trackCount : 0;
-  return base + karaoke;
+  const videoshot = metadata.addVideoshot === 'yes' ? VIDEOSHOT_PRICE : 0;
+  return base + karaoke + videoshot;
   // Note: promo discount applied client-side — we verify pre-discount base is plausible
 }
 
