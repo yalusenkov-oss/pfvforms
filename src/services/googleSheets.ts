@@ -21,7 +21,7 @@ function getTrackCount(data: Record<string, string>): number {
 // Попытки (в порядке): import.meta.env -> window global -> /config.json
 let _cachedGoogleScriptUrl: string | null = null;
 const DEFAULT_GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxV8xHP0O09Q7KqMWmsApHOiSw9oNMDb6JKonoVnOBwbL95-v9duxnNZLca55yQJQk7OQ/exec';
-const DEBUG_LOGGING = true;
+const DEBUG_LOGGING = typeof window !== 'undefined' && /localhost|127\.0\.0\.1/.test(window.location.hostname);
 async function getGoogleScriptUrl(): Promise<string> {
   if (_cachedGoogleScriptUrl) return _cachedGoogleScriptUrl;
 

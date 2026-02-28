@@ -11,6 +11,15 @@
         },
         "api/test-email.js": {
             "maxDuration": 20
+        },
+        "api/payment/create.js": {
+            "maxDuration": 30
+        },
+        "api/payment/status.js": {
+            "maxDuration": 15
+        },
+        "api/payment/webhook.js": {
+            "maxDuration": 30
         }
     },
     "rewrites": [

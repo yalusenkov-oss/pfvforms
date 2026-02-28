@@ -4,14 +4,50 @@ import crypto from 'crypto';
 
 const YOOKASSA_API_URL = 'https://api.yookassa.ru/v3/payments';
 
+// ═══ Server-side price calculation (must match frontend) ═══
+const PRICES = {
+  basic:    { single: 500,  ep: 700,  album: 900  },
+  advanced: { single: 690,  ep: 890,  album: 1200 },
+  premium:  { single: 1200, ep: 1690, album: 2290 },
+  platinum: { single: 4990, ep: 6490, album: 7990 },
+};
+const KARAOKE_PRICES = { basic: 350, advanced: 195, premium: 140, platinum: 0 };
+const TARIFF_MAP = { 'Базовый': 'basic', 'Продвинутый': 'advanced', 'Премиум': 'premium', 'Платинум': 'platinum' };
+const RELEASE_MAP = { 'Single': 'single', 'EP': 'ep', 'Album': 'album' };
+
+function calculateExpectedPrice(metadata) {
+  if (!metadata) return null;
+  const tariff = TARIFF_MAP[metadata.tariff] || metadata.tariff;
+  const releaseType = RELEASE_MAP[metadata.releaseType] || metadata.releaseType;
+  if (!tariff || !releaseType || !PRICES[tariff]?.[releaseType]) return null;
+
+  const trackCount = parseInt(metadata.trackCount || '1', 10) || 1;
+  const base = PRICES[tariff][releaseType];
+  const karaoke = metadata.addKaraoke === 'yes' ? (KARAOKE_PRICES[tariff] || 0) * trackCount : 0;
+  return base + karaoke;
+  // Note: promo discount applied client-side — we verify pre-discount base is plausible
+}
+
+// ═══ CORS helper ═══
+const ALLOWED_ORIGINS = ['https://pfvmusic.digital', 'https://www.pfvmusic.digital'];
+function getCorsOrigin(requestOrigin) {
+  if (!requestOrigin) return 'https://pfvmusic.digital';
+  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(requestOrigin)) return requestOrigin;
+  if (ALLOWED_ORIGINS.includes(requestOrigin)) return requestOrigin;
+  return 'https://pfvmusic.digital';
+}
+
 export default async function handler(req, res) {
   // Read env vars lazily (after dotenv.config() has run in server.js)
   const YOOKASSA_SHOP_ID = process.env.YOOKASSA_SHOP_ID || '';
   const YOOKASSA_SECRET_KEY = process.env.YOOKASSA_SECRET_KEY || '';
   const SITE_URL = process.env.SITE_URL || 'https://pfvmusic.digital';
+  const requestOrigin = req.headers.origin || '';
+  const isLocalOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(requestOrigin);
+  const returnBaseUrl = (isLocalOrigin ? requestOrigin : SITE_URL).replace(/\/$/, '');
 
-  // CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // CORS — restrict to known origins
+  res.setHeader('Access-Control-Allow-Origin', getCorsOrigin(requestOrigin));
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -32,6 +68,20 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, error: 'Invalid amount' });
     }
 
+    // Server-side price verification — guard against client-side manipulation
+    const expectedBase = calculateExpectedPrice(metadata);
+    if (expectedBase !== null) {
+      // Amount can be <= expectedBase (promo discount applied), but never MORE
+      if (Number(amount) > expectedBase) {
+        console.error(`[payment/create] Price mismatch: client sent ${amount}, expected max ${expectedBase}`);
+        return res.status(400).json({ success: false, error: 'Price verification failed' });
+      }
+      // Amount should be at least 1 RUB (YooKassa minimum) unless free (0)
+      if (Number(amount) < 1) {
+        return res.status(400).json({ success: false, error: 'Amount too low for payment' });
+      }
+    }
+
     // Idempotence key to prevent duplicate payments
     const idempotenceKey = crypto.randomUUID();
 
@@ -42,7 +92,7 @@ export default async function handler(req, res) {
       },
       confirmation: {
         type: 'redirect',
-        return_url: `${SITE_URL}?paymentComplete=true#distribution`,
+        return_url: `${returnBaseUrl}?paymentComplete=true#distribution`,
       },
       capture: true, // Auto-capture (one-stage payment)
       description: description || 'Оплата дистрибуции PFVMUSIC',

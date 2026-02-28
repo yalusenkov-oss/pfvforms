@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "vite",
+    "dev": "concurrently \"npm:dev:server\" \"npm:dev:app\"",
+    "dev:server": "node server.js",
     "dev:app": "vite",
     "dev:admin": "cd admin && npm run dev",
     "dev:both": "concurrently \"npm:dev:app\" \"npm:dev:admin\"",

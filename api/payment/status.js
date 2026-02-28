@@ -3,13 +3,23 @@
 
 const YOOKASSA_API_URL = 'https://api.yookassa.ru/v3/payments';
 
+// ═══ CORS helper ═══
+const ALLOWED_ORIGINS = ['https://pfvmusic.digital', 'https://www.pfvmusic.digital'];
+function getCorsOrigin(requestOrigin) {
+  if (!requestOrigin) return 'https://pfvmusic.digital';
+  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(requestOrigin)) return requestOrigin;
+  if (ALLOWED_ORIGINS.includes(requestOrigin)) return requestOrigin;
+  return 'https://pfvmusic.digital';
+}
+
 export default async function handler(req, res) {
   // Read env vars lazily (after dotenv.config() has run in server.js)
   const YOOKASSA_SHOP_ID = process.env.YOOKASSA_SHOP_ID || '';
   const YOOKASSA_SECRET_KEY = process.env.YOOKASSA_SECRET_KEY || '';
 
-  // CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // CORS — restrict to known origins
+  const requestOrigin = req.headers.origin || '';
+  res.setHeader('Access-Control-Allow-Origin', getCorsOrigin(requestOrigin));
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();

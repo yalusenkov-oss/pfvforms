@@ -33,7 +33,9 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
   const [promoError, setPromoError] = useState<string>('');
   const [paymentCreating, setPaymentCreating] = useState(false);
   const [paymentError, setPaymentError] = useState<string>('');
-  const [paymentPolling, setPaymentPolling] = useState(false);
+  const [paymentPolling, setPaymentPolling] = useState(() => {
+    return new URLSearchParams(window.location.search).has('paymentComplete');
+  });
   const tariffMap: Record<string, string> = {
     'Базовый': 'basic',
     'Продвинутый': 'advanced',
@@ -49,6 +51,13 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
   const totalBeforeDiscount = base + karaoke;
   const appliedDiscount = parseFloat(data.promoDiscountAmount || '0') || 0;
   const totalAfterDiscount = Math.max(0, totalBeforeDiscount - (data.promoApplied === 'yes' ? appliedDiscount : 0));
+  const savedConfirmationUrl = data.paymentConfirmationUrl || localStorage.getItem('pfv_confirmationUrl') || '';
+
+  const cleanPaymentCompleteParam = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('paymentComplete');
+    window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+  };
 
   useEffect(() => {
     // If promo codes were preloaded in the parent, use them directly
@@ -181,7 +190,9 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
           tariff,
           releaseType,
           trackCount: String(trackCount),
+          addKaraoke: data.karaokeAddition === 'Да' ? 'yes' : 'no',
           promoCode: data.promoCode || '',
+          email: data.email || '',
         },
       });
 
@@ -194,14 +205,17 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
       // Store the payment ID in formData so we can track it
       onChange('paymentId', result.paymentId);
       onChange('paymentStatus', 'pending');
+      onChange('paymentConfirmationUrl', result.confirmationUrl);
 
       // Persist paymentId AND full formData to localStorage before redirect
       // (React state will be lost when navigating away)
       localStorage.setItem('pfv_paymentId', result.paymentId);
+      localStorage.setItem('pfv_confirmationUrl', result.confirmationUrl);
       localStorage.setItem('pfv_formData', JSON.stringify({
         ...data,
         paymentId: result.paymentId,
         paymentStatus: 'pending',
+        paymentConfirmationUrl: result.confirmationUrl,
       }));
 
       // Redirect user to YooKassa payment page
@@ -227,21 +241,21 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
         onChange('paymentId', paymentId);
       }
     }
-    if (!paymentId) return;
-
-    // Already confirmed? Skip polling
-    if (data.paymentStatus === 'succeeded') {
-      // Clean URL
-      const url = new URL(window.location.href);
-      url.searchParams.delete('paymentComplete');
-      window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+    if (!paymentId) {
+      setPaymentPolling(false);
       return;
     }
 
-    // Clean URL
-    const url = new URL(window.location.href);
-    url.searchParams.delete('paymentComplete');
-    window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+    const confirmationUrl = data.paymentConfirmationUrl || localStorage.getItem('pfv_confirmationUrl') || '';
+    if (confirmationUrl && !data.paymentConfirmationUrl) {
+      onChange('paymentConfirmationUrl', confirmationUrl);
+    }
+
+    // Already confirmed? Skip polling
+    if (data.paymentStatus === 'succeeded') {
+      cleanPaymentCompleteParam();
+      return;
+    }
 
     // Poll for payment status
     let cancelled = false;
@@ -255,18 +269,23 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
           if (status.status === 'succeeded') {
             onChange('paymentStatus', 'succeeded');
             onChange('paymentProof', `yookassa:${paymentId}`);
+            onChange('paymentConfirmationUrl', '');
             localStorage.removeItem('pfv_paymentId');
+            localStorage.removeItem('pfv_confirmationUrl');
             localStorage.removeItem('pfv_formData');
-            setPaymentPolling(false);
+            cleanPaymentCompleteParam();
             onPaymentSuccess?.();
             return;
           }
           if (status.status === 'canceled') {
             onChange('paymentStatus', 'canceled');
+            // Clean up localStorage on cancellation
             localStorage.removeItem('pfv_paymentId');
+            localStorage.removeItem('pfv_confirmationUrl');
             localStorage.removeItem('pfv_formData');
             setPaymentError('Платёж был отменён. Попробуйте оплатить ещё раз.');
             setPaymentPolling(false);
+            cleanPaymentCompleteParam();
             return;
           }
         }
@@ -274,7 +293,8 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
       }
       // Timeout
       setPaymentPolling(false);
-      setPaymentError('Не удалось подтвердить статус платежа. Если вы оплатили, свяжитесь с нами.');
+      setPaymentError('Не удалось подтвердить статус платежа. Вы можете повторно открыть страницу оплаты или попробовать создать новый платёж.');
+      cleanPaymentCompleteParam();
     };
 
     poll();
@@ -395,6 +415,17 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
             <XCircle className="w-4 h-4 flex-shrink-0" />
             <span>{paymentError}</span>
           </div>
+        )}
+
+        {savedConfirmationUrl && data.paymentStatus !== 'succeeded' && !paymentPolling && (
+          <button
+            type="button"
+            onClick={() => { window.location.href = savedConfirmationUrl; }}
+            className="mt-3 w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-purple-200 bg-white px-4 py-2.5 text-sm font-semibold text-purple-700 hover:bg-purple-50"
+          >
+            <Wallet className="w-4 h-4" />
+            Вернуться к оплате
+          </button>
         )}
       </StepCard>
 
@@ -533,5 +564,4 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
     </div>
   );
 }
-
 
