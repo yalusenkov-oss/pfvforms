@@ -75,8 +75,10 @@ function initializeSheets() {
   let distributionSheet = spreadsheet.getSheetByName(DISTRIBUTION_SHEET_NAME);
   if (!distributionSheet) {
     distributionSheet = spreadsheet.insertSheet(DISTRIBUTION_SHEET_NAME);
+    setupDistributionSheet(distributionSheet);
+  } else {
+    migrateDistributionSheet(distributionSheet);
   }
-  setupDistributionSheet(distributionSheet);
 
   let promoSheet = spreadsheet.getSheetByName(PROMO_SHEET_NAME);
   if (!promoSheet) {
@@ -89,6 +91,75 @@ function initializeSheets() {
     promoCodesSheet = spreadsheet.insertSheet(PROMO_CODES_SHEET_NAME);
   }
   setupPromoCodesSheet(promoCodesSheet);
+}
+
+/**
+ * Умная миграция: добавляет недостающие колонки в нужные позиции,
+ * не трогая существующие данные.
+ */
+function migrateDistributionSheet(sheet) {
+  const expectedHeaders = [
+    'timestamp', 'tariff', 'release_type', 'track_count', 'work_title',
+    'pseudonym', 'release_version', 'release_link', 'genre', 'language',
+    'release_date', 'cover_link', 'tiktok_excerpt', 'tiktok_full', 'yandex_presave',
+    'karaoke', 'videoshot', 'videoshot_link', 'tracks_json', 'licensor_name',
+    'passport_series_number', 'passport_issued_by', 'passport_issue_date',
+    'bank_details', 'email', 'contact', 'artist_profile_links',
+    'base_price', 'karaoke_price', 'videoshot_price', 'total_price',
+    'payment_proof_url', 'contract_number', 'percentage',
+    'contract_status', 'music_author', 'lyrics_author', 'lyrics_texts',
+    'document_status', 'telegram_status',
+    'sign_status', 'sign_token', 'sign_expires_at', 'sign_link',
+    'sign_doc_id', 'signed_url', 'signed_at',
+    'contract_html', 'sign_source', 'signed_pdf_id', 'platforms', 'tg_contract_msg_id'
+  ];
+
+  var lastCol = sheet.getLastColumn();
+  var currentHeaders = lastCol > 0
+    ? sheet.getRange(1, 1, 1, lastCol).getValues()[0]
+    : [];
+
+  // Строим карту текущих заголовков → индекс (1-based)
+  var headerMap = {};
+  for (var i = 0; i < currentHeaders.length; i++) {
+    if (currentHeaders[i]) headerMap[String(currentHeaders[i]).trim()] = i + 1;
+  }
+
+  // Проходим по ожидаемым заголовкам и вставляем недостающие
+  for (var ei = 0; ei < expectedHeaders.length; ei++) {
+    var expectedCol = ei + 1; // 1-based позиция в ожидаемой схеме
+    var colName = expectedHeaders[ei];
+
+    if (!headerMap[colName]) {
+      // Колонки нет — вставляем на нужную позицию
+      var insertAt = expectedCol;
+      if (insertAt > sheet.getLastColumn() + 1) {
+        insertAt = sheet.getLastColumn() + 1;
+      }
+      sheet.insertColumnBefore(insertAt);
+      sheet.getRange(1, insertAt).setValue(colName);
+      // Обновляем headerMap со сдвигом
+      var newHeaderMap = {};
+      for (var key in headerMap) {
+        newHeaderMap[key] = headerMap[key] >= insertAt ? headerMap[key] + 1 : headerMap[key];
+      }
+      newHeaderMap[colName] = insertAt;
+      headerMap = newHeaderMap;
+      Logger.log('migrateDistributionSheet: inserted column "' + colName + '" at position ' + insertAt);
+    }
+  }
+
+  // Применяем стили к строке заголовков
+  var totalCols = sheet.getLastColumn();
+  var headerRange = sheet.getRange(1, 1, 1, totalCols);
+  headerRange.setFontWeight('bold');
+  headerRange.setBackground('#4A90E2');
+  headerRange.setFontColor('#FFFFFF');
+  headerRange.setHorizontalAlignment('center');
+  headerRange.setVerticalAlignment('middle');
+  headerRange.setWrap(true);
+  sheet.setFrozenRows(1);
+  Logger.log('migrateDistributionSheet: done. Total columns: ' + totalCols);
 }
 
 function setupDistributionSheet(sheet) {
@@ -398,59 +469,68 @@ function saveDistribution(data) {
     const fileName_        = 'Договор №' + contractNumber + ' - ' + licensorName_;
     const stored           = storeContractHtml(htmlWithOwnerSig, fileName_, '');
 
-    const row = [
-      new Date(data.timestamp || new Date()),
-      tariffName,
-      releaseTypeName,
-      data.trackCount || 0,
-      data.releaseName || '',
-      data.mainArtist || '',
-      data.releaseVersion || '',
-      data.releaseLink || '',
-      data.genre || '',
-      data.language || '',
-      data.releaseDate || '',
-      data.coverLink || '',
-      data.tiktokExcerpt || '',
-      data.tiktokFull || '',
-      data.yandexPreSave || '',
-      data.addKaraoke === 'yes' ? 'Да' : 'Нет',
-      data.addVideoshot === 'yes' ? 'Да' : 'Нет',
-      data.videoshotLink || '',
-      JSON.stringify(tracksArray, null, 2),
-      data.fullName || '',
-      data.passportNumber || '',
-      data.issuedBy || '',
-      data.issueDate || '',
-      data.bankDetails || '',
-      data.email || '',
-      data.contactInfo || '',
-      data.artistProfileLinks || '',
-      Number(data.basePrice || 0),
-      Number(data.karaokePrice || 0),
-      Number(data.videoshotPrice || 0),
-      Number(data.totalPrice || 0),
-      '',                              // payment_proof_url — заполним фоном
-      contractNumber,
-      percentage + '%',
-      '',                              // contract_status
-      musicAuthorValue || '',
-      lyricsAuthorValue || '',
-      collectLyricsFromTracks(tracksArray) || '',
-      '',                              // document_status
-      '',                              // telegram_status
-      'pending',                       // sign_status
-      signToken,                       // sign_token
-      expiresAt.toISOString(),         // sign_expires_at
-      signUrl,                         // sign_link
-      '',                              // sign_doc_id
-      '',                              // signed_url
-      '',                              // signed_at
-      stored.value,                    // contract_html
-      'internal',                      // sign_source
-      '',                              // signed_pdf_id
-      data.platforms || ''             // platforms
-    ];
+    // Словарь данных по именам колонок — не зависит от порядка колонок в таблице
+    const rowData = {
+      timestamp:               new Date(data.timestamp || new Date()),
+      tariff:                  tariffName,
+      release_type:            releaseTypeName,
+      track_count:             data.trackCount || 0,
+      work_title:              data.releaseName || '',
+      pseudonym:               data.mainArtist || '',
+      release_version:         data.releaseVersion || '',
+      release_link:            data.releaseLink || '',
+      genre:                   data.genre || '',
+      language:                data.language || '',
+      release_date:            data.releaseDate || '',
+      cover_link:              data.coverLink || '',
+      tiktok_excerpt:          data.tiktokExcerpt || '',
+      tiktok_full:             data.tiktokFull || '',
+      yandex_presave:          data.yandexPreSave || '',
+      karaoke:                 data.addKaraoke === 'yes' ? 'Да' : 'Нет',
+      videoshot:               data.addVideoshot === 'yes' ? 'Да' : 'Нет',
+      videoshot_link:          data.videoshotLink || '',
+      tracks_json:             JSON.stringify(tracksArray, null, 2),
+      licensor_name:           data.fullName || '',
+      passport_series_number:  data.passportNumber || '',
+      passport_issued_by:      data.issuedBy || '',
+      passport_issue_date:     data.issueDate || '',
+      bank_details:            data.bankDetails || '',
+      email:                   data.email || '',
+      contact:                 data.contactInfo || '',
+      artist_profile_links:    data.artistProfileLinks || '',
+      base_price:              Number(data.basePrice || 0),
+      karaoke_price:           Number(data.karaokePrice || 0),
+      videoshot_price:         Number(data.videoshotPrice || 0),
+      total_price:             Number(data.totalPrice || 0),
+      payment_proof_url:       '',   // заполним фоном
+      contract_number:         contractNumber,
+      percentage:              percentage + '%',
+      contract_status:         '',
+      music_author:            musicAuthorValue || '',
+      lyrics_author:           lyricsAuthorValue || '',
+      lyrics_texts:            collectLyricsFromTracks(tracksArray) || '',
+      document_status:         '',
+      telegram_status:         '',
+      sign_status:             'pending',
+      sign_token:              signToken,
+      sign_expires_at:         expiresAt.toISOString(),
+      sign_link:               signUrl,
+      sign_doc_id:             '',
+      signed_url:              '',
+      signed_at:               '',
+      contract_html:           stored.value,
+      sign_source:             'internal',
+      signed_pdf_id:           '',
+      platforms:               data.platforms || '',
+      tg_contract_msg_id:      ''
+    };
+
+    // Строим строку по актуальным заголовкам таблицы
+    const currentHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const row = currentHeaders.map(function(h) {
+      var key = String(h).trim();
+      return rowData.hasOwnProperty(key) ? rowData[key] : '';
+    });
 
     sheet.appendRow(row);
 
