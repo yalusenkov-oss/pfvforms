@@ -93,6 +93,7 @@ function runBackgroundTasks(scriptUrl, cleanPayload, gasJson) {
       email: cleanPayload.email || '',
       contactInfo: cleanPayload.contactInfo || '',
       paymentProof: cleanPayload.paymentProof || '',
+      coverFile: cleanPayload.coverFile || '',
     };
 
     fetch(scriptUrl, {

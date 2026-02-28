@@ -211,7 +211,9 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
     // Если указан languageOther, используем его, иначе language
     language: formData.languageOther?.trim() || formData.language || '',
     releaseDate: formData.releaseDate,
-    coverLink: formData.coverLink,
+    // Обложка: если base64 (загруженный файл) → отправляем как coverFile, GAS загрузит в Drive
+    coverLink: formData.coverLink?.startsWith('data:') ? '' : (formData.coverLink || ''),
+    coverFile: formData.coverLink?.startsWith('data:') ? formData.coverLink : '',
 
     // TikTok
     tiktokExcerpt: formData.tiktokExcerpt,

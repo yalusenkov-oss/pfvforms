@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useRef, type ChangeEvent } from 'react';
 import { Input, TextArea, RadioGroup, InfoBox, StepCard, Divider, NumberStepper, DatePicker, Select } from './UI';
 import {
   Music2, User, Link2, Disc3, Calendar, Image, Globe, Clock,
   Mic2, PenTool, Hash, Bookmark, TicketPercent, Type, Banknote,
-  AlertCircle, ChevronDown, ChevronUp, Plus, X, Users, ChevronRight, Radio
+  AlertCircle, ChevronDown, ChevronUp, Plus, X, Users, ChevronRight, Radio,
+  Upload, Trash2, CheckCircle2
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
@@ -101,6 +102,199 @@ function getTracksData(data: Record<string, string>, count: number): TrackData[]
 
 function setTracksData(onChange: (k: string, v: string) => void, tracks: TrackData[]) {
   onChange('_tracks', JSON.stringify(tracks));
+}
+
+/* ═══ Cover Upload Component ═══ */
+function CoverUpload({ data, onChange }: { data: Record<string, string>; onChange: (key: string, value: string) => void }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [coverMode, setCoverMode] = useState<'file' | 'link'>(
+    // If coverLink already has a URL (not base64), default to link mode
+    data.coverLink && !data.coverLink.startsWith('data:') ? 'link' : 'file'
+  );
+  const [fileName, setFileName] = useState<string>(data._coverFileName || '');
+  const [fileError, setFileError] = useState<string>('');
+  const [dragOver, setDragOver] = useState(false);
+
+  const hasFile = !!data.coverLink && data.coverLink.startsWith('data:');
+  const hasLink = !!data.coverLink && !data.coverLink.startsWith('data:');
+
+  const handleFile = (file: File) => {
+    setFileError('');
+
+    if (!file.type.startsWith('image/')) {
+      setFileError('Загрузите изображение (JPG, PNG).');
+      return;
+    }
+
+    const maxSizeMb = 10;
+    if (file.size > maxSizeMb * 1024 * 1024) {
+      setFileError(`Файл слишком большой. Максимум ${maxSizeMb} МБ.`);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : '';
+      if (!result) {
+        setFileError('Не удалось прочитать файл. Попробуйте ещё раз.');
+        return;
+      }
+      setFileName(file.name);
+      onChange('coverLink', result);
+      onChange('_coverFileName', file.name);
+    };
+    reader.onerror = () => {
+      setFileError('Ошибка чтения файла.');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    handleFile(file);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleFile(file);
+  };
+
+  const handleRemoveFile = () => {
+    setFileName('');
+    setFileError('');
+    onChange('coverLink', '');
+    onChange('_coverFileName', '');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* Label */}
+      <div className="flex items-center gap-2">
+        <Image className="w-4 h-4 text-purple-500" />
+        <label className="text-sm font-semibold text-gray-800">
+          Обложка релиза <span className="text-red-500">*</span>
+        </label>
+      </div>
+
+      {/* Mode toggle */}
+      <div className="flex rounded-xl bg-gray-100 p-1 gap-1">
+        <button
+          type="button"
+          onClick={() => { setCoverMode('file'); if (hasLink) { onChange('coverLink', ''); } }}
+          className={cn(
+            'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all',
+            coverMode === 'file'
+              ? 'bg-white text-purple-700 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          )}
+        >
+          <Upload className="w-3.5 h-3.5" />
+          Загрузить файл
+        </button>
+        <button
+          type="button"
+          onClick={() => { setCoverMode('link'); if (hasFile) { handleRemoveFile(); } }}
+          className={cn(
+            'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all',
+            coverMode === 'link'
+              ? 'bg-white text-purple-700 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          )}
+        >
+          <Link2 className="w-3.5 h-3.5" />
+          Вставить ссылку
+        </button>
+      </div>
+
+      {/* File upload mode */}
+      {coverMode === 'file' && (
+        <div className="animate-in space-y-3">
+          {!hasFile ? (
+            /* Drop zone */
+            <div
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className={cn(
+                'relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 cursor-pointer transition-all',
+                dragOver
+                  ? 'border-purple-500 bg-purple-50'
+                  : 'border-gray-300 bg-gray-50/50 hover:border-purple-400 hover:bg-purple-50/30'
+              )}
+            >
+              <div className={cn(
+                'w-14 h-14 rounded-2xl flex items-center justify-center mb-3',
+                dragOver ? 'bg-purple-200' : 'bg-gray-200'
+              )}>
+                <Upload className={cn('w-6 h-6', dragOver ? 'text-purple-600' : 'text-gray-400')} />
+              </div>
+              <p className="text-sm font-semibold text-gray-700">
+                {dragOver ? 'Отпустите файл' : 'Нажмите или перетащите обложку'}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">JPG или PNG • 3000×3000 px • до 10 МБ</p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/jpg"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+            </div>
+          ) : (
+            /* Preview */
+            <div className="relative rounded-2xl border-2 border-emerald-300 bg-emerald-50/30 p-4">
+              <div className="flex items-start gap-4">
+                <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 border border-gray-200 shadow-sm">
+                  <img
+                    src={data.coverLink}
+                    alt="Обложка"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                    <p className="text-sm font-semibold text-emerald-800">Обложка загружена</p>
+                  </div>
+                  <p className="text-xs text-gray-600 truncate">{fileName}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRemoveFile}
+                  className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                  title="Удалить"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {fileError && (
+            <div className="flex items-center gap-2 text-red-600 text-xs font-medium bg-red-50 rounded-lg px-3 py-2">
+              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+              {fileError}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Link mode */}
+      {coverMode === 'link' && (
+        <div className="animate-in">
+          <Input label="" icon={<Link2 className="w-4 h-4" />}
+            hint={'Загрузите обложку в облако (Яндекс Диск / Google Drive) и оставьте ссылку.\n• Разрешение: 3000×3000 px\n• Формат: JPEG'}
+            value={data.coverLink || ''} onChange={(e) => onChange('coverLink', e.target.value)}
+            placeholder="https://disk.yandex.ru/..." />
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function StepOne({ data, onChange }: StepOneProps) {
@@ -526,10 +720,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
 
         <Divider label="Оформление" />
 
-        <Input label="Обложка релиза" required icon={<Image className="w-4 h-4" />}
-          hint={'Загрузите обложку в облако (Яндекс Диск / Google Drive) и оставьте ссылку.\n• Разрешение: 3000×3000 px\n• Формат: JPEG'}
-          value={data.coverLink || ''} onChange={(e) => onChange('coverLink', e.target.value)}
-          placeholder="https://disk.yandex.ru/..." />
+        <CoverUpload data={data} onChange={onChange} />
 
       </StepCard>
 

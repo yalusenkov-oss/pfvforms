@@ -167,7 +167,7 @@ function validateStep1(data: Record<string, string>): ValidationResult {
   if (!data.genre?.trim()) errors.push('Укажите жанр');
   if (!data.language && !data.languageOther) errors.push('Укажите язык релиза');
   if (!data.releaseDate) errors.push('Укажите дату релиза');
-  if (!data.coverLink?.trim()) errors.push('Укажите ссылку на обложку');
+  if (!data.coverLink?.trim()) errors.push('Загрузите обложку или укажите ссылку');
   if (!data.tiktokExcerpt?.trim()) errors.push('Укажите отрывок в TikTok');
   const tiktokFullValue = data.tiktokFull || data.fullTiktok;
   if (!tiktokFullValue && (data.tariff === 'Премиум' || data.tariff === 'Платинум')) {

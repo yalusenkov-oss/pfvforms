@@ -513,6 +513,27 @@ function processDistributionBackground(data) {
       }
     }
 
+    // ── Загрузка обложки на Drive (если передан base64 файл) ──
+    if (data.coverFile && lastRow > 1) {
+      try {
+        const coverBlob = dataUrlToBlob(data.coverFile);
+        const safeName = 'Обложка ' + (contractNumber || 'PFV') + ' - ' + (data.mainArtist || data.fullName || 'Артист');
+        coverBlob.setName(safeName);
+        const folder = getOrCreatePaymentProofsFolder(); // reuse same folder or create dedicated
+        const file = folder.createFile(coverBlob);
+        makeFilePublic(file);
+        const coverUrl = file.getUrl();
+        const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+        const coverColIdx = headers.indexOf('cover_link');
+        if (coverColIdx >= 0) {
+          sheet.getRange(lastRow, coverColIdx + 1).setValue(coverUrl);
+        }
+        Logger.log('✅ Cover image uploaded: ' + coverUrl);
+      } catch (e) {
+        Logger.log('❌ Background coverFile error: ' + e);
+      }
+    }
+
     // ── Telegram #1: уведомление о дистрибуции ──
     const distCfg = getTelegramConfig('distribution');
     if (TELEGRAM_CONFIG.NOTIFY_DISTRIBUTION && distCfg.ENABLED && distCfg.BOT_TOKEN && distCfg.CHAT_ID) {

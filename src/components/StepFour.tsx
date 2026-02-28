@@ -209,10 +209,16 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
 
       // Persist paymentId AND full formData to localStorage before redirect
       // (React state will be lost when navigating away)
+      // Exclude base64 coverLink to avoid exceeding localStorage ~5MB limit
+      const persistData = { ...data };
+      if (persistData.coverLink?.startsWith('data:')) {
+        persistData._coverWasFile = 'true'; // remember it was a file upload
+        delete persistData.coverLink;
+      }
       localStorage.setItem('pfv_paymentId', result.paymentId);
       localStorage.setItem('pfv_confirmationUrl', result.confirmationUrl);
       localStorage.setItem('pfv_formData', JSON.stringify({
-        ...data,
+        ...persistData,
         paymentId: result.paymentId,
         paymentStatus: 'pending',
         paymentConfirmationUrl: result.confirmationUrl,
