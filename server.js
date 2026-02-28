@@ -18,6 +18,7 @@ import listHandler from './api/list.js';
 import paymentCreateHandler from './api/payment/create.js';
 import paymentStatusHandler from './api/payment/status.js';
 import paymentWebhookHandler from './api/payment/webhook.js';
+import uploadCoverHandler from './api/upload-cover.js';
 
 const app = express();
 
@@ -55,6 +56,7 @@ app.all('/api/list', vercelHandler(listHandler));
 app.all('/api/payment/create', vercelHandler(paymentCreateHandler));
 app.all('/api/payment/status', vercelHandler(paymentStatusHandler));
 app.all('/api/payment/webhook', vercelHandler(paymentWebhookHandler));
+app.all('/api/upload-cover', vercelHandler(uploadCoverHandler));
 
 // Proxy for Google Apps Script (avoids CORS on localhost)
 app.all('/api/gas-proxy', async (req, res) => {

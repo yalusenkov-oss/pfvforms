@@ -96,9 +96,9 @@ function setupDistributionSheet(sheet) {
     'timestamp', 'tariff', 'release_type', 'track_count', 'work_title',
     'pseudonym', 'release_version', 'release_link', 'genre', 'language',
     'release_date', 'cover_link', 'tiktok_excerpt', 'tiktok_full', 'yandex_presave',
-    'karaoke', 'tracks_json', 'licensor_name', 'passport_series_number', 'passport_issued_by',
+    'karaoke', 'videoshot', 'videoshot_link', 'tracks_json', 'licensor_name', 'passport_series_number', 'passport_issued_by',
     'passport_issue_date', 'bank_details', 'email', 'contact', 'artist_profile_links',
-    'base_price', 'karaoke_price', 'total_price', 'payment_proof_url', 'contract_number', 'percentage',
+    'base_price', 'karaoke_price', 'videoshot_price', 'total_price', 'payment_proof_url', 'contract_number', 'percentage',
     'contract_status', 'music_author', 'lyrics_author', 'lyrics_texts', 'document_status', 'telegram_status',
     'sign_status', 'sign_token', 'sign_expires_at', 'sign_link', 'sign_doc_id', 'signed_url', 'signed_at',
     'contract_html', 'sign_source', 'signed_pdf_id', 'platforms', 'tg_contract_msg_id'
@@ -219,6 +219,10 @@ function doPost(e) {
       result = updateContractTgStatus(data);
     } else if (data.action === 'distribution_background') {
       result = processDistributionBackground(data);
+    } else if (data.action === 'upload_cover') {
+      result = uploadCoverToDrive(data);
+    } else if (data.action === 'use_promo') {
+      result = incrementPromoCodeUsage(data);
     } else if (data.formType === 'promo_code') {
       savePromoCode(data);
     } else if (data.formType === 'distribution') {
@@ -411,6 +415,8 @@ function saveDistribution(data) {
       data.tiktokFull || '',
       data.yandexPreSave || '',
       data.addKaraoke === 'yes' ? 'Да' : 'Нет',
+      data.addVideoshot === 'yes' ? 'Да' : 'Нет',
+      data.videoshotLink || '',
       JSON.stringify(tracksArray, null, 2),
       data.fullName || '',
       data.passportNumber || '',
@@ -422,6 +428,7 @@ function saveDistribution(data) {
       data.artistProfileLinks || '',
       Number(data.basePrice || 0),
       Number(data.karaokePrice || 0),
+      Number(data.videoshotPrice || 0),
       Number(data.totalPrice || 0),
       '',                              // payment_proof_url — заполним фоном
       contractNumber,
@@ -717,6 +724,45 @@ function deletePromoCode(data) {
   } catch (error) {
     Logger.log('deletePromoCode error: ' + error.toString());
     throw error;
+  }
+}
+
+/**
+ * Increment current_uses for a promo code by its code string.
+ * Called after successful form submission (payment confirmed or 100% discount).
+ * data.code — the promo code string (case-insensitive)
+ */
+function incrementPromoCodeUsage(data) {
+  try {
+    initializeSheets();
+    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(PROMO_CODES_SHEET_NAME);
+    if (!sheet) throw new Error('Sheet "' + PROMO_CODES_SHEET_NAME + '" not found');
+
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const codeCol = headers.indexOf('code');
+    const usesCol = headers.indexOf('current_uses');
+    if (codeCol === -1 || usesCol === -1) {
+      throw new Error('Required columns not found: code=' + codeCol + ' current_uses=' + usesCol);
+    }
+
+    const codeNormalized = String(data.code || '').trim().toUpperCase();
+    if (!codeNormalized) throw new Error('No promo code provided');
+
+    const allData = sheet.getDataRange().getValues();
+    for (var i = 1; i < allData.length; i++) {
+      if (String(allData[i][codeCol]).trim().toUpperCase() === codeNormalized) {
+        var currentUses = parseInt(allData[i][usesCol], 10) || 0;
+        sheet.getRange(i + 1, usesCol + 1).setValue(currentUses + 1);
+        Logger.log('Promo code "' + codeNormalized + '" usage incremented: ' + currentUses + ' -> ' + (currentUses + 1));
+        return { success: true, currentUses: currentUses + 1 };
+      }
+    }
+
+    Logger.log('Promo code not found for usage increment: ' + codeNormalized);
+    return { success: false, error: 'Promo code not found: ' + codeNormalized };
+  } catch (error) {
+    Logger.log('incrementPromoCodeUsage error: ' + error.toString());
+    return { success: false, error: error.toString() };
   }
 }
 
@@ -2436,6 +2482,24 @@ function storePaymentProof(dataUrl, contractNumber, licensorName) {
   const file = folder.createFile(blob);
   makeFilePublic(file);
   return file;
+}
+
+function uploadCoverToDrive(data) {
+  try {
+    if (!data.coverFile) throw new Error('No coverFile provided');
+    const blob = dataUrlToBlob(data.coverFile);
+    const safeName = 'Обложка - ' + (data.artistName || 'Артист') + ' - ' + new Date().toISOString().substring(0, 10);
+    blob.setName(safeName);
+    const folder = getOrCreatePaymentProofsFolder();
+    const file = folder.createFile(blob);
+    makeFilePublic(file);
+    const coverUrl = file.getUrl();
+    Logger.log('✅ Cover uploaded to Drive: ' + coverUrl);
+    return { success: true, coverUrl: coverUrl };
+  } catch (e) {
+    Logger.log('❌ uploadCoverToDrive error: ' + e);
+    return { success: false, error: e.toString() };
+  }
 }
 
 function storeContractHtml(html, fileName, existingValue) {

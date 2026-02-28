@@ -20,6 +20,9 @@
         },
         "api/payment/webhook.js": {
             "maxDuration": 30
+        },
+        "api/upload-cover.js": {
+            "maxDuration": 60
         }
     },
     "rewrites": [

@@ -30,8 +30,8 @@ export function StepTwo({ data, onChange, agreed, onAgree }: StepTwoProps) {
         >
           <InfoBox variant="purple">
             <div>
-              <p className="font-semibold mb-2">📋 Дистрибуция на договорной основе</p>
-              <p className="text-xs mb-3">В настоящее время мы запускаем дистрибуцию на договорной основе. Пожалуйста, ознакомьтесь с договором перед заполнением.</p>
+              <p className="font-semibold mb-2">📋 Договор</p>
+              <p className="text-xs mb-3">Пожалуйста, ознакомьтесь с договором перед заполнением.</p>
               <a
                 href="https://disk.yandex.ru/i/pvZXPt4B7t5FIA"
                 target="_blank"

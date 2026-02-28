@@ -5,7 +5,7 @@ import { StepOne, getTrackCount } from './components/StepOne';
 import { StepTwo } from './components/StepTwo';
 import { StepFour } from './components/StepFour';
 import { StepPromo } from './components/StepPromo';
-import { submitToGoogleSheets, fetchPromoCodes, PromoCodeRecord } from './services/googleSheets';
+import { submitToGoogleSheets, fetchPromoCodes, incrementPromoUsage, PromoCodeRecord } from './services/googleSheets';
 import SignPage from './pages/Sign';
 
 type AppMode = 'home' | 'distribution' | 'promo' | 'success' | 'fail' | 'result' | 'sign';
@@ -531,6 +531,10 @@ export function App() {
     try {
       const result = await submitToGoogleSheets('distribution', normalized);
       if (result.success) {
+        // Increment promo code usage if one was applied (fire-and-forget)
+        if (formData.promoApplied === 'yes' && formData.promoCode) {
+          incrementPromoUsage(formData.promoCode).catch(() => {});
+        }
         setSubmittedSignLink(result.signLink || '');
         setSubmitting(false);
         setSubmitted(true);

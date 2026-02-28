@@ -25,7 +25,7 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
   const tariff = data.tariff || '';
   const releaseType = data.releaseType || '';
   const trackCount = getTrackCount(data);
-  const { base, karaoke } = calcTotal(data);
+  const { base, karaoke, videoshot } = calcTotal(data);
   const hasSelection = tariff && releaseType;
   const [promoCodes, setPromoCodes] = useState<PromoCodeRecord[]>([]);
   const [promoLoading, setPromoLoading] = useState(false);
@@ -48,7 +48,7 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
     'Album': 'album',
   };
 
-  const totalBeforeDiscount = base + karaoke;
+  const totalBeforeDiscount = base + karaoke + videoshot;
   const appliedDiscount = parseFloat(data.promoDiscountAmount || '0') || 0;
   const totalAfterDiscount = Math.max(0, totalBeforeDiscount - (data.promoApplied === 'yes' ? appliedDiscount : 0));
   const savedConfirmationUrl = data.paymentConfirmationUrl || localStorage.getItem('pfv_confirmationUrl') || '';
@@ -176,6 +176,18 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tariff, releaseType, base, karaoke, promoCodes, promoLoading]);
 
+  const [freeSubmitting, setFreeSubmitting] = useState(false);
+
+  const handleFreeSubmit = () => {
+    if (!hasSelection || freeSubmitting) return;
+    setFreeSubmitting(true);
+    // Mark as "paid" via promo so the submit flow proceeds
+    onChange('paymentStatus', 'succeeded');
+    onChange('paymentProof', `promo_100:${data.promoCode || 'FREE'}`);
+    onChange('paymentId', `promo-${Date.now()}`);
+    onPaymentSuccess?.();
+  };
+
   const handlePayment = async () => {
     if (!hasSelection) return;
     setPaymentError('');
@@ -209,16 +221,11 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
 
       // Persist paymentId AND full formData to localStorage before redirect
       // (React state will be lost when navigating away)
-      // Exclude base64 coverLink to avoid exceeding localStorage ~5MB limit
-      const persistData = { ...data };
-      if (persistData.coverLink?.startsWith('data:')) {
-        persistData._coverWasFile = 'true'; // remember it was a file upload
-        delete persistData.coverLink;
-      }
+      // coverLink is now always a URL (uploaded to Drive beforehand), safe for localStorage
       localStorage.setItem('pfv_paymentId', result.paymentId);
       localStorage.setItem('pfv_confirmationUrl', result.confirmationUrl);
       localStorage.setItem('pfv_formData', JSON.stringify({
-        ...persistData,
+        ...data,
         paymentId: result.paymentId,
         paymentStatus: 'pending',
         paymentConfirmationUrl: result.confirmationUrl,
@@ -503,6 +510,16 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
               </div>
             )}
 
+            {data.videoshotAddition === 'Да' && (
+              <div className="flex items-center justify-between text-sm bg-white/60 rounded-xl px-4 py-3 border border-purple-100">
+                <div>
+                  <p className="text-gray-700 font-semibold">Видеошот</p>
+                  <p className="text-xs text-gray-400">Короткое вертикальное видео</p>
+                </div>
+                <p className="font-bold text-gray-900 text-base">{videoshot.toLocaleString('ru-RU')} ₽</p>
+              </div>
+            )}
+
             {data.promoApplied === 'yes' && (
               <div className="flex items-center justify-between text-sm bg-white/60 rounded-xl px-4 py-3 border border-purple-100">
                 <div>
@@ -536,6 +553,54 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
                     <p className="text-xs text-green-600">Данные отправляются автоматически</p>
                   </div>
                 </div>
+              ) : totalAfterDiscount === 0 && data.promoApplied === 'yes' ? (
+                <>
+                  {validationErrors.length > 0 && (
+                    <div className="mb-3 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
+                      <p className="text-xs font-semibold text-amber-800 mb-1.5">⚠️ Заполните все обязательные поля:</p>
+                      <ul className="space-y-0.5">
+                        {validationErrors.slice(0, 5).map((err, i) => (
+                          <li key={i} className="text-xs text-amber-700 flex items-start gap-1.5">
+                            <span className="w-1 h-1 rounded-full bg-amber-400 mt-1.5 flex-shrink-0" />
+                            {err}
+                          </li>
+                        ))}
+                        {validationErrors.length > 5 && (
+                          <li className="text-xs text-amber-600 font-medium mt-1">
+                            ... и ещё {validationErrors.length - 5}
+                          </li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
+                  <div className="rounded-xl bg-green-50 border border-green-200 px-4 py-3 mb-3">
+                    <div className="flex items-center gap-2 text-sm text-green-700">
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span className="font-semibold">Скидка 100% — оплата не требуется</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleFreeSubmit}
+                    disabled={freeSubmitting || validationErrors.length > 0}
+                    className="w-full flex items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-green-600 via-green-700 to-green-800 px-6 py-4 text-base font-bold text-white shadow-lg shadow-green-300/50 hover:from-green-700 hover:via-green-800 hover:to-green-900 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                  >
+                    {freeSubmitting ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Отправка...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-5 h-5" />
+                        Отправить заявку бесплатно
+                      </>
+                    )}
+                  </button>
+                  <p className="text-[11px] text-gray-400 text-center mt-2">
+                    Промокод покрывает 100% стоимости
+                  </p>
+                </>
               ) : (
                 <>
                   {validationErrors.length > 0 && (

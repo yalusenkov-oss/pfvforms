@@ -149,7 +149,7 @@ export default async function handler(req, res) {
     ];
 
     // Fields that can be large but must be passed through without truncation
-    const fieldsNoTruncate = ['paymentProof', 'payment_proof'];
+    const fieldsNoTruncate = ['paymentProof', 'payment_proof', 'coverFile'];
 
     const maxFieldLength = 45000;
     const cleanPayload = {};
@@ -167,14 +167,17 @@ export default async function handler(req, res) {
       }
     }
 
-    // ═══ For distribution: send GAS request WITHOUT paymentProof for speed ═══
-    // paymentProof will be sent in the background request separately
+    // ═══ For distribution: send GAS request WITHOUT paymentProof/coverFile for speed ═══
+    // These large base64 fields will be sent in the background request separately
     const isDistribution = cleanPayload.formType === 'distribution';
     let gasPayload = cleanPayload;
-    if (isDistribution && cleanPayload.paymentProof) {
+    if (isDistribution) {
       gasPayload = { ...cleanPayload };
-      delete gasPayload.paymentProof; // Don't send 8MB base64 in fast path
+      if (gasPayload.paymentProof) delete gasPayload.paymentProof; // Don't send 8MB base64 in fast path
+      if (gasPayload.coverFile) delete gasPayload.coverFile; // Don't send large cover base64 in fast path
     }
+
+    console.log('[submit] coverLink:', gasPayload.coverLink || '(empty)', '| coverFile length:', (cleanPayload.coverFile || '').length);
 
     const response = await fetch(scriptUrl, {
       method: 'POST',

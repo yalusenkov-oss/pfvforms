@@ -174,10 +174,13 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
   const trackCount = getTrackCount(formData);
   // В форме используется karaokeAddition со значениями "Да"/"Нет"
   const addKaraoke = formData.karaokeAddition === 'Да';
+  const addVideoshot = formData.videoshotAddition === 'Да';
+  const VIDEOSHOT_PRICE = 1000;
 
   const basePrice = prices[tariff]?.[releaseType] || 0;
   const karaokePrice = addKaraoke ? karaokePrices[tariff] * trackCount : 0;
-  let totalPrice = basePrice + karaokePrice;
+  const videoshotPrice = addVideoshot ? VIDEOSHOT_PRICE : 0;
+  let totalPrice = basePrice + karaokePrice + videoshotPrice;
 
   const promoApplied = formData.promoApplied === 'yes';
   const promoDiscountType = formData.promoDiscountType || '';
@@ -211,9 +214,8 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
     // Если указан languageOther, используем его, иначе language
     language: formData.languageOther?.trim() || formData.language || '',
     releaseDate: formData.releaseDate,
-    // Обложка: если base64 (загруженный файл) → отправляем как coverFile, GAS загрузит в Drive
-    coverLink: formData.coverLink?.startsWith('data:') ? '' : (formData.coverLink || ''),
-    coverFile: formData.coverLink?.startsWith('data:') ? formData.coverLink : '',
+    // Обложка: всегда URL (либо ссылка от пользователя, либо Drive URL от upload-cover)
+    coverLink: formData.coverLink || '',
 
     // TikTok
     tiktokExcerpt: formData.tiktokExcerpt,
@@ -224,6 +226,10 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
 
     // Караоке (конвертируем "Да"/"Нет" в "yes"/"no" для Apps Script)
     addKaraoke: formData.karaokeAddition === 'Да' ? 'yes' : 'no',
+
+    // Видеошот
+    addVideoshot: formData.videoshotAddition === 'Да' ? 'yes' : 'no',
+    videoshotLink: formData.videoshotLink || '',
 
     // Треки (JSON для сложных данных)
     tracks: JSON.stringify(tracksFormatted, null, 2),
@@ -243,6 +249,7 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
     // Цены
     basePrice: basePrice,
     karaokePrice: karaokePrice,
+    videoshotPrice: videoshotPrice,
     totalPrice: totalPrice,
     promoCode: formData.promoCode || '',
     promoDiscountType: formData.promoDiscountType || '',
@@ -320,6 +327,37 @@ export async function fetchPromoCodes(): Promise<PromoCodeRecord[] | null> {
     createdAt: String(r.createdAt || r.created_at || ''),
     description: String(r.description || ''),
   }));
+}
+
+/**
+ * Increment promo code usage in Google Sheets after successful submission.
+ * Fire-and-forget — errors are logged but don't block the user.
+ */
+export async function incrementPromoUsage(promoCode: string): Promise<void> {
+  if (!promoCode) return;
+  try {
+    const isLocal = typeof window !== 'undefined' && /localhost|127\.0\.0\.1/.test(window.location.hostname);
+
+    if (isLocal) {
+      // Use server-side proxy on localhost
+      await fetch('/api/gas-proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'use_promo', code: promoCode }),
+      });
+    } else {
+      const url = await getGoogleScriptUrl();
+      if (!url) return;
+      await fetch(url, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'use_promo', code: promoCode }),
+        redirect: 'follow',
+      });
+    }
+    if (DEBUG_LOGGING) console.log('[promo] usage incremented for', promoCode);
+  } catch (err) {
+    console.error('[promo] failed to increment usage:', err);
+  }
 }
 
 // Подготовка данных промо для отправки

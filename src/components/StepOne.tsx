@@ -4,7 +4,7 @@ import {
   Music2, User, Link2, Disc3, Calendar, Image, Globe, Clock,
   Mic2, PenTool, Hash, Bookmark, TicketPercent, Type, Banknote,
   AlertCircle, ChevronDown, ChevronUp, Plus, X, Users, ChevronRight, Radio,
-  Upload, Trash2, CheckCircle2
+  Upload, Trash2, CheckCircle2, Video
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
@@ -28,6 +28,8 @@ const KARAOKE_PRICES: Record<string, number> = {
   'Платинум': 0,
 };
 
+const VIDEOSHOT_PRICE = 1000;
+
 export function getTrackCount(data: Record<string, string>): number {
   const type = data.releaseType;
   if (type === 'Single') return data.singleTrackCount === '2' ? 2 : 1;
@@ -36,16 +38,17 @@ export function getTrackCount(data: Record<string, string>): number {
   return 1;
 }
 
-export function calcTotal(data: Record<string, string>): { base: number; karaoke: number; total: number } {
+export function calcTotal(data: Record<string, string>): { base: number; karaoke: number; videoshot: number; total: number } {
   const tariff = data.tariff;
   const type = data.releaseType;
-  if (!tariff || !type || !PRICES[tariff] || !PRICES[tariff][type]) return { base: 0, karaoke: 0, total: 0 };
+  if (!tariff || !type || !PRICES[tariff] || !PRICES[tariff][type]) return { base: 0, karaoke: 0, videoshot: 0, total: 0 };
   const trackCount = getTrackCount(data);
   const albumExtraTracks = type === 'Album' ? Math.max(0, trackCount - 20) : 0;
   const base = PRICES[tariff][type] + (albumExtraTracks * 50);
   const karaokePerTrack = KARAOKE_PRICES[tariff] ?? 0;
   const karaoke = data.karaokeAddition === 'Да' ? karaokePerTrack * trackCount : 0;
-  return { base, karaoke, total: base + karaoke };
+  const videoshot = data.videoshotAddition === 'Да' ? VIDEOSHOT_PRICE : 0;
+  return { base, karaoke, videoshot, total: base + karaoke + videoshot };
 }
 
 /* ═══ Track data helpers ═══ */
@@ -108,15 +111,51 @@ function setTracksData(onChange: (k: string, v: string) => void, tracks: TrackDa
 function CoverUpload({ data, onChange }: { data: Record<string, string>; onChange: (key: string, value: string) => void }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [coverMode, setCoverMode] = useState<'file' | 'link'>(
-    // If coverLink already has a URL (not base64), default to link mode
-    data.coverLink && !data.coverLink.startsWith('data:') ? 'link' : 'file'
+    data.coverLink && !data.coverLink.startsWith('data:') && data.coverLink !== 'file:pending_upload' ? 'link' : 'file'
   );
   const [fileName, setFileName] = useState<string>(data._coverFileName || '');
   const [fileError, setFileError] = useState<string>('');
   const [dragOver, setDragOver] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [previewSrc, setPreviewSrc] = useState<string>('');
 
-  const hasFile = !!data.coverLink && data.coverLink.startsWith('data:');
-  const hasLink = !!data.coverLink && !data.coverLink.startsWith('data:');
+  // Cover is "ready" if coverLink is a real URL (not base64, not marker)
+  const isCoverUrl = !!data.coverLink && !data.coverLink.startsWith('data:') && data.coverLink !== 'file:pending_upload';
+  const hasUploadedCover = isCoverUrl && !!fileName;
+  const hasLink = isCoverUrl && !fileName;
+
+  const uploadToServer = async (base64: string, name: string) => {
+    setUploading(true);
+    setFileError('');
+    try {
+      const res = await fetch('/api/upload-cover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ coverFile: base64, artistName: data.mainArtist || '' }),
+      });
+      const json = await res.json();
+      if (json.success && json.coverUrl) {
+        // Store the Drive URL — this persists fine in localStorage
+        onChange('coverLink', json.coverUrl);
+        onChange('_coverFileName', name);
+        setFileName(name);
+        setPreviewSrc(base64); // keep preview from base64 locally
+      } else {
+        setFileError(json.error || 'Не удалось загрузить обложку. Попробуйте ещё раз.');
+        onChange('coverLink', '');
+        onChange('_coverFileName', '');
+        setFileName('');
+      }
+    } catch (err) {
+      console.error('Cover upload error:', err);
+      setFileError('Ошибка загрузки обложки. Проверьте соединение.');
+      onChange('coverLink', '');
+      onChange('_coverFileName', '');
+      setFileName('');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleFile = (file: File) => {
     setFileError('');
@@ -139,9 +178,9 @@ function CoverUpload({ data, onChange }: { data: Record<string, string>; onChang
         setFileError('Не удалось прочитать файл. Попробуйте ещё раз.');
         return;
       }
-      setFileName(file.name);
-      onChange('coverLink', result);
-      onChange('_coverFileName', file.name);
+      setPreviewSrc(result);
+      // Upload immediately to server → get Drive URL
+      uploadToServer(result, file.name);
     };
     reader.onerror = () => {
       setFileError('Ошибка чтения файла.');
@@ -165,6 +204,7 @@ function CoverUpload({ data, onChange }: { data: Record<string, string>; onChang
   const handleRemoveFile = () => {
     setFileName('');
     setFileError('');
+    setPreviewSrc('');
     onChange('coverLink', '');
     onChange('_coverFileName', '');
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -197,7 +237,7 @@ function CoverUpload({ data, onChange }: { data: Record<string, string>; onChang
         </button>
         <button
           type="button"
-          onClick={() => { setCoverMode('link'); if (hasFile) { handleRemoveFile(); } }}
+          onClick={() => { setCoverMode('link'); if (hasUploadedCover || uploading) { handleRemoveFile(); } }}
           className={cn(
             'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all',
             coverMode === 'link'
@@ -213,7 +253,14 @@ function CoverUpload({ data, onChange }: { data: Record<string, string>; onChang
       {/* File upload mode */}
       {coverMode === 'file' && (
         <div className="animate-in space-y-3">
-          {!hasFile ? (
+          {uploading ? (
+            /* Uploading spinner */
+            <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-purple-300 bg-purple-50/30 p-8">
+              <div className="w-10 h-10 border-3 border-purple-300 border-t-purple-600 rounded-full animate-spin mb-3" />
+              <p className="text-sm font-semibold text-purple-700">Загружаем обложку...</p>
+              <p className="text-xs text-gray-500 mt-1">Это может занять несколько секунд</p>
+            </div>
+          ) : !hasUploadedCover ? (
             /* Drop zone */
             <div
               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -246,22 +293,25 @@ function CoverUpload({ data, onChange }: { data: Record<string, string>; onChang
               />
             </div>
           ) : (
-            /* Preview */
+            /* Preview — uploaded successfully */
             <div className="relative rounded-2xl border-2 border-emerald-300 bg-emerald-50/30 p-4">
               <div className="flex items-start gap-4">
-                <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 border border-gray-200 shadow-sm">
-                  <img
-                    src={data.coverLink}
-                    alt="Обложка"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+                {previewSrc && (
+                  <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 border border-gray-200 shadow-sm">
+                    <img
+                      src={previewSrc}
+                      alt="Обложка"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                     <p className="text-sm font-semibold text-emerald-800">Обложка загружена</p>
                   </div>
                   <p className="text-xs text-gray-600 truncate">{fileName}</p>
+                  <p className="text-[10px] text-gray-400 mt-1 truncate">{data.coverLink}</p>
                 </div>
                 <button
                   type="button"
@@ -658,6 +708,7 @@ export function StepOne({ data, onChange }: StepOneProps) {
         <Divider label="Файл релиза" />
 
         <Input label="Ссылка на релиз" required icon={<Link2 className="w-4 h-4" />}
+          hint="Загрузите аудиофайлы (.wav) на облачное хранилище (Google Drive, Яндекс Диск и т.д.) и вставьте ссылку. Пронумеруйте файлы в порядке треклиста и назовите их в соответствии с названиями треков (например: 01 — Название трека.wav)."
           value={data.releaseLink || ''} onChange={(e) => onChange('releaseLink', e.target.value)}
           placeholder="https://drive.google.com/..." />
 
@@ -1207,6 +1258,84 @@ export function StepOne({ data, onChange }: StepOneProps) {
           )}
         </div>
 
+      </StepCard>
+
+      {/* ═══ CARD 9: Videoshot ═══ */}
+      <StepCard
+        title="Видеошот"
+        subtitle="Короткое вертикальное видео для площадок"
+        icon={<Video className="w-5 h-5" />}
+      >
+        <RadioGroup label="Добавить видеошот" required name="videoshotAddition" icon={<Video className="w-4 h-4" />}
+          options={['Да', 'Нет']} value={data.videoshotAddition || ''} onChange={(v) => onChange('videoshotAddition', v)} horizontal />
+
+        <div className="rounded-xl bg-gray-50 border border-gray-100 p-4">
+          <p className="text-xs font-semibold text-gray-700 mb-1">💰 Стоимость видеошота:</p>
+          <p className="text-sm font-bold text-gray-900">1 000 ₽</p>
+        </div>
+
+        {data.videoshotAddition === 'Да' && (
+          <>
+            <Input label="Ссылка на видеошот" required icon={<Link2 className="w-4 h-4" />}
+              hint="Загрузите видеофайл на облачное хранилище (Google Drive, Яндекс Диск и т.д.) и вставьте ссылку."
+              value={data.videoshotLink || ''} onChange={(e) => onChange('videoshotLink', e.target.value)}
+              placeholder="https://drive.google.com/..." />
+
+            <InfoBox variant="warning">
+              <div>
+                <p className="font-semibold mb-2">📋 Технические требования к видеошотам</p>
+                <ul className="space-y-1.5 text-xs">
+                  <li className="flex items-start gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 flex-shrink-0" />
+                    <span>Формат: <strong>MP4, H.264</strong></span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 flex-shrink-0" />
+                    <span>Размер: <strong>404×720 (720p)</strong></span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 flex-shrink-0" />
+                    <span>Длительность: <strong>до 15 секунд</strong></span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 flex-shrink-0" />
+                    <span>Ориентация: <strong>вертикальная</strong></span>
+                  </li>
+                </ul>
+              </div>
+            </InfoBox>
+
+            <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 space-y-3">
+              <div>
+                <p className="text-xs font-semibold text-gray-700 mb-1.5">✅ Допустимые материалы:</p>
+                <ul className="text-xs text-gray-600 space-y-0.5 ml-1">
+                  <li>• Специально снятое видео</li>
+                  <li>• Нарезка клипа</li>
+                  <li>• Бэкстейдж-кадры</li>
+                  <li>• Моушн-дизайн</li>
+                </ul>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-700 mb-1.5">💡 Рекомендации:</p>
+                <ul className="text-xs text-gray-600 space-y-0.5 ml-1">
+                  <li>• Избегать кадров с движением губ</li>
+                  <li>• Не использовать слишком короткие сцены</li>
+                  <li>• Смысловые элементы располагать по центру</li>
+                  <li>• Желательно создать короткий законченный сюжет</li>
+                </ul>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-red-600 mb-1.5">🚫 Запрещено:</p>
+                <ul className="text-xs text-gray-600 space-y-0.5 ml-1">
+                  <li>• Посторонний текст</li>
+                  <li>• Алкоголь, табак, наркотики, насилие</li>
+                  <li>• Реклама брендов, альбомов, концертов</li>
+                  <li>• Вотермарки и лого сторонних сервисов</li>
+                </ul>
+              </div>
+            </div>
+          </>
+        )}
       </StepCard>
     </div>
   );
