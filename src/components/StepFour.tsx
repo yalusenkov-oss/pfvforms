@@ -33,6 +33,7 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
   const [promoError, setPromoError] = useState<string>('');
   const [paymentCreating, setPaymentCreating] = useState(false);
   const [paymentError, setPaymentError] = useState<string>('');
+  const [cancellationReason, setCancellationReason] = useState<string>('');
   const [paymentPolling, setPaymentPolling] = useState(() => {
     return new URLSearchParams(window.location.search).has('paymentComplete');
   });
@@ -57,6 +58,20 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
     const url = new URL(window.location.href);
     url.searchParams.delete('paymentComplete');
     window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+  };
+
+  const resetPayment = () => {
+    onChange('paymentId', '');
+    onChange('paymentStatus', '');
+    onChange('paymentConfirmationUrl', '');
+    onChange('paymentProof', '');
+    localStorage.removeItem('pfv_paymentId');
+    localStorage.removeItem('pfv_confirmationUrl');
+    localStorage.removeItem('pfv_formData');
+    setPaymentError('');
+    setCancellationReason('');
+    setPaymentPolling(false);
+    setPaymentCreating(false);
   };
 
   useEffect(() => {
@@ -293,11 +308,32 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
           }
           if (status.status === 'canceled') {
             onChange('paymentStatus', 'canceled');
+            // Save cancellation reason if available
+            const reason = status.cancellationDetails?.reason;
+            const reasonMap: Record<string, string> = {
+              '3d_secure_failed': 'Не пройдена проверка 3-D Secure',
+              'call_issuer': 'Отклонено банком — обратитесь в банк',
+              'card_expired': 'Карта просрочена',
+              'country_forbidden': 'Карты этой страны не принимаются',
+              'fraud_suspected': 'Платёж заблокирован — подозрение на мошенничество',
+              'general_decline': 'Отклонено без объяснения причин — обратитесь в банк',
+              'identification_required': 'Требуется идентификация кошелька',
+              'insufficient_funds': 'Недостаточно средств на счёте',
+              'invalid_card_number': 'Некорректный номер карты',
+              'invalid_csc': 'Неверный CVV/CVC код',
+              'issuer_unavailable': 'Банк недоступен — попробуйте позже',
+              'payment_method_limit_exceeded': 'Превышен лимит по данному способу оплаты',
+              'payment_method_restricted': 'Данный способ оплаты не поддерживается',
+              'permission_revoked': 'Автоплатёж отозван',
+              'too_many_requests': 'Слишком много попыток — подождите немного',
+              'transaction_not_allowed': 'Транзакция не разрешена — обратитесь в банк',
+            };
+            const readableReason = reason ? (reasonMap[reason] || reason) : '';
+            setCancellationReason(readableReason);
             // Clean up localStorage on cancellation
             localStorage.removeItem('pfv_paymentId');
             localStorage.removeItem('pfv_confirmationUrl');
             localStorage.removeItem('pfv_formData');
-            setPaymentError('Платёж был отменён. Попробуйте оплатить ещё раз.');
             setPaymentPolling(false);
             cleanPaymentCompleteParam();
             return;
@@ -405,12 +441,26 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
         )}
 
         {data.paymentStatus === 'canceled' && (
-          <div className="mt-3 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 flex items-center gap-2">
-            <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
-            <div>
-              <p className="font-semibold">Платёж отменён</p>
-              <p className="text-xs text-red-600 mt-0.5">Вы можете попробовать оплатить ещё раз</p>
+          <div className="mt-3 rounded-xl bg-red-50 border border-red-200 px-4 py-4 text-sm text-red-700">
+            <div className="flex items-start gap-3 mb-3">
+              <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-red-800">Платёж не прошёл</p>
+                {cancellationReason ? (
+                  <p className="text-xs text-red-600 mt-0.5">Причина: {cancellationReason}</p>
+                ) : (
+                  <p className="text-xs text-red-600 mt-0.5">Оплата была отменена или отклонена банком</p>
+                )}
+              </div>
             </div>
+            <button
+              type="button"
+              onClick={resetPayment}
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors"
+            >
+              <CreditCard className="w-4 h-4" />
+              Попробовать снова
+            </button>
           </div>
         )}
 
@@ -447,19 +497,7 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
             {data.paymentStatus !== 'succeeded' && !paymentPolling && (
               <button
                 type="button"
-                onClick={() => {
-                  // Reset ALL payment state so user can create a fresh payment
-                  onChange('paymentId', '');
-                  onChange('paymentStatus', '');
-                  onChange('paymentConfirmationUrl', '');
-                  onChange('paymentProof', '');
-                  localStorage.removeItem('pfv_paymentId');
-                  localStorage.removeItem('pfv_confirmationUrl');
-                  localStorage.removeItem('pfv_formData');
-                  setPaymentError('');
-                  setPaymentPolling(false);
-                  setPaymentCreating(false);
-                }}
+                onClick={resetPayment}
                 className="mt-3 w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors"
               >
                 <CreditCard className="w-4 h-4" />

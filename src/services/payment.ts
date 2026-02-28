@@ -21,6 +21,7 @@ export interface PaymentStatusResult {
   status?: 'pending' | 'waiting_for_capture' | 'succeeded' | 'canceled';
   paid?: boolean;
   error?: string;
+  cancellationDetails?: { party?: string; reason?: string } | null;
 }
 
 const API_BASE = '';
@@ -101,6 +102,7 @@ export async function checkPaymentStatus(paymentId: string): Promise<PaymentStat
       paymentId: json?.paymentId,
       status: json?.status,
       paid: json?.paid,
+      cancellationDetails: json?.cancellationDetails || null,
     };
   } catch (err) {
     console.error('[payment] checkPaymentStatus error:', err);

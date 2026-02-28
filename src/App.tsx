@@ -417,6 +417,8 @@ export function App() {
       tiktokFull: 'Да',
       yandexPreSave: 'Да',
       karaokeAddition: 'Нет',
+      videoshotAddition: 'Да',
+      videoshotLink: 'https://drive.google.com/test-videoshot',
       platforms: 'Все площадки',
       _tracks: JSON.stringify([testTrack]),
       // Step 2 — Contract
@@ -424,6 +426,7 @@ export function App() {
       passportNumber: '1234 567890',
       issueDate: '2020-01-15',
       issuedBy: 'ОВД по г. Тула',
+      bankDetails: 'Сбербанк, карта 4276 1234 5678 9012, Тестов Т.Т.',
       email: 'o.danil150806@gmail.com',
       // Step 3 — Payment
       contactInfo: '@test_telegram',
