@@ -1245,6 +1245,39 @@ function editTelegramMessage(messageId, newText, cfg) {
   return false;
 }
 
+// Удаляет сообщение в Telegram по message_id
+function deleteTelegramMessage(messageId, cfg) {
+  if (!messageId || !cfg.BOT_TOKEN || !cfg.CHAT_ID) return false;
+  const url = `https://api.telegram.org/bot${cfg.BOT_TOKEN}/deleteMessage`;
+  const baseChatId = String(cfg.CHAT_ID || '').trim();
+  if (!baseChatId) return false;
+  const chatIdsToTry = buildTelegramChatCandidates(baseChatId);
+
+  for (const chatId of chatIdsToTry) {
+    try {
+      const payload = {
+        chat_id: chatId,
+        message_id: Number(messageId)
+      };
+      const response = UrlFetchApp.fetch(url, {
+        method: 'post',
+        contentType: 'application/json',
+        payload: JSON.stringify(payload),
+        muteHttpExceptions: true
+      });
+      const data = JSON.parse(response.getContentText());
+      if (data.ok) {
+        Logger.log('✅ Telegram message deleted: ' + messageId);
+        return true;
+      }
+      Logger.log('deleteTelegramMessage error: ' + (data.description || 'unknown'));
+    } catch (e) {
+      Logger.log('deleteTelegramMessage exception: ' + e.message);
+    }
+  }
+  return false;
+}
+
 // Убирает MarkdownV2-разметку для отправки plain text fallback
 function stripMarkdown(text) {
   if (!text) return '';
@@ -2983,8 +3016,23 @@ function updateContractTgStatus(data) {
     }
 
     const edited = editTelegramMessage(msgId, newText, cfg);
-    Logger.log(edited ? '✅ TG message edited (email_failed)' : '⚠️ TG message edit failed');
-    return { success: edited };
+    if (!edited) {
+      // Edit failed — delete old and send new
+      deleteTelegramMessage(msgId, cfg);
+      try {
+        const newResult = sendToTelegramAPI(newText, cfg);
+        const newMsgId = newResult.result ? newResult.result.message_id : null;
+        if (newMsgId && tgMsgIdIdx >= 0) {
+          sheet.getRange(r + 1, tgMsgIdIdx + 1).setValue(newMsgId);
+        }
+        Logger.log('✅ TG: old deleted, new sent (email_failed status)');
+      } catch (sendErr) {
+        Logger.log('❌ TG send after delete failed: ' + sendErr);
+      }
+    } else {
+      Logger.log('✅ TG message edited (email_failed)');
+    }
+    return { success: true };
   }
 
   return { success: false, error: 'Contract not found: ' + contractNumber };
@@ -3039,7 +3087,7 @@ function submitSignature(data) {
     const contractStatusCol = getOrCreateColumn(sheet, 'contract_status');
     sheet.getRange(r + 1, contractStatusCol).setValue('signed');
 
-    // ── Telegram: договор подписан — редактируем исходное сообщение ─────────
+    // ── Telegram: договор подписан — удаляем старое сообщение, отправляем новое ─────────
     const signedDocCfg = getTelegramConfig('document');
     if (signedDocCfg.ENABLED && signedDocCfg.BOT_TOKEN && signedDocCfg.CHAT_ID) {
       try {
@@ -3060,21 +3108,22 @@ function submitSignature(data) {
           `📄 [Открыть подписанный договор](${escUrl(signedUrl)})`
         ].join("\n");
 
+        // Delete old "Договор создан" message if exists
         const tgMsgIdHeaderIdx = headers.indexOf('tg_contract_msg_id');
         const tgMsgId = tgMsgIdHeaderIdx >= 0 ? row[tgMsgIdHeaderIdx] : null;
 
         if (tgMsgId) {
-          const edited = editTelegramMessage(tgMsgId, msg, signedDocCfg);
-          if (edited) {
-            Logger.log('✅ Telegram: сообщение отредактировано — договор подписан');
-          } else {
-            // Редактирование не удалось — отправляем новое
-            sendToTelegramAPI(msg, signedDocCfg);
-            Logger.log('✅ Telegram: отправлено новое сообщение о подписании (edit failed)');
-          }
+          deleteTelegramMessage(tgMsgId, signedDocCfg);
+        }
+
+        // Send new "Договор подписан" message and save its ID
+        const newResult = sendToTelegramAPI(msg, signedDocCfg);
+        const newMsgId = newResult.result ? newResult.result.message_id : null;
+        if (newMsgId && tgMsgIdHeaderIdx >= 0) {
+          sheet.getRange(r + 1, tgMsgIdHeaderIdx + 1).setValue(newMsgId);
+          Logger.log('✅ Telegram: старое сообщение удалено, новое отправлено (msg_id=' + newMsgId + ')');
         } else {
-          sendToTelegramAPI(msg, signedDocCfg);
-          Logger.log('✅ Telegram: уведомление о подписании отправлено (нет msg_id)');
+          Logger.log('✅ Telegram: уведомление о подписании отправлено');
         }
       } catch (tgErr) {
         Logger.log('❌ Telegram signed notification error: ' + tgErr);
