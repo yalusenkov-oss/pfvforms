@@ -2,7 +2,13 @@ import { sendContractEmail } from './_email.js';
 import nodemailer from 'nodemailer';
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // ═══ DISABLED IN PRODUCTION — only allow on localhost ═══
+  const origin = req.headers.origin || req.headers.host || '';
+  if (!/localhost|127\.0\.0\.1/.test(origin)) {
+    return res.status(403).json({ success: false, error: 'Test endpoint disabled in production' });
+  }
+
+  res.setHeader('Access-Control-Allow-Origin', origin);
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();

@@ -62,8 +62,18 @@ async function readJsonBody(req) {
   });
 }
 
+// ═══ CORS helper ═══
+const ALLOWED_ORIGINS = ['https://pfvmusic.digital', 'https://www.pfvmusic.digital'];
+function getCorsOrigin(requestOrigin) {
+  if (!requestOrigin) return 'https://pfvmusic.digital';
+  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(requestOrigin)) return requestOrigin;
+  if (ALLOWED_ORIGINS.includes(requestOrigin)) return requestOrigin;
+  return 'https://pfvmusic.digital';
+}
+
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const requestOrigin = req.headers.origin || '';
+  res.setHeader('Access-Control-Allow-Origin', getCorsOrigin(requestOrigin));
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
