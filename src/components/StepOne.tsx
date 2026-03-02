@@ -160,9 +160,9 @@ function CoverUpload({ data, onChange }: { data: Record<string, string>; onChang
   const handleFile = (file: File) => {
     setFileError('');
 
-    const allowedTypes = ['image/jpeg', 'image/png'];
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
     if (!allowedTypes.includes(file.type)) {
-      setFileError('Допустимый формат: JPG или PNG.');
+      setFileError('Допустимые форматы: JPG, PNG.');
       return;
     }
 
@@ -180,27 +180,29 @@ function CoverUpload({ data, onChange }: { data: Record<string, string>; onChang
         return;
       }
 
-      // Validate image dimensions
+      // Validate image dimensions: must be square, 1400–6000px
       const img = new window.Image();
       img.onload = () => {
-        const { width, height } = img;
-        if (width !== height) {
-          setFileError(`Обложка должна быть квадратной. Ваш размер: ${width}×${height}px.`);
+        const w = img.naturalWidth;
+        const h = img.naturalHeight;
+        if (w !== h) {
+          setFileError(`Обложка должна быть квадратной. Сейчас: ${w}×${h} px.`);
           return;
         }
-        if (width < 1400) {
-          setFileError(`Минимальный размер: 1400×1400px. Ваш размер: ${width}×${height}px.`);
+        if (w < 1400 || h < 1400) {
+          setFileError(`Минимальный размер 1400×1400 px. Сейчас: ${w}×${h} px.`);
           return;
         }
-        if (width > 6000) {
-          setFileError(`Максимальный размер: 6000×6000px. Ваш размер: ${width}×${height}px.`);
+        if (w > 6000 || h > 6000) {
+          setFileError(`Максимальный размер 6000×6000 px. Сейчас: ${w}×${h} px.`);
           return;
         }
         setPreviewSrc(result);
+        // Upload immediately to server → get Drive URL
         uploadToServer(result, file.name);
       };
       img.onerror = () => {
-        setFileError('Не удалось прочитать изображение. Попробуйте ещё раз.');
+        setFileError('Не удалось прочитать изображение. Проверьте файл.');
       };
       img.src = result;
     };
@@ -305,11 +307,11 @@ function CoverUpload({ data, onChange }: { data: Record<string, string>; onChang
               <p className="text-sm font-semibold text-gray-700">
                 {dragOver ? 'Отпустите файл' : 'Нажмите или перетащите обложку'}
               </p>
-              <p className="text-xs text-gray-500 mt-1">JPG или PNG • квадратная • 1400–6000 px • до 20 МБ</p>
+              <p className="text-xs text-gray-500 mt-1">JPG или PNG • квадрат 1400–6000 px • до 20 МБ</p>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/png"
+                accept="image/jpeg,image/png,image/jpg"
                 onChange={handleFileChange}
                 className="hidden"
               />
@@ -360,7 +362,7 @@ function CoverUpload({ data, onChange }: { data: Record<string, string>; onChang
       {coverMode === 'link' && (
         <div className="animate-in">
           <Input label="" icon={<Link2 className="w-4 h-4" />}
-            hint={'Загрузите обложку в облако (Яндекс Диск / Google Drive) и оставьте ссылку.\n• Формат: JPG или PNG\n• Квадратная: от 1400×1400 до 6000×6000 px\n• Не менее 72 dpi'}
+            hint={'Загрузите обложку в облако (Яндекс Диск / Google Drive) и оставьте ссылку.\n• Квадратное изображение: 1400–6000 px\n• Формат: JPG, PNG\n• Максимум: 20 МБ'}
             value={data.coverLink || ''} onChange={(e) => onChange('coverLink', e.target.value)}
             placeholder="https://disk.yandex.ru/..." />
         </div>
