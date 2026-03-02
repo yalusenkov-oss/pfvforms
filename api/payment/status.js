@@ -9,14 +9,13 @@ function getCorsOrigin(requestOrigin) {
   if (!requestOrigin) return 'https://pfvmusic.digital';
   if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(requestOrigin)) return requestOrigin;
   if (ALLOWED_ORIGINS.includes(requestOrigin)) return requestOrigin;
-  if (/\.vercel\.app$/i.test(requestOrigin)) return requestOrigin;
   return 'https://pfvmusic.digital';
 }
 
 export default async function handler(req, res) {
-  // PRODUCTION YooKassa credentials (shop 1273624)
-  const YOOKASSA_SHOP_ID = '1273624';
-  const YOOKASSA_SECRET_KEY = 'live_maM_6Nf09Qsp-CLxguHNmlg5v45gUSFPekFNWNR9VH0';
+  // Read env vars lazily (after dotenv.config() has run in server.js)
+  const YOOKASSA_SHOP_ID = process.env.YOOKASSA_SHOP_ID || '';
+  const YOOKASSA_SECRET_KEY = process.env.YOOKASSA_SECRET_KEY || '';
 
   // CORS — restrict to known origins
   const requestOrigin = req.headers.origin || '';

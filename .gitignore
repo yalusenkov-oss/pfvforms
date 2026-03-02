@@ -4,7 +4,7 @@ dist/
 .next/
 .build/
 .DS_Store
-.env
+# .env — included in repo for deployment (private repo)
 .env.*.local
 .vscode/
 .idea/
@@ -19,5 +19,3 @@ dist/
 *.DS_Store
 # Editor
 Thumbs.db
-
-.env.local

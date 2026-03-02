@@ -59,9 +59,8 @@ export default async function handler(req, res) {
     }
 
     // Verify payment status with YooKassa API (don't trust webhook body blindly)
-    // PRODUCTION YooKassa credentials (shop 1273624)
-    const YOOKASSA_SHOP_ID = '1273624';
-    const YOOKASSA_SECRET_KEY = 'live_maM_6Nf09Qsp-CLxguHNmlg5v45gUSFPekFNWNR9VH0';
+    const YOOKASSA_SHOP_ID = process.env.YOOKASSA_SHOP_ID || '';
+    const YOOKASSA_SECRET_KEY = process.env.YOOKASSA_SECRET_KEY || '';
 
     if (!YOOKASSA_SHOP_ID || !YOOKASSA_SECRET_KEY) {
       console.error('[webhook] Missing YooKassa credentials');
