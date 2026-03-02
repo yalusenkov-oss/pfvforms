@@ -785,15 +785,6 @@ export function App() {
                   Выберите оптимальный пакет для вашего релиза. Полная информация о сроках, ценах и выплатах.
                 </p>
               </div>
-              <a
-                href="https://clck.ru/3E6yBX"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-full border-2 border-purple-500 bg-white px-4 py-2 text-sm font-semibold text-purple-600 hover:bg-purple-50 whitespace-nowrap"
-              >
-                Полные тарифы
-                <ExternalLink className="w-4 h-4" />
-              </a>
             </div>
 
             {/* Info Pills */}
@@ -819,12 +810,12 @@ export function App() {
                 Общие условия для всех тарифов
               </p>
               <div className="grid gap-4 text-sm text-gray-700 md:grid-cols-2">
-                <div className="flex gap-3">
-                  <span className="flex-shrink-0 text-purple-600 font-bold mt-0.5 text-lg">→</span>
+                <div className="flex items-baseline gap-3">
+                  <span className="flex-shrink-0 text-purple-600 font-bold text-lg leading-none">→</span>
                   <p>
                     Гайд по подготовке:{' '}
                     <a
-                      href="https://vk.com/@pfvmusic-kak-podgotovit-reliz-k-distr"
+                      href="https://vk.com/@pfvmusic-kak-podgotovit-reliz-k-distribucii"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="font-semibold text-purple-600 hover:text-purple-700 underline underline-offset-2"
@@ -833,16 +824,16 @@ export function App() {
                     </a>
                   </p>
                 </div>
-                <div className="flex gap-3">
-                  <span className="flex-shrink-0 text-purple-600 font-bold mt-0.5 text-lg">→</span>
+                <div className="flex items-baseline gap-3">
+                  <span className="flex-shrink-0 text-purple-600 font-bold text-lg leading-none">→</span>
                   <p>Площадки: Apple Music, VK, Spotify, TikTok, Яндекс и др.</p>
                 </div>
-                <div className="flex gap-3">
-                  <span className="flex-shrink-0 text-purple-600 font-bold mt-0.5 text-lg">→</span>
+                <div className="flex items-baseline gap-3">
+                  <span className="flex-shrink-0 text-purple-600 font-bold text-lg leading-none">→</span>
                   <p>Юридическая защита авторских прав</p>
                 </div>
-                <div className="flex gap-3">
-                  <span className="flex-shrink-0 text-purple-600 font-bold mt-0.5 text-lg">→</span>
+                <div className="flex items-baseline gap-3">
+                  <span className="flex-shrink-0 text-purple-600 font-bold text-lg leading-none">→</span>
                   <p>Еженедельные + ежеквартальные отчёты</p>
                 </div>
               </div>
