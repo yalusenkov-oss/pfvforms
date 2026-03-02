@@ -160,12 +160,13 @@ function CoverUpload({ data, onChange }: { data: Record<string, string>; onChang
   const handleFile = (file: File) => {
     setFileError('');
 
-    if (!file.type.startsWith('image/')) {
-      setFileError('Загрузите изображение (JPG, PNG).');
+    const allowedTypes = ['image/jpeg', 'image/png'];
+    if (!allowedTypes.includes(file.type)) {
+      setFileError('Допустимый формат: JPG или PNG.');
       return;
     }
 
-    const maxSizeMb = 10;
+    const maxSizeMb = 20;
     if (file.size > maxSizeMb * 1024 * 1024) {
       setFileError(`Файл слишком большой. Максимум ${maxSizeMb} МБ.`);
       return;
@@ -178,9 +179,30 @@ function CoverUpload({ data, onChange }: { data: Record<string, string>; onChang
         setFileError('Не удалось прочитать файл. Попробуйте ещё раз.');
         return;
       }
-      setPreviewSrc(result);
-      // Upload immediately to server → get Drive URL
-      uploadToServer(result, file.name);
+
+      // Validate image dimensions
+      const img = new window.Image();
+      img.onload = () => {
+        const { width, height } = img;
+        if (width !== height) {
+          setFileError(`Обложка должна быть квадратной. Ваш размер: ${width}×${height}px.`);
+          return;
+        }
+        if (width < 1400) {
+          setFileError(`Минимальный размер: 1400×1400px. Ваш размер: ${width}×${height}px.`);
+          return;
+        }
+        if (width > 6000) {
+          setFileError(`Максимальный размер: 6000×6000px. Ваш размер: ${width}×${height}px.`);
+          return;
+        }
+        setPreviewSrc(result);
+        uploadToServer(result, file.name);
+      };
+      img.onerror = () => {
+        setFileError('Не удалось прочитать изображение. Попробуйте ещё раз.');
+      };
+      img.src = result;
     };
     reader.onerror = () => {
       setFileError('Ошибка чтения файла.');
@@ -283,11 +305,11 @@ function CoverUpload({ data, onChange }: { data: Record<string, string>; onChang
               <p className="text-sm font-semibold text-gray-700">
                 {dragOver ? 'Отпустите файл' : 'Нажмите или перетащите обложку'}
               </p>
-              <p className="text-xs text-gray-500 mt-1">JPG или PNG • 3000×3000 px • до 10 МБ</p>
+              <p className="text-xs text-gray-500 mt-1">JPG или PNG • квадратная • 1400–6000 px • до 20 МБ</p>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/jpg"
+                accept="image/jpeg,image/png"
                 onChange={handleFileChange}
                 className="hidden"
               />
@@ -338,7 +360,7 @@ function CoverUpload({ data, onChange }: { data: Record<string, string>; onChang
       {coverMode === 'link' && (
         <div className="animate-in">
           <Input label="" icon={<Link2 className="w-4 h-4" />}
-            hint={'Загрузите обложку в облако (Яндекс Диск / Google Drive) и оставьте ссылку.\n• Разрешение: 3000×3000 px\n• Формат: JPEG'}
+            hint={'Загрузите обложку в облако (Яндекс Диск / Google Drive) и оставьте ссылку.\n• Формат: JPG или PNG\n• Квадратная: от 1400×1400 до 6000×6000 px\n• Не менее 72 dpi'}
             value={data.coverLink || ''} onChange={(e) => onChange('coverLink', e.target.value)}
             placeholder="https://disk.yandex.ru/..." />
         </div>
@@ -1174,6 +1196,11 @@ export function StepOne({ data, onChange }: StepOneProps) {
         {isPremiumOrPlatinum && (
           <>
             <Divider />
+            <InfoBox variant="success">
+              <p className="text-xs">
+                🎉 Вам доступны дополнительные возможности тарифа <strong>«{tariff}»</strong>.
+              </p>
+            </InfoBox>
             <RadioGroup
               label="Полная версия в TikTok"
               name="tiktokFull"
