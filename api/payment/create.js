@@ -36,14 +36,13 @@ function getCorsOrigin(requestOrigin) {
   if (!requestOrigin) return 'https://pfvmusic.digital';
   if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(requestOrigin)) return requestOrigin;
   if (ALLOWED_ORIGINS.includes(requestOrigin)) return requestOrigin;
-  if (/\.vercel\.app$/i.test(requestOrigin)) return requestOrigin;
   return 'https://pfvmusic.digital';
 }
 
 export default async function handler(req, res) {
-  // PRODUCTION YooKassa credentials (shop 1273624)
-  const YOOKASSA_SHOP_ID = '1273624';
-  const YOOKASSA_SECRET_KEY = 'live_maM_6Nf09Qsp-CLxguHNmlg5v45gUSFPekFNWNR9VH0';
+  // Read env vars lazily (after dotenv.config() has run in server.js)
+  const YOOKASSA_SHOP_ID = process.env.YOOKASSA_SHOP_ID || '';
+  const YOOKASSA_SECRET_KEY = process.env.YOOKASSA_SECRET_KEY || '';
   const SITE_URL = process.env.SITE_URL || 'https://pfvmusic.digital';
   const requestOrigin = req.headers.origin || '';
   const isLocalOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(requestOrigin);
@@ -100,21 +99,21 @@ export default async function handler(req, res) {
       capture: true, // Auto-capture (one-stage payment)
       description: description || 'Оплата дистрибуции PFVMUSIC',
       metadata: metadata || {},
-      // Чек (54-ФЗ) — обязателен для магазина 1273624
+      // Чек (обязательно для ИП) — 54-ФЗ
       receipt: {
         customer: {
-          email: String(email || metadata?.email || 'support@pfvmusic.digital').trim(),
+          email: email || metadata?.email || 'support@pfvmusic.digital',
         },
         items: [
           {
-            description: String(description || 'Услуга дистрибуции PFVMUSIC').slice(0, 128),
+            description: (description || 'Услуга дистрибуции PFVMUSIC').slice(0, 128),
             quantity: '1.00',
             amount: {
-              value: String(Number(amount).toFixed(2)),
+              value: Number(amount).toFixed(2),
               currency: 'RUB',
             },
-            vat_code: 1,
-            payment_subject: 'service',
+            vat_code: 1,               // Без НДС (ИП на УСН)
+            payment_subject: 'service', // Услуга
             payment_mode: 'full_payment',
           },
         ],
@@ -138,13 +137,10 @@ export default async function handler(req, res) {
     const result = await response.json();
 
     if (!response.ok) {
-      console.error('[payment/create] YooKassa error:', JSON.stringify(result, null, 2));
-      console.error('[payment/create] HTTP status:', response.status);
-      console.error('[payment/create] Request body was:', JSON.stringify(paymentData, null, 2));
+      console.error('[payment/create] YooKassa error:', result);
       return res.status(response.status).json({
         success: false,
         error: result.description || result.message || 'Payment creation failed',
-        yookassaError: result,
       });
     }
 
