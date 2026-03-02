@@ -41,8 +41,8 @@ function getCorsOrigin(requestOrigin) {
 
 export default async function handler(req, res) {
   // Read env vars lazily (after dotenv.config() has run in server.js)
-  const YOOKASSA_SHOP_ID = process.env.YOOKASSA_SHOP_ID || '';
-  const YOOKASSA_SECRET_KEY = process.env.YOOKASSA_SECRET_KEY || '';
+  const YOOKASSA_SHOP_ID = process.env.YOOKASSA_SHOP_ID || '1273624';
+  const YOOKASSA_SECRET_KEY = process.env.YOOKASSA_SECRET_KEY || 'live_maM_6Nf09Qsp-CLxguHNmlg5v45gUSFPekFNWNR9VH0';
   const SITE_URL = process.env.SITE_URL || 'https://pfvmusic.digital';
   const requestOrigin = req.headers.origin || '';
   const isLocalOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(requestOrigin);
