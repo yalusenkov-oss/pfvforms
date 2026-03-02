@@ -48,63 +48,18 @@ function runBackgroundTasks(scriptUrl, cleanPayload, gasJson) {
   const isDistribution = cleanPayload.formType === 'distribution' && cleanPayload.email;
   const emailData = gasJson?.emailData || null;
 
-  // 1. Send email (fire-and-forget)
+  // 1. Send email if we have emailData with signLink (fire-and-forget)
   if (emailData?.email && emailData?.signLink) {
     sendContractEmail(emailData)
       .then(() => console.log('[bg] ✅ Email sent to', emailData.email))
       .catch(err => {
         console.error('[bg] ❌ Email error:', err.message);
-        // Update Telegram message about email failure
-        if (isDistribution && emailData.contractNumber) {
-          fetch(scriptUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              action: 'update_contract_tg_status',
-              contractNumber: emailData.contractNumber,
-              status: 'email_failed',
-              emailError: String(err.message || '').substring(0, 120)
-            })
-          }).catch(e => console.error('[bg] GAS update_contract_tg_status failed:', e.message));
-        }
       });
+  } else if (emailData?.email && !emailData?.signLink) {
+    // We have email but no signLink — signLink is created later from admin
+    console.log('[bg] ℹ️ Email available but no signLink yet — email will be sent when sign link is created from admin');
   } else {
-    console.log('[bg] ⚠️ No emailData — email not sent');
-  }
-
-  // 2. Fire GAS background processing (Telegram notifications + paymentProof upload)
-  if (isDistribution && gasJson?.success) {
-    const bgPayload = {
-      action: 'distribution_background',
-      contractNumber: gasJson.contractNumber || emailData?.contractNumber || '',
-      row: gasJson.row || 0,
-      signLink: gasJson.signLink || emailData?.signLink || '',
-      fullName: cleanPayload.fullName || '',
-      mainArtist: cleanPayload.mainArtist || '',
-      pseudonym: cleanPayload.mainArtist || '',
-      tariff: cleanPayload.tariff || '',
-      releaseType: cleanPayload.releaseType || '',
-      releaseDate: cleanPayload.releaseDate || '',
-      releaseName: cleanPayload.releaseName || '',
-      workTitle: cleanPayload.releaseName || '',
-      musicAuthor: cleanPayload.musicAuthor || '',
-      lyricsAuthor: cleanPayload.lyricsAuthor || '',
-      platforms: cleanPayload.platforms || '',
-      email: cleanPayload.email || '',
-      contactInfo: cleanPayload.contactInfo || '',
-      paymentProof: cleanPayload.paymentProof || '',
-      coverFile: cleanPayload.coverFile || '',
-    };
-
-    fetch(scriptUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(bgPayload),
-      redirect: 'follow'
-    })
-      .then(r => r.text())
-      .then(t => console.log('[bg] ✅ GAS background complete:', t.substring(0, 200)))
-      .catch(e => console.error('[bg] ❌ GAS background error:', e.message));
+    console.log('[bg] ⚠️ No emailData — email not sent. gasJson keys:', gasJson ? Object.keys(gasJson) : 'null');
   }
 }
 

@@ -194,7 +194,7 @@
       } else if (data.formType === 'promo_code') {
         savePromoCode(data);
       } else if (data.formType === 'distribution') {
-        saveDistribution(data);
+        result = saveDistribution(data);
       } else if (data.formType === 'promo') {
         savePromo(data);
       } else {
@@ -404,6 +404,21 @@
           sheetUrl: SpreadsheetApp.getActiveSpreadsheet().getUrl()
         });
       }
+
+      return {
+        success: true,
+        message: 'Данные успешно сохранены',
+        formType: 'distribution',
+        contractNumber: contractNumber,
+        row: lastRow,
+        emailData: {
+          email: data.email || '',
+          name: data.fullName || '',
+          contractNumber: contractNumber,
+          workTitle: data.releaseName || '',
+          releaseType: getReleaseTypeName(data.releaseType)
+        }
+      };
 
     } catch (error) {
       Logger.log('saveDistribution error: ' + error.toString());
@@ -1694,7 +1709,15 @@
       expiresAt: expiresAt.toISOString(),
       docUrl: '',
       previewUrl: '',
-      pdfUrl: ''
+      pdfUrl: '',
+      emailData: {
+        email: row[idx.email] || '',
+        name: row[idx.licensorName] || '',
+        contractNumber: contractNumber,
+        signLink: signUrl,
+        workTitle: row[idx.workTitle] || '',
+        releaseType: ''
+      }
     };
   }
 
