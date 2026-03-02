@@ -271,24 +271,9 @@ export function prepareDistributionData(formData: Record<string, string>): Recor
 }
 
 export async function fetchPromoCodes(): Promise<PromoCodeRecord[] | null> {
-  const isLocal = typeof window !== 'undefined' && /localhost|127\.0\.0\.1/.test(window.location.hostname);
-
-  let final: string;
-  if (isLocal) {
-    // On localhost, use server-side proxy to avoid CORS with GAS
-    final = `/api/gas-proxy?action=list&sheet=promocodes`;
-  } else {
-    const url = await getGoogleScriptUrl();
-    if (!url) return null;
-    try {
-      const u = new URL(url);
-      u.searchParams.set('action', 'list');
-      u.searchParams.set('sheet', 'promocodes');
-      final = u.toString();
-    } catch {
-      final = `${url}${url.includes('?') ? '&' : '?'}action=list&sheet=promocodes`;
-    }
-  }
+  // Always use server-side proxy to avoid CORS issues with GAS
+  // Works on both localhost (dev) and pfvmusic.digital (VPS prod)
+  const final = `/api/gas-proxy?action=list&sheet=promocodes`;
 
   const res = await fetch(final, { method: 'GET', redirect: 'follow' });
   const text = await res.text();
@@ -336,24 +321,12 @@ export async function fetchPromoCodes(): Promise<PromoCodeRecord[] | null> {
 export async function incrementPromoUsage(promoCode: string): Promise<void> {
   if (!promoCode) return;
   try {
-    const isLocal = typeof window !== 'undefined' && /localhost|127\.0\.0\.1/.test(window.location.hostname);
-
-    if (isLocal) {
-      // Use server-side proxy on localhost
-      await fetch('/api/gas-proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'use_promo', code: promoCode }),
-      });
-    } else {
-      const url = await getGoogleScriptUrl();
-      if (!url) return;
-      await fetch(url, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'use_promo', code: promoCode }),
-        redirect: 'follow',
-      });
-    }
+    // Always use server-side proxy to avoid CORS issues with GAS
+    await fetch('/api/gas-proxy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'use_promo', code: promoCode }),
+    });
     if (DEBUG_LOGGING) console.log('[promo] usage incremented for', promoCode);
   } catch (err) {
     console.error('[promo] failed to increment usage:', err);
