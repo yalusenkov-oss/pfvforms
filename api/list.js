@@ -27,6 +27,7 @@ function getCorsOrigin(requestOrigin) {
   if (!requestOrigin) return 'https://pfvmusic.digital';
   if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(requestOrigin)) return requestOrigin;
   if (ALLOWED_ORIGINS.includes(requestOrigin)) return requestOrigin;
+  if (/\.vercel\.app$/i.test(requestOrigin)) return requestOrigin;
   return 'https://pfvmusic.digital';
 }
 
