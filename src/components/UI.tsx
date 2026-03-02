@@ -25,6 +25,7 @@ export function Input({ label, required, hint, icon, className, ...props }: Inpu
           'placeholder:text-gray-400',
           'focus:border-purple-400 focus:outline-none focus:ring-3 focus:ring-purple-100',
           'hover:border-purple-300',
+          'disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed disabled:hover:border-gray-200',
           className
         )}
         {...props}

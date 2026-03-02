@@ -173,6 +173,16 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
     setPromoMessage(`Промокод применён: -${result.discountAmount!.toLocaleString('ru-RU')} ₽`);
   };
 
+  const removePromo = () => {
+    onChange('promoCode', '');
+    onChange('promoApplied', 'no');
+    onChange('promoDiscountType', '');
+    onChange('promoDiscountValue', '');
+    onChange('promoDiscountAmount', '');
+    setPromoMessage('');
+    setPromoError('');
+  };
+
   useEffect(() => {
     if (data.promoApplied !== 'yes') return;
     if (!data.promoCode) return;
@@ -187,9 +197,16 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
       onChange('promoDiscountAmount', '');
       setPromoMessage('');
       setPromoError(result.error || 'Промокод неактуален');
+    } else {
+      // Recalculate discount amount when tariff/release/options change
+      const newAmount = String(result.discountAmount!);
+      if (newAmount !== data.promoDiscountAmount) {
+        onChange('promoDiscountAmount', newAmount);
+        setPromoMessage(`Промокод применён: -${result.discountAmount!.toLocaleString('ru-RU')} ₽`);
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tariff, releaseType, base, karaoke, promoCodes, promoLoading]);
+  }, [tariff, releaseType, base, karaoke, videoshot, promoCodes, promoLoading]);
 
   const [freeSubmitting, setFreeSubmitting] = useState(false);
 
@@ -385,18 +402,30 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
               placeholder="PFV10, WELCOME20..."
               value={data.promoCode || ''}
               onChange={(e) => onChange('promoCode', e.target.value.toUpperCase())}
+              disabled={data.promoApplied === 'yes'}
             />
           </div>
-          <div className="sm:pt-7">
-            <button
-              type="button"
-              onClick={applyPromo}
-              disabled={promoLoading}
-              className="w-full sm:w-auto inline-flex items-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 text-sm font-semibold shadow-sm disabled:opacity-60"
-            >
-              <TicketPercent className="w-4 h-4" />
-              {promoLoading ? 'Загрузка...' : 'Применить'}
-            </button>
+          <div className="sm:pt-7 flex gap-2">
+            {data.promoApplied === 'yes' ? (
+              <button
+                type="button"
+                onClick={removePromo}
+                className="w-full sm:w-auto inline-flex items-center gap-2 rounded-xl bg-red-500 hover:bg-red-600 text-white px-4 py-3 text-sm font-semibold shadow-sm transition-colors"
+              >
+                <XCircle className="w-4 h-4" />
+                Удалить
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={applyPromo}
+                disabled={promoLoading}
+                className="w-full sm:w-auto inline-flex items-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 text-sm font-semibold shadow-sm disabled:opacity-60 transition-colors"
+              >
+                <TicketPercent className="w-4 h-4" />
+                {promoLoading ? 'Загрузка...' : 'Применить'}
+              </button>
+            )}
           </div>
         </div>
 
