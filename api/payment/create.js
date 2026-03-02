@@ -99,26 +99,35 @@ export default async function handler(req, res) {
       capture: true, // Auto-capture (one-stage payment)
       description: description || 'Оплата дистрибуции PFVMUSIC',
       metadata: metadata || {},
-      // Чек (обязательно для ИП) — 54-ФЗ
-      receipt: {
-        customer: {
-          email: email || metadata?.email || 'support@pfvmusic.digital',
-        },
-        items: [
-          {
-            description: (description || 'Услуга дистрибуции PFVMUSIC').slice(0, 128),
-            quantity: '1.00',
-            amount: {
-              value: Number(amount).toFixed(2),
-              currency: 'RUB',
-            },
-            vat_code: 1,               // Без НДС (ИП на УСН)
-            payment_subject: 'service', // Услуга
-            payment_mode: 'full_payment',
-          },
-        ],
-      },
     };
+
+    // Чек (54-ФЗ) — добавляем только если касса подключена в YooKassa
+    // Если магазин не настроен на чеки, receipt вызывает ошибку "Invalid parameter"
+    const ENABLE_RECEIPT = process.env.YOOKASSA_RECEIPT !== 'false';
+    if (ENABLE_RECEIPT) {
+      try {
+        paymentData.receipt = {
+          customer: {
+            email: email || metadata?.email || 'support@pfvmusic.digital',
+          },
+          items: [
+            {
+              description: (description || 'Услуга дистрибуции PFVMUSIC').slice(0, 128),
+              quantity: '1.00',
+              amount: {
+                value: Number(amount).toFixed(2),
+                currency: 'RUB',
+              },
+              vat_code: 1,               // Без НДС (ИП на УСН)
+              payment_subject: 'service', // Услуга
+              payment_mode: 'full_payment',
+            },
+          ],
+        };
+      } catch (e) {
+        console.warn('[payment/create] Could not build receipt:', e);
+      }
+    }
 
     console.log('[payment/create] Creating payment:', JSON.stringify(paymentData, null, 2));
 
