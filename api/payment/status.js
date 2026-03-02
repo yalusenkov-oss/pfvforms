@@ -13,9 +13,9 @@ function getCorsOrigin(requestOrigin) {
 }
 
 export default async function handler(req, res) {
-  // Read env vars lazily (after dotenv.config() has run in server.js)
-  const YOOKASSA_SHOP_ID = process.env.YOOKASSA_SHOP_ID || '1273624';
-  const YOOKASSA_SECRET_KEY = process.env.YOOKASSA_SECRET_KEY || 'live_maM_6Nf09Qsp-CLxguHNmlg5v45gUSFPekFNWNR9VH0';
+  // PRODUCTION YooKassa credentials (shop 1273624)
+  const YOOKASSA_SHOP_ID = '1273624';
+  const YOOKASSA_SECRET_KEY = 'live_maM_6Nf09Qsp-CLxguHNmlg5v45gUSFPekFNWNR9VH0';
 
   // CORS — restrict to known origins
   const requestOrigin = req.headers.origin || '';
