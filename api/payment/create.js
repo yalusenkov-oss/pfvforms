@@ -137,10 +137,13 @@ export default async function handler(req, res) {
     const result = await response.json();
 
     if (!response.ok) {
-      console.error('[payment/create] YooKassa error:', result);
+      console.error('[payment/create] YooKassa error:', JSON.stringify(result, null, 2));
+      console.error('[payment/create] HTTP status:', response.status);
+      console.error('[payment/create] Request body was:', JSON.stringify(paymentData, null, 2));
       return res.status(response.status).json({
         success: false,
         error: result.description || result.message || 'Payment creation failed',
+        yookassaError: result,
       });
     }
 
