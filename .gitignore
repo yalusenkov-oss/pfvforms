@@ -1,6 +1,5 @@
 # Node
 node_modules/
-dist/
 .next/
 .build/
 .DS_Store
@@ -13,8 +12,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-# Vite build
-dist/
 # macOS
 *.DS_Store
 # Editor

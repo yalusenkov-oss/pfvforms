@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Подписание договора</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap');
+
+    :root {
+      --bg: #ffffff;
+      --panel: #ffffff;
+      --panel-2: #f8fafc;
+      --accent: #7c3aed;
+      --accent-2: #6d28d9;
+      --text: #111827;
+      --text-secondary: #6b7280;
+      --text-tertiary: #9ca3af;
+      --muted: #6b7280;
+      --danger: #ef4444;
+      --success: #10b981;
+      --border: rgba(124, 58, 237, 0.12);
+      --shadow: 0 4px 20px rgba(124, 58, 237, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+    
+    html {
+      scroll-behavior: smooth;
+    }
+    
+    body {
+      margin: 0;
+      font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: var(--text);
+      background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 50%, rgba(245, 243, 255, 0.3) 100%);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+      background: #ffffff;
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 20px;
+      margin: -20px -20px 40px -20px;
+      box-shadow: 0 2px 12px rgba(124, 58, 237, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 18px;
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+      flex-shrink: 0;
+      line-height: 1;
+    }
+
+    .header-logo svg {
+      width: 24px;
+      height: 24px;
+      stroke: white;
+      stroke-width: 1.5;
+      display: block;
+      flex-shrink: 0;
+    }
+
+    .header-title {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .header-title h2 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 0.3px;
+    }
+
+    .header-title p {
+      margin: 0;
+      font-size: 11px;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .btn-home {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 10px;
+      background: rgba(124, 58, 237, 0.08);
+      color: var(--accent);
+      border: 1px solid var(--border);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      line-height: 1;
+      min-height: 38px;
+    }
+
+    .btn-home svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      stroke-width: 2;
+      display: block;
+      flex-shrink: 0;
+    }
+
+    .btn-home:hover {
+      background: rgba(124, 58, 237, 0.12);
+      border-color: rgba(124, 58, 237, 0.25);
+      transform: translateY(-1px);
+    }
+
+    .hero {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 32px;
+    }
+
+    .title {
+      font-size: clamp(28px, 5vw, 42px);
+      letter-spacing: -0.5px;
+      margin: 0;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .subtitle {
+      color: var(--text-secondary);
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .grid {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: 1fr 1fr;
+      margin-bottom: 40px;
+    }
+
+    @media (max-width: 1000px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card:hover {
+      box-shadow: 0 8px 32px rgba(124, 58, 237, 0.12);
+      border-color: rgba(124, 58, 237, 0.2);
+    }
+
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.3px;
+      display: flex;
+      align-items: center;
+    }
+
+    .card h3 svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      stroke-width: 2;
+      margin-right: 6px;
+      flex-shrink: 0;
+    }
+
+    .card > .status:first-of-type {
+      margin-top: 4px;
+      margin-bottom: 20px;
+    }
+
+    .doc-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      border: 1px solid var(--border);
+      color: var(--accent);
+      background: rgba(124, 58, 237, 0.06);
+      padding: 10px 16px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      font-family: 'Manrope', sans-serif;
+    }
+
+    .btn:hover {
+      border-color: rgba(124, 58, 237, 0.3);
+      background: rgba(124, 58, 237, 0.12);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.15);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+      border-color: #7c3aed;
+      color: #ffffff;
+      font-weight: 700;
+      width: 100%;
+      padding: 14px 20px;
+      font-size: 14px;
+      box-shadow: 0 6px 20px rgba(124, 58, 237, 0.3);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%);
+      box-shadow: 0 8px 28px rgba(124, 58, 237, 0.4);
+      border-color: #6d28d9;
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .status {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 0;
+      line-height: 1.5;
+    }
+
+    .status.error {
+      color: var(--danger);
+      background: rgba(239, 68, 68, 0.08);
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      margin-bottom: 16px;
+    }
+
+    .status.success {
+      color: var(--success);
+      background: rgba(16, 185, 129, 0.08);
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      margin-bottom: 16px;
+      font-weight: 600;
+    }
+
+    .preview {
+      width: 100%;
+      aspect-ratio: 1/1.4;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      flex: 1;
+      min-height: 400px;
+    }
+
+    .signature-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      flex: 1;
+    }
+
+    canvas {
+      width: 100%;
+      height: 200px;
+      background: #ffffff;
+      border-radius: 14px;
+      border: 2px dashed rgba(124, 58, 237, 0.25);
+      cursor: crosshair;
+      transition: all 0.2s ease;
+    }
+
+    canvas:focus {
+      outline: none;
+      border-color: rgba(124, 58, 237, 0.5);
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+    }
+
+    canvas:hover {
+      border-color: rgba(124, 58, 237, 0.35);
+      background: rgba(124, 58, 237, 0.02);
+    }
+
+    .hint {
+      color: var(--text-tertiary);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .footer-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--success);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .pill svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding-top: 40px;
+      margin-top: 40px;
+      text-align: center;
+    }
+
+    footer p {
+      color: var(--text-tertiary);
+      font-size: 12px;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-left">
+      <div class="header-logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="13" r="11"></circle>
+          <path d="M12 2v22M2 12h20"></path>
+          <circle cx="12" cy="13" r="5"></circle>
+        </svg>
+      </div>
+      <div class="header-title">
+        <h2>PFVMUSIC</h2>
+        <p>Издательство</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <a href="/" class="btn-home">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8M21 3v6h-6M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16M3 21v-6h6"></path>
+        </svg>
+        На главную
+      </a>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <section class="hero">
+      <h1 class="title">Подписание договора</h1>
+      <p class="subtitle">Проверьте документ и оставьте подпись. Подписанный договор будет доступен для скачивания сразу после подтверждения.</p>
+      <span id="pill" class="pill" style="display:none;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"></path>
+        </svg>
+        Готово к подписи
+      </span>
+    </section>
+
+    <div class="grid">
+      <section class="card">
+        <h3>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline; margin-right: 6px; vertical-align: middle;">
+            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+            <polyline points="13 2 13 9 20 9"></polyline>
+          </svg>
+          Документ
+        </h3>
+        <div class="status" id="status">Загрузка документа…</div>
+        <div class="doc-actions">
+          <a id="docLink" class="btn" href="#" target="_blank" rel="noopener">Открыть HTML</a>
+          <a id="pdfLink" class="btn" href="#" target="_blank" rel="noopener">Скачать PDF</a>
+        </div>
+        <iframe id="preview" class="preview" title="preview" src=""></iframe>
+      </section>
+
+      <section class="card">
+        <h3>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline; margin-right: 6px; vertical-align: middle;">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+          </svg>
+          Подпись
+        </h3>
+        <div class="signature-wrap">
+          <div class="status" id="signStatus">Подпишите в поле ниже.</div>
+          <canvas id="signature"></canvas>
+          <div class="hint">Рисуйте мышью или пальцем. Только рисование — подпись не сохраняется отдельно.</div>
+          <div class="footer-actions">
+            <button id="clearBtn" class="btn" type="button">Очистить</button>
+            <button id="submitBtn" class="btn btn-primary" type="button">Подписать и скачать</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer>
+      <p>© 2026 PFVMUSIC. Все права защищены.</p>
+    </footer>
+  </div>
+
+  <script>
+    const statusEl = document.getElementById('status');
+    const signStatusEl = document.getElementById('signStatus');
+    const docLink = document.getElementById('docLink');
+    const pdfLink = document.getElementById('pdfLink');
+    const preview = document.getElementById('preview');
+    const pill = document.getElementById('pill');
+    const canvas = document.getElementById('signature');
+    const clearBtn = document.getElementById('clearBtn');
+    const submitBtn = document.getElementById('submitBtn');
+
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token');
+
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+    let hasStroke = false;
+
+    function resizeCanvas() {
+      const ratio = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * ratio;
+      canvas.height = rect.height * ratio;
+      ctx.scale(ratio, ratio);
+      ctx.lineWidth = 1.6;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#000000';
+    }
+
+    function startDraw(e) {
+      drawing = true;
+      hasStroke = true;
+      const p = getPoint(e);
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+    }
+
+    function draw(e) {
+      if (!drawing) return;
+      const p = getPoint(e);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+    }
+
+    function endDraw() {
+      drawing = false;
+      ctx.closePath();
+    }
+
+    function getPoint(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', endDraw);
+    canvas.addEventListener('mouseleave', endDraw);
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e); });
+    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); });
+    canvas.addEventListener('touchend', (e) => { e.preventDefault(); endDraw(e); });
+
+    clearBtn.addEventListener('click', () => {
+      const rect = canvas.getBoundingClientRect();
+      ctx.clearRect(0, 0, rect.width, rect.height);
+      hasStroke = false;
+    });
+
+    async function loadDoc() {
+      if (!token) {
+        statusEl.textContent = 'Ссылка недействительна. Нет токена.';
+        statusEl.classList.add('error');
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/sign?action=get&token=${encodeURIComponent(token)}`);
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Не удалось загрузить документ');
+
+        if (!data.contractHtml) {
+          throw new Error('Документ не найден. Попросите администратора пересоздать ссылку.');
+        }
+
+        preview.removeAttribute('src');
+        preview.srcdoc = data.contractHtml;
+        const blob = new Blob([data.contractHtml], { type: 'text/html' });
+        const blobUrl = URL.createObjectURL(blob);
+        docLink.href = blobUrl;
+        docLink.textContent = 'Открыть HTML';
+        pdfLink.href = data.signedUrl || '#';
+
+        statusEl.textContent = data.status === 'signed' ? 'Договор уже подписан.' : 'Документ готов к подписи.';
+        statusEl.classList.toggle('success', data.status !== 'signed');
+        pill.style.display = 'inline-flex';
+
+        if (data.status === 'signed' && data.signedUrl) {
+          signStatusEl.textContent = 'Подписанный договор готов. Можно скачать.';
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Подписано';
+          pdfLink.href = data.signedUrl;
+        }
+      } catch (e) {
+        const msg = e && e.message ? e.message : 'Ошибка загрузки.';
+        statusEl.textContent = msg;
+        statusEl.classList.add('error');
+      }
+    }
+
+    async function submitSignature() {
+      if (!token) return;
+      if (!hasStroke) {
+        signStatusEl.textContent = 'Подпись пустая. Нарисуйте подпись.';
+        signStatusEl.classList.add('error');
+        return;
+      }
+
+      signStatusEl.textContent = 'Отправляем подпись…';
+      signStatusEl.classList.remove('error');
+
+      try {
+        const signature = canvas.toDataURL('image/png');
+        const res = await fetch('/api/sign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'submit', token, signature })
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Не удалось подписать');
+
+        signStatusEl.textContent = 'Готово. Начинаем скачивание…';
+        signStatusEl.classList.add('success');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Подписано';
+
+        if (data.downloadUrl) {
+          window.location.href = data.downloadUrl;
+        } else if (data.signedUrl) {
+          window.location.href = data.signedUrl;
+        }
+      } catch (e) {
+        signStatusEl.textContent = e.message || 'Ошибка подписания.';
+        signStatusEl.classList.add('error');
+      }
+    }
+
+    submitBtn.addEventListener('click', submitSignature);
+    window.addEventListener('resize', resizeCanvas);
+
+    resizeCanvas();
+    loadDoc();
+  </script>
+</body>
+</html>
