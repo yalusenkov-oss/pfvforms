@@ -18,9 +18,9 @@ function getTrackCount(data: Record<string, string>): number {
 }
 
 // Функция для получения URL (читает переменную при вызове).
-// Попытки (в порядке): import.meta.env -> window global -> /config.json
+// In production all requests go through /api/submit and /api/gas-proxy,
+// so this is only used as a fallback for direct dev testing.
 let _cachedGoogleScriptUrl: string | null = null;
-const DEFAULT_GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxV8xHP0O09Q7KqMWmsApHOiSw9oNMDb6JKonoVnOBwbL95-v9duxnNZLca55yQJQk7OQ/exec';
 const DEBUG_LOGGING = typeof window !== 'undefined' && /localhost|127\.0\.0\.1/.test(window.location.hostname);
 async function getGoogleScriptUrl(): Promise<string> {
   if (_cachedGoogleScriptUrl) return _cachedGoogleScriptUrl;
@@ -30,48 +30,12 @@ async function getGoogleScriptUrl(): Promise<string> {
     const envUrl = ((import.meta as any)?.env?.VITE_GOOGLE_SCRIPT_URL as string) || '';
     if (envUrl) {
       _cachedGoogleScriptUrl = envUrl;
-      console.log('DEBUG getGoogleScriptUrl(): from import.meta.env', envUrl);
       return envUrl;
     }
   } catch (e) {
     // ignore
   }
 
-  // 2) try global window variable (injected via public/config.js or similar)
-  try {
-    // @ts-ignore
-    const w = (window as any);
-    if (w && w.VITE_GOOGLE_SCRIPT_URL) {
-      _cachedGoogleScriptUrl = String(w.VITE_GOOGLE_SCRIPT_URL);
-      console.log('DEBUG getGoogleScriptUrl(): from window.VITE_GOOGLE_SCRIPT_URL', _cachedGoogleScriptUrl);
-      return _cachedGoogleScriptUrl;
-    }
-  } catch (e) {
-    // ignore
-  }
-
-  // 3) production fallback (no runtime /config.json dependency)
-  if (typeof window !== 'undefined' && !/localhost|127\.0\.0\.1/.test(window.location.hostname)) {
-    _cachedGoogleScriptUrl = DEFAULT_GOOGLE_SCRIPT_URL;
-    return _cachedGoogleScriptUrl;
-  }
-
-  // 4) try to fetch /config.json (served from public/)
-  try {
-    const res = await fetch('/config.json', { cache: 'no-store' });
-    if (res.ok) {
-      const obj = await res.json();
-      if (obj && obj.VITE_GOOGLE_SCRIPT_URL) {
-        _cachedGoogleScriptUrl = String(obj.VITE_GOOGLE_SCRIPT_URL);
-        console.log('DEBUG getGoogleScriptUrl(): from /config.json', _cachedGoogleScriptUrl);
-        return _cachedGoogleScriptUrl;
-      }
-    }
-  } catch (e) {
-    // ignore
-  }
-
-  console.log('DEBUG getGoogleScriptUrl(): no URL found');
   return '';
 }
 

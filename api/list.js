@@ -2,23 +2,7 @@ import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 
 function getScriptUrl() {
-  if (process.env.GOOGLE_SCRIPT_URL) return process.env.GOOGLE_SCRIPT_URL;
-  if (process.env.VITE_GOOGLE_SCRIPT_URL) return process.env.VITE_GOOGLE_SCRIPT_URL;
-  const candidates = [
-    join(process.cwd(), 'public', 'config.json'),
-    join(process.cwd(), 'config.json'),
-    join(process.cwd(), 'dist', 'config.json'),
-    join(process.cwd(), 'admin', 'public', 'config.json')
-  ];
-
-  for (const configPath of candidates) {
-    if (!existsSync(configPath)) continue;
-    const raw = readFileSync(configPath, 'utf8');
-    const parsed = JSON.parse(raw);
-    if (parsed.VITE_GOOGLE_SCRIPT_URL) return parsed.VITE_GOOGLE_SCRIPT_URL;
-  }
-
-  return '';
+  return process.env.GOOGLE_SCRIPT_URL || process.env.VITE_GOOGLE_SCRIPT_URL || '';
 }
 
 // ═══ CORS helper ═══
@@ -32,6 +16,7 @@ function getCorsOrigin(requestOrigin) {
 
 export default async function handler(req, res) {
   const requestOrigin = req.headers.origin || '';
+  const referer = req.headers.referer || '';
   res.setHeader('Access-Control-Allow-Origin', getCorsOrigin(requestOrigin));
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -39,6 +24,21 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
+  }
+
+  // ═══ Security: block direct access to promo codes ═══
+  const sheet = req.query.sheet || '';
+  if (sheet === 'promocodes') {
+    const isAllowedOrigin = 
+      requestOrigin.includes('pfvmusic.digital') || 
+      requestOrigin.includes('localhost') || 
+      requestOrigin.includes('127.0.0.1') ||
+      referer.includes('pfvmusic.digital') || 
+      referer.includes('localhost') || 
+      referer.includes('127.0.0.1');
+    if (!isAllowedOrigin) {
+      return res.status(403).json({ success: false, error: 'Forbidden' });
+    }
   }
 
   try {

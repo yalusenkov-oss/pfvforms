@@ -3,23 +3,7 @@ import { join } from 'path';
 import { sendContractEmail } from './_email.js';
 
 function getScriptUrl() {
-  if (process.env.GOOGLE_SCRIPT_URL) return process.env.GOOGLE_SCRIPT_URL;
-  if (process.env.VITE_GOOGLE_SCRIPT_URL) return process.env.VITE_GOOGLE_SCRIPT_URL;
-  const candidates = [
-    join(process.cwd(), 'public', 'config.json'),
-    join(process.cwd(), 'config.json'),
-    join(process.cwd(), 'dist', 'config.json'),
-    join(process.cwd(), 'admin', 'public', 'config.json')
-  ];
-
-  for (const configPath of candidates) {
-    if (!existsSync(configPath)) continue;
-    const raw = readFileSync(configPath, 'utf8');
-    const parsed = JSON.parse(raw);
-    if (parsed.VITE_GOOGLE_SCRIPT_URL) return parsed.VITE_GOOGLE_SCRIPT_URL;
-  }
-
-  return '';
+  return process.env.GOOGLE_SCRIPT_URL || process.env.VITE_GOOGLE_SCRIPT_URL || '';
 }
 
 async function readJsonBody(req) {

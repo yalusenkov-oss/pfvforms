@@ -2,19 +2,7 @@ import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 
 function getScriptUrl() {
-  if (process.env.GOOGLE_SCRIPT_URL) return process.env.GOOGLE_SCRIPT_URL;
-  if (process.env.VITE_GOOGLE_SCRIPT_URL) return process.env.VITE_GOOGLE_SCRIPT_URL;
-  const candidates = [
-    join(process.cwd(), 'public', 'config.json'),
-    join(process.cwd(), 'config.json'),
-    join(process.cwd(), 'dist', 'config.json'),
-  ];
-  for (const p of candidates) {
-    if (!existsSync(p)) continue;
-    const parsed = JSON.parse(readFileSync(p, 'utf8'));
-    if (parsed.VITE_GOOGLE_SCRIPT_URL) return parsed.VITE_GOOGLE_SCRIPT_URL;
-  }
-  return '';
+  return process.env.GOOGLE_SCRIPT_URL || process.env.VITE_GOOGLE_SCRIPT_URL || '';
 }
 
 // ═══ CORS helper ═══

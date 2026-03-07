@@ -64,6 +64,26 @@ app.all('/api/gas-proxy', async (req, res) => {
     const gasUrl = process.env.VITE_GOOGLE_SCRIPT_URL;
     if (!gasUrl) return res.status(500).json({ error: 'GAS URL not configured' });
 
+    // ═══ Security: only allow requests from our own site ═══
+    const origin = req.headers.origin || '';
+    const referer = req.headers.referer || '';
+    const isAllowedOrigin = 
+      origin.includes('pfvmusic.digital') || 
+      origin.includes('localhost') || 
+      origin.includes('127.0.0.1') ||
+      referer.includes('pfvmusic.digital') || 
+      referer.includes('localhost') || 
+      referer.includes('127.0.0.1');
+    
+    // For sensitive data (promo codes), require valid origin
+    const action = req.query?.action || req.body?.action || '';
+    const sheet = req.query?.sheet || '';
+    if ((action === 'list' && sheet === 'promocodes') || action === 'use_promo') {
+      if (!isAllowedOrigin) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+    }
+
     if (req.method === 'GET') {
       const params = new URLSearchParams(req.query);
       const url = `${gasUrl}?${params.toString()}`;
@@ -89,9 +109,10 @@ app.all('/api/gas-proxy', async (req, res) => {
 });
 
 // ═══ Security: block sensitive files from being served ═══
+// IMPORTANT: This MUST be before express.static so files are blocked before static serving
 app.use((req, res, next) => {
   const blocked = ['/config.json', '/.env', '/.env.local', '/.gitignore'];
-  if (blocked.includes(req.path) || req.path.endsWith('/config.json')) {
+  if (blocked.includes(req.path) || req.path.endsWith('/config.json') || req.path.endsWith('/.env')) {
     return res.status(404).json({ error: 'Not found' });
   }
   next();
