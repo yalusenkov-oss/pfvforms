@@ -88,6 +88,15 @@ app.all('/api/gas-proxy', async (req, res) => {
   }
 });
 
+// ═══ Security: block sensitive files from being served ═══
+app.use((req, res, next) => {
+  const blocked = ['/config.json', '/.env', '/.env.local', '/.gitignore'];
+  if (blocked.includes(req.path) || req.path.endsWith('/config.json')) {
+    return res.status(404).json({ error: 'Not found' });
+  }
+  next();
+});
+
 // Serve built frontend (dist/) for all other routes (SPA fallback)
 const distPath = join(__dirname, 'dist');
 app.use(express.static(distPath));

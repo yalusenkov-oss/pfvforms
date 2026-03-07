@@ -16,3 +16,7 @@ pnpm-debug.log*
 *.DS_Store
 # Editor
 Thumbs.db
+
+# Security: never commit config.json with secrets to dist
+dist/config.json
+admin/dist/config.json
