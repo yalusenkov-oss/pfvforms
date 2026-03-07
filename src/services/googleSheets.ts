@@ -1,12 +1,8 @@
 // Google Sheets Integration Service
 // Этот сервис отправляет данные форм в Google Таблицы через Google Apps Script
 
-// URL вашего Google Apps Script (замените на свой после создания)
-// Рекомендуем задать через переменную окружения VITE_GOOGLE_SCRIPT_URL
-// Создайте файл .env в корне проекта с содержимым:
-// VITE_GOOGLE_SCRIPT_URL="https://script.google.com/macros/s/ВАШ_ID/exec"
-// Vite сделает переменную доступной через import.meta.env
-// import.meta.env typing differs between TS setups; cast to any to avoid type errors here
+// Браузер всегда работает через локальные API-роуты (/api/*).
+// Прямой URL Google Apps Script не должен попадать во фронтенд.
 
 // Вспомогательная функция для вычисления количества треков (совпадает с логикой из StepOne)
 function getTrackCount(data: Record<string, string>): number {
@@ -17,27 +13,7 @@ function getTrackCount(data: Record<string, string>): number {
   return 1;
 }
 
-// Функция для получения URL (читает переменную при вызове).
-// In production all requests go through /api/submit and /api/gas-proxy,
-// so this is only used as a fallback for direct dev testing.
-let _cachedGoogleScriptUrl: string | null = null;
 const DEBUG_LOGGING = typeof window !== 'undefined' && /localhost|127\.0\.0\.1/.test(window.location.hostname);
-async function getGoogleScriptUrl(): Promise<string> {
-  if (_cachedGoogleScriptUrl) return _cachedGoogleScriptUrl;
-
-  // 1) try Vite-provided import.meta.env (replaced at build time)
-  try {
-    const envUrl = ((import.meta as any)?.env?.VITE_GOOGLE_SCRIPT_URL as string) || '';
-    if (envUrl) {
-      _cachedGoogleScriptUrl = envUrl;
-      return envUrl;
-    }
-  } catch (e) {
-    // ignore
-  }
-
-  return '';
-}
 
 interface SubmitResponse {
   success: boolean;
@@ -389,9 +365,6 @@ export async function submitToGoogleSheets(
     console.log('[DEBUG] submitToGoogleSheets preparedData', preparedData);
   }
 
-  const isProd = typeof window !== 'undefined' && !/localhost|127\\.0\\.0\\.1/.test(window.location.hostname);
-  const isLocal = !isProd && typeof window !== 'undefined';
-
   const isTestEnv = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test';
 
   // Таймаут: GAS может работать 30-60 сек (запись + Telegram + Drive + email)
@@ -414,86 +387,41 @@ export async function submitToGoogleSheets(
 
   // Без ретраев — GAS не идемпотентен (повторные попытки дублируют строки и письма)
   try {
-      // Both prod and localhost use /api/submit (server-side proxy avoids CORS)
-      if (isProd || isLocal) {
-        const res = await fetchWithTimeout('/api/submit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(preparedData),
-        });
-        const text = await res.text();
-        if (DEBUG_LOGGING) {
-          console.log('[DEBUG] /api/submit status', res.status, 'body', text);
-        }
-        let json: any = null;
-        try {
-          json = text ? JSON.parse(text) : null;
-        } catch (parseErr) {
-          // Do not retry on non-JSON HTML responses to avoid duplicate submissions
-          return {
-            success: false,
-            message: `Failed to parse response: ${text.substring(0, 200)}`,
-          };
-        }
-        if (json && typeof json.success === 'boolean') {
-          return {
-            success: json.success,
-            message: json.message || '',
-            row: json.row,
-            signLink: json.signLink || '',
-            emailSent: !!json.emailSent,
-          };
-        }
-        return { success: true, message: 'Данные успешно отправлены' };
-      }
-
-      const GOOGLE_SCRIPT_URL = await getGoogleScriptUrl();
-      if (!GOOGLE_SCRIPT_URL) {
-        console.error('Google Script URL not configured. Data not sent.');
-        return {
-          success: false,
-          message:
-            'Google Script URL not configured. Set VITE_GOOGLE_SCRIPT_URL in .env (or configure env) and restart dev server.',
-        };
-      }
-
-      // Dev: use POST with text/plain to avoid CORS preflight (simple request)
-      // Apps Script reads JSON from e.postData.contents
-      const res = await fetchWithTimeout(GOOGLE_SCRIPT_URL, {
+      const res = await fetchWithTimeout('/api/submit', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(preparedData),
-        redirect: 'follow',
-      }, isTestEnv ? 500 : 60000);
+      });
 
-      // Ожидаем JSON-ответ от Apps Script
       const text = await res.text();
       if (DEBUG_LOGGING) {
-        console.log('[DEBUG] Apps Script response status', res.status, 'body', text);
+        console.log('[DEBUG] /api/submit status', res.status, 'body', text);
       }
       let json: any = null;
       try {
         json = text ? JSON.parse(text) : null;
-      } catch (parseErr) {
-        // если не JSON — вернём текст
-        json = { success: res.ok, message: text || res.statusText };
-      }
-
-      if (!res.ok) {
-        // Небольшая полезная информация для отладки
-        const msg = json && json.error ? json.error : json && json.message ? json.message : `HTTP ${res.status}`;
-        return { success: false, message: `Server error: ${msg}` };
-      }
-
-      // Если сервер вернул JSON { success: true } — используем его
-      if (json && typeof json === 'object') {
+      } catch {
         return {
-          success: !!json.success,
-          message: json.message || 'Данные успешно отправлены',
-          row: json.row,
+          success: false,
+          message: `Failed to parse response: ${text.substring(0, 200)}`,
         };
       }
 
-      // По умолчанию считаем успехом, если HTTP 2xx
+      if (json && typeof json.success === 'boolean') {
+        return {
+          success: json.success,
+          message: json.message || '',
+          row: json.row,
+          signLink: json.signLink || '',
+          emailSent: !!json.emailSent,
+        };
+      }
+
+      if (!res.ok) {
+        const msg = json?.error || json?.message || `HTTP ${res.status}`;
+        return { success: false, message: `Server error: ${msg}` };
+      }
+
       return { success: true, message: 'Данные успешно отправлены' };
 
     } catch (err) {

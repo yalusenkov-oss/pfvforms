@@ -1,36 +1,20 @@
-import { existsSync, readFileSync } from 'fs';
-import { join } from 'path';
 import { sendContractEmail } from './_email.js';
 
-function readConfigValue(key) {
+function readEnvValue(key) {
   if (process.env[key]) return process.env[key];
-  if (key === 'VITE_GOOGLE_SCRIPT_URL' && process.env.GOOGLE_SCRIPT_URL) {
-    return process.env.GOOGLE_SCRIPT_URL;
-  }
-  const candidates = [
-    join(process.cwd(), 'public', 'config.json'),
-    join(process.cwd(), 'config.json'),
-    join(process.cwd(), 'dist', 'config.json'),
-    join(process.cwd(), 'admin', 'public', 'config.json')
-  ];
-
-  for (const configPath of candidates) {
-    if (!existsSync(configPath)) continue;
-    const raw = readFileSync(configPath, 'utf8');
-    const parsed = JSON.parse(raw);
-    if (parsed[key] != null) return parsed[key];
-  }
-
+  if (key === 'VITE_GOOGLE_SCRIPT_URL') return process.env.GOOGLE_SCRIPT_URL || process.env.VITE_GOOGLE_SCRIPT_URL || null;
+  if (key === 'VITE_SIGN_BASE_URL') return process.env.SIGN_BASE_URL || process.env.VITE_SIGN_BASE_URL || null;
+  if (key === 'VITE_SIGN_EXPIRES_DAYS') return process.env.SIGN_EXPIRES_DAYS || process.env.VITE_SIGN_EXPIRES_DAYS || null;
   return null;
 }
 
 function getScriptUrl() {
-  const url = readConfigValue('VITE_GOOGLE_SCRIPT_URL');
+  const url = readEnvValue('VITE_GOOGLE_SCRIPT_URL');
   return url || '';
 }
 
 function getSignBaseUrl(req) {
-  const configured = readConfigValue('VITE_SIGN_BASE_URL');
+  const configured = readEnvValue('VITE_SIGN_BASE_URL');
   if (configured) return String(configured).replace(/\/$/, '');
   const proto = req.headers['x-forwarded-proto'] || 'https';
   const host = req.headers['x-forwarded-host'] || req.headers.host || '';
@@ -38,7 +22,7 @@ function getSignBaseUrl(req) {
 }
 
 function getSignExpiresDays() {
-  const raw = readConfigValue('VITE_SIGN_EXPIRES_DAYS');
+  const raw = readEnvValue('VITE_SIGN_EXPIRES_DAYS');
   const parsed = Number(raw);
   if (Number.isFinite(parsed) && parsed > 0) return parsed;
   return 7;

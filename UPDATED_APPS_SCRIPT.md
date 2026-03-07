@@ -193,7 +193,7 @@ function getPromoTypeName(type) {
 
 7. **Обновите URL в проекте** (если изменился)
    - В файле `.env`
-   - В файле `public/config.json`
+   - В переменной `GOOGLE_SCRIPT_URL`
 
 8. **Проверьте работу**
    - Откройте `test-google-sheets.html`

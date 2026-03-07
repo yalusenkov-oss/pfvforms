@@ -135,32 +135,21 @@
     </div>
 
     <script type="module">
-        // Импортируем функции из сервиса
-        const scriptUrl = 'https://script.google.com/macros/s/AKfycbzXO-i9scK4c61XUiuqQWl90I1BTgtiIgpm3UR6dBF9fuzatXkDPZ3YJffxuPmWt9GPDA/exec';
-        
-        // Устанавливаем URL в window для тестирования
-        window.VITE_GOOGLE_SCRIPT_URL = scriptUrl;
-        
-        document.getElementById('urlInfo').textContent = `URL скрипта: ${scriptUrl}`;
+        // Укажите URL через ?scriptUrl=... или localStorage key PFV_SCRIPT_URL
+        const scriptUrlFromQuery = new URLSearchParams(window.location.search).get('scriptUrl') || '';
+        const scriptUrl = scriptUrlFromQuery || localStorage.getItem('PFV_SCRIPT_URL') || '';
+        if (scriptUrlFromQuery) {
+            localStorage.setItem('PFV_SCRIPT_URL', scriptUrlFromQuery);
+        }
+        window.GOOGLE_SCRIPT_URL = scriptUrl;
+
+        document.getElementById('urlInfo').textContent = scriptUrl
+            ? `URL скрипта: ${scriptUrl}`
+            : 'URL скрипта не задан. Откройте страницу с ?scriptUrl=https://script.google.com/macros/s/.../exec';
 
         // Функция для получения URL
         async function getGoogleScriptUrl() {
-            if (window.VITE_GOOGLE_SCRIPT_URL) {
-                return window.VITE_GOOGLE_SCRIPT_URL;
-            }
-            
-            try {
-                const res = await fetch('/config.json', { cache: 'no-store' });
-                if (res.ok) {
-                    const obj = await res.json();
-                    if (obj && obj.VITE_GOOGLE_SCRIPT_URL) {
-                        return obj.VITE_GOOGLE_SCRIPT_URL;
-                    }
-                }
-            } catch (e) {
-                console.error('Error fetching config:', e);
-            }
-            
+            if (window.GOOGLE_SCRIPT_URL) return window.GOOGLE_SCRIPT_URL;
             return '';
         }
 
@@ -529,7 +518,7 @@
                 button.disabled = false;
                 resultDiv.innerHTML = `<div class="result error">
                     <strong>❌ URL не найден</strong><br>
-                    Проверьте настройки в .env или config.json
+                    Передайте ?scriptUrl=https://script.google.com/macros/s/.../exec
                 </div>`;
                 return;
             }

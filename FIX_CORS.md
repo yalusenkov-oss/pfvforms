@@ -68,8 +68,7 @@ function doPost(e) {
 5. **Скопируйте новый URL** (если создали новое развертывание)
 
 6. **Обновите URL в проекте** (если изменился)
-   - В файле `.env`: `VITE_GOOGLE_SCRIPT_URL="новый_URL"`
-   - В файле `public/config.json`: `"VITE_GOOGLE_SCRIPT_URL": "новый_URL"`
+   - В файле `.env`: `GOOGLE_SCRIPT_URL="новый_URL"`
 
 7. **Проверьте работу**
    - Откройте `test-google-sheets.html`

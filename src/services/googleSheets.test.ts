@@ -461,11 +461,6 @@ describe('submitToGoogleSheets', () => {
   });
 
   it('должен обработать ошибку сервера', async () => {
-    const mockUrl = 'https://script.google.com/macros/s/test/exec';
-    
-    // Устанавливаем URL через window для теста
-    (window as any).VITE_GOOGLE_SCRIPT_URL = mockUrl;
-
     const mockResponse = {
       ok: false,
       status: 500,
@@ -481,22 +476,10 @@ describe('submitToGoogleSheets', () => {
     expect(result.message).toContain('Server error');
   });
 
-  it('должен повторить попытку при ошибке сети', async () => {
-    const mockUrl = 'https://script.google.com/macros/s/test/exec';
-    
-    // Устанавливаем URL через window для теста
-    (window as any).VITE_GOOGLE_SCRIPT_URL = mockUrl;
-
-    // Первая попытка - ошибка, вторая - успех
+  it('должен вернуть ошибку при сбое сети без повторной отправки', async () => {
     global.fetch = vi
       .fn()
-      .mockRejectedValueOnce(new Error('Network error'))
-      .mockResolvedValueOnce({
-        ok: true,
-        text: async () => JSON.stringify({ success: true }),
-      } as Response);
-
-    vi.useFakeTimers();
+      .mockRejectedValueOnce(new Error('Network error'));
 
     const resultPromise = submitToGoogleSheets('distribution', {
       tariff: 'Базовый',
@@ -521,15 +504,11 @@ describe('submitToGoogleSheets', () => {
       _tracks: JSON.stringify([{ name: 'Track', artists: [{ name: 'Artist', type: 'main' }], lyricists: [], composers: [], explicitContent: 'Нет', substanceMention: 'Нет', lyrics: '' }]),
     });
 
-    // Продвигаем таймеры для ретраев
-    await vi.advanceTimersByTimeAsync(2000);
-
     const result = await resultPromise;
 
-    expect(result.success).toBe(true);
-    expect(global.fetch).toHaveBeenCalledTimes(2);
-
-    vi.useRealTimers();
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('Network error');
+    expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 
   it.skip('должен обработать таймаут запроса', async () => {

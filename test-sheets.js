@@ -5,23 +5,17 @@
  * Использование: node test-sheets.js [distribution|promo-detailed|promo-weekly]
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
-
 function resolveScriptUrl() {
   if (process.env.SCRIPT_URL) return process.env.SCRIPT_URL;
-  try {
-    const cfgPath = path.resolve(process.cwd(), 'public', 'config.json');
-    const raw = fs.readFileSync(cfgPath, 'utf8');
-    const cfg = JSON.parse(raw);
-    if (cfg?.VITE_GOOGLE_SCRIPT_URL) return String(cfg.VITE_GOOGLE_SCRIPT_URL);
-  } catch {
-    // ignore
-  }
-  return 'https://script.google.com/macros/s/AKfycbzogGGEaJXU7QA9QAB5Oz9HwGmWm8DsDezr1M-wwAmc8L9XkP0lQBHxfyCqOKIgNhJypg/exec';
+  if (process.env.GOOGLE_SCRIPT_URL) return process.env.GOOGLE_SCRIPT_URL;
+  return '';
 }
 
 const SCRIPT_URL = resolveScriptUrl();
+if (!SCRIPT_URL) {
+  console.error('❌ Не задан SCRIPT_URL или GOOGLE_SCRIPT_URL');
+  process.exit(1);
+}
 
 // Тестовые данные для дистрибуции
 const testDistributionData = {

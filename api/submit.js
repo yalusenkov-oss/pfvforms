@@ -57,7 +57,7 @@ function getCorsOrigin(requestOrigin) {
 }
 
 export default async function handler(req, res) {
-  const requestOrigin = req.headers.origin || '';
+  const requestOrigin = req?.headers?.origin || '';
   res.setHeader('Access-Control-Allow-Origin', getCorsOrigin(requestOrigin));
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');

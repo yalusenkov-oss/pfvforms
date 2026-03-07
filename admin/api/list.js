@@ -1,28 +1,5 @@
-import { existsSync, readFileSync } from 'fs';
-import { join } from 'path';
-
-const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxV8xHP0O09Q7KqMWmsApHOiSw9oNMDb6JKonoVnOBwbL95-v9duxnNZLca55yQJQk7OQ/exec';
-
 function getScriptUrl() {
-  if (process.env.GOOGLE_SCRIPT_URL) return process.env.GOOGLE_SCRIPT_URL;
-  const candidates = [
-    join(process.cwd(), 'public', 'config.json'),
-    join(process.cwd(), 'config.json')
-  ];
-
-  for (const configPath of candidates) {
-    if (!existsSync(configPath)) continue;
-    const raw = readFileSync(configPath, 'utf8');
-    const parsed = JSON.parse(raw);
-    if (parsed.VITE_GOOGLE_SCRIPT_URL) return parsed.VITE_GOOGLE_SCRIPT_URL;
-  }
-
-  if (DEFAULT_SCRIPT_URL) {
-    console.warn('[admin/api/list] Falling back to DEFAULT_SCRIPT_URL. config.json not found.');
-    return DEFAULT_SCRIPT_URL;
-  }
-
-  return '';
+  return process.env.GOOGLE_SCRIPT_URL || process.env.VITE_GOOGLE_SCRIPT_URL || '';
 }
 
 export default async function handler(req, res) {

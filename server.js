@@ -61,7 +61,7 @@ app.all('/api/upload-cover', vercelHandler(uploadCoverHandler));
 // Proxy for Google Apps Script (avoids CORS on localhost)
 app.all('/api/gas-proxy', async (req, res) => {
   try {
-    const gasUrl = process.env.VITE_GOOGLE_SCRIPT_URL;
+    const gasUrl = process.env.GOOGLE_SCRIPT_URL || process.env.VITE_GOOGLE_SCRIPT_URL;
     if (!gasUrl) return res.status(500).json({ error: 'GAS URL not configured' });
 
     // ═══ Security: only allow requests from our own site ═══

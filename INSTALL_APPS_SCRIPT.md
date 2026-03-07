@@ -47,17 +47,10 @@ const PROMO_SHEET_NAME = 'Промо';
 
 1. **`.env`** файл:
    ```
-   VITE_GOOGLE_SCRIPT_URL="ваш_новый_URL"
+   GOOGLE_SCRIPT_URL="ваш_новый_URL"
    ```
 
-2. **`public/config.json`** файл:
-   ```json
-   {
-     "VITE_GOOGLE_SCRIPT_URL": "ваш_новый_URL"
-   }
-   ```
-
-3. **`test-google-sheets.html`** (если используете):
+2. **`test-google-sheets.html`** (если используете):
    - Найдите строку с `const scriptUrl = ...`
    - Замените на новый URL
 

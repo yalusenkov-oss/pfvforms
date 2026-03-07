@@ -1,33 +1,5 @@
-// Admin Google Sheets helper — use local API proxy to avoid browser CORS/preflight issues.
-const DEFAULT_GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxV8xHP0O09Q7KqMWmsApHOiSw9oNMDb6JKonoVnOBwbL95-v9duxnNZLca55yQJQk7OQ/exec';
-async function getGoogleScriptUrl(): Promise<string> {
-  // @ts-ignore
-  if ((window as any)?.VITE_GOOGLE_SCRIPT_URL) return (window as any).VITE_GOOGLE_SCRIPT_URL;
-  if (!/localhost|127\.0\.0\.1/.test(window.location.hostname)) return DEFAULT_GOOGLE_SCRIPT_URL;
-  try {
-    const res = await fetch('/config.json', { cache: 'no-store' });
-    if (res.ok) {
-      const obj = await res.json();
-      if (obj?.VITE_GOOGLE_SCRIPT_URL) return obj.VITE_GOOGLE_SCRIPT_URL;
-    }
-  } catch (e) {
-    // ignore
-  }
-  return '';
-}
-
-async function getSignBaseUrl(): Promise<string> {
-  // @ts-ignore
-  if ((window as any)?.VITE_SIGN_BASE_URL) return String((window as any).VITE_SIGN_BASE_URL).replace(/\/$/, '');
-  try {
-    const res = await fetch('/config.json', { cache: 'no-store' });
-    if (res.ok) {
-      const obj = await res.json();
-      if (obj?.VITE_SIGN_BASE_URL) return String(obj.VITE_SIGN_BASE_URL).replace(/\/$/, '');
-    }
-  } catch {
-    // ignore
-  }
+// Admin Google Sheets helper — browser calls only local /api/* routes.
+function getSignBaseUrl(): string {
   return String(window.location.origin).replace(/\/$/, '');
 }
 
@@ -45,19 +17,6 @@ async function fetchViaProxyPost(path: string, payload: Record<string, any>): Pr
   });
 }
 
-async function postDirectToScript(payload: Record<string, any>): Promise<Response> {
-  const url = await getGoogleScriptUrl();
-  if (!url) throw new Error('Google Script URL not configured');
-  // Do NOT set Content-Type: application/json — it triggers CORS preflight (OPTIONS)
-  // which Google Apps Script does not support (405). Omitting the header makes it
-  // a "simple request" that avoids preflight. Apps Script reads JSON from e.postData.contents.
-  return fetch(url, {
-    method: 'POST',
-    redirect: 'follow',
-    body: JSON.stringify(payload),
-  });
-}
-
 function parseJsonSafe(text: string): any {
   if (!text || !text.trim()) return {};
   return JSON.parse(text);
@@ -69,11 +28,7 @@ export async function fetchSheetRows(sheetName: string, options: { limit?: numbe
   if (options.limit) params.set('limit', String(options.limit));
 
   try {
-    // Read operations are safe to call directly and avoid local /api dev routing issues.
-    const url = await getGoogleScriptUrl();
-    if (!url) return null;
-    const final = `${url}?action=list&${params.toString()}`;
-    const res = await fetch(final, { method: 'GET', redirect: 'follow' });
+    const res = await fetch(`/api/list?${params.toString()}`, { method: 'GET', redirect: 'follow' });
     const text = await res.text();
 
     if (!res.ok) {
@@ -101,24 +56,12 @@ export async function fetchSheetRows(sheetName: string, options: { limit?: numbe
 
 export async function updateSheetRow(sheet: string, rowIndex: number, updates: Record<string, any>): Promise<boolean> {
   try {
-    let res = await fetchViaProxyPost('/api/submit', {
+    const res = await fetchViaProxyPost('/api/submit', {
       action: 'update',
       sheet,
       row: rowIndex,
       updates,
     });
-    if (!res.ok && (res.status === 404 || res.status === 405)) {
-      try {
-        res = await postDirectToScript({
-          action: 'update',
-          sheet,
-          row: rowIndex,
-          updates,
-        });
-      } catch {
-        return false;
-      }
-    }
 
     const text = await res.text();
     const json = parseJsonSafe(text);
@@ -131,18 +74,11 @@ export async function updateSheetRow(sheet: string, rowIndex: number, updates: R
 
 export async function deleteSheetRow(sheet: string, rowIndex: number): Promise<boolean> {
   try {
-    let res = await fetchViaProxyPost('/api/submit', {
+    const res = await fetchViaProxyPost('/api/submit', {
       action: 'delete',
       sheet,
       row: rowIndex,
     });
-    if (!res.ok && (res.status === 404 || res.status === 405)) {
-      res = await postDirectToScript({
-        action: 'delete',
-        sheet,
-        row: rowIndex,
-      });
-    }
 
     const text = await res.text();
     const json = parseJsonSafe(text);
@@ -158,7 +94,7 @@ export async function createSignLink(
   rowIndex?: number,
   payload?: { contractHtml?: string; signSource?: string; forceRegenerate?: boolean }
 ): Promise<{ signUrl?: string; token?: string; success?: boolean; emailSent?: boolean; emailError?: string; message?: string } | null> {
-  const mainSiteBase = await getSignBaseUrl();
+  const mainSiteBase = getSignBaseUrl();
 
   // Normalize any sign URL to point to the main site with /#sign?token= format
   const normalizeSignUrl = (url: string): string => {
@@ -173,7 +109,7 @@ export async function createSignLink(
 
   // Create sign link only on server so token/email/html stay in sync.
   try {
-    let res = await fetchViaProxyPost('/api/sign', {
+    const res = await fetchViaProxyPost('/api/sign', {
       action: 'create',
       contractNumber,
       row: rowIndex,
@@ -181,18 +117,6 @@ export async function createSignLink(
       signSource: payload?.signSource || 'internal',
       forceRegenerate: payload?.forceRegenerate || false
     });
-    if (!res.ok && (res.status === 404 || res.status === 405)) {
-      res = await postDirectToScript({
-        action: 'sign_create',
-        contractNumber,
-        row: rowIndex,
-        signBaseUrl: mainSiteBase,
-        signExpiresDays: 7,
-        contractHtml: payload?.contractHtml || '',
-        signSource: payload?.signSource || 'internal',
-        forceRegenerate: payload?.forceRegenerate || false
-      });
-    }
     const text = await res.text();
     const json = parseJsonSafe(text);
     if (res.ok && json?.success) {
@@ -209,14 +133,8 @@ export async function createSignLink(
 }
 
 export async function fetchPromoCodes(): Promise<any[] | null> {
-  const params = new URLSearchParams();
-  params.set('sheet', 'promocodes');
-
   try {
-    const url = await getGoogleScriptUrl();
-    if (!url) return null;
-    const final = `${url}?action=list&${params.toString()}`;
-    const res = await fetch(final, { method: 'GET', redirect: 'follow' });
+    const res = await fetch('/api/gas-proxy?action=list&sheet=promocodes', { method: 'GET', redirect: 'follow' });
     const text = await res.text();
 
     if (!res.ok) {
@@ -240,16 +158,10 @@ export async function fetchPromoCodes(): Promise<any[] | null> {
 
 export async function upsertPromoCode(promoData: Record<string, any>): Promise<boolean> {
   try {
-    let res = await fetchViaProxyPost('/api/submit', {
+    const res = await fetchViaProxyPost('/api/submit', {
       formType: 'promo_code',
       ...promoData,
     });
-    if (!res.ok && (res.status === 404 || res.status === 405)) {
-      res = await postDirectToScript({
-        formType: 'promo_code',
-        ...promoData,
-      });
-    }
 
     const text = await res.text();
     const json = parseJsonSafe(text);
@@ -262,16 +174,10 @@ export async function upsertPromoCode(promoData: Record<string, any>): Promise<b
 
 export async function deletePromoCodeRemote(id: string): Promise<boolean> {
   try {
-    let res = await fetchViaProxyPost('/api/submit', {
+    const res = await fetchViaProxyPost('/api/submit', {
       action: 'promo_code_delete',
       id,
     });
-    if (!res.ok && (res.status === 404 || res.status === 405)) {
-      res = await postDirectToScript({
-        action: 'promo_code_delete',
-        id,
-      });
-    }
 
     const text = await res.text();
     const json = parseJsonSafe(text);
