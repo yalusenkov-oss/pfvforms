@@ -134,7 +134,7 @@ export async function createSignLink(
 
 export async function fetchPromoCodes(): Promise<any[] | null> {
   try {
-    const res = await fetch('/api/gas-proxy?action=list&sheet=promocodes', { method: 'GET', redirect: 'follow' });
+    const res = await fetch('/api/list?sheet=promocodes', { method: 'GET', redirect: 'follow' });
     const text = await res.text();
 
     if (!res.ok) {
