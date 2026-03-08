@@ -20,3 +20,9 @@ Thumbs.db
 # Security: never commit config.json with secrets anywhere
 **/config.json
 config.json
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example
