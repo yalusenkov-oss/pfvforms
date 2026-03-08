@@ -11,7 +11,7 @@
     "dev:admin": "cd admin && npm run dev",
     "dev:both": "concurrently \"npm:dev:app\" \"npm:dev:admin\"",
     "build": "vite build",
-    "preview": "vite preview",
+    "preview": "npm run build && wrangler dev",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
@@ -19,7 +19,8 @@
     "test:sheets:check": "node test-sheets.js check",
     "test:sheets:distribution": "node test-sheets.js distribution",
     "test:sheets:promo-detailed": "node test-sheets.js promo-detailed",
-    "test:sheets:promo-weekly": "node test-sheets.js promo-weekly"
+    "test:sheets:promo-weekly": "node test-sheets.js promo-weekly",
+    "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
     "@tailwindcss/vite": "4.1.17",
@@ -36,6 +37,7 @@
     "vite-plugin-singlefile": "2.3.0"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.26.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^22.0.0",
@@ -46,6 +48,7 @@
     "jsdom": "^28.0.0",
     "tailwindcss": "4.1.17",
     "typescript": "5.9.3",
-    "vitest": "^4.0.18"
+    "vitest": "^4.0.18",
+    "wrangler": "^4.71.0"
   }
 }
