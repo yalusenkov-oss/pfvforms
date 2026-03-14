@@ -45,6 +45,31 @@ function runBackgroundTasks(scriptUrl, cleanPayload, gasJson) {
   } else {
     console.log('[bg] ⚠️ No emailData — email not sent. gasJson keys:', gasJson ? Object.keys(gasJson) : 'null');
   }
+
+  // 2. Trigger GAS background flow for Telegram/payment proof/cover upload
+  if (isDistribution && gasJson?.contractNumber && gasJson?.row) {
+    fetch(scriptUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...cleanPayload,
+        action: 'distribution_background',
+        contractNumber: gasJson.contractNumber,
+        row: gasJson.row,
+        signLink: gasJson.signLink || emailData?.signLink || cleanPayload.signLink || '',
+      }),
+      redirect: 'follow',
+    })
+      .then(async (res) => {
+        const text = await res.text();
+        console.log('[bg] distribution_background status:', res.status, '| body:', text.slice(0, 300));
+      })
+      .catch((err) => {
+        console.error('[bg] ❌ distribution_background error:', err.message);
+      });
+  } else if (cleanPayload.formType === 'distribution') {
+    console.log('[bg] ⚠️ Skipping distribution_background: missing contractNumber or row');
+  }
 }
 
 // ═══ CORS helper ═══

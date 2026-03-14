@@ -230,6 +230,7 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
         amount: totalAfterDiscount,
         description: `Дистрибуция PFVMUSIC — ${tariff}, ${releaseType}`,
         email: data.email || '',
+        returnUrl: `${window.location.origin}${window.location.pathname}?paymentComplete=true#distribution`,
         metadata: {
           tariff,
           releaseType,
@@ -735,4 +736,3 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
     </div>
   );
 }
-

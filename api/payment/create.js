@@ -30,6 +30,23 @@ function calculateExpectedPrice(metadata) {
   // Note: promo discount applied client-side — we verify pre-discount base is plausible
 }
 
+function normalizeReturnUrl(candidate, fallback) {
+  if (!candidate || typeof candidate !== 'string') return fallback;
+
+  try {
+    const url = new URL(candidate);
+    const isAllowedOrigin =
+      ALLOWED_ORIGINS.includes(url.origin) ||
+      /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(url.origin);
+
+    if (!isAllowedOrigin) return fallback;
+
+    return url.toString();
+  } catch {
+    return fallback;
+  }
+}
+
 // ═══ CORS helper ═══
 const ALLOWED_ORIGINS = ['https://pfvmusic.digital', 'https://www.pfvmusic.digital'];
 function getCorsOrigin(requestOrigin) {
@@ -64,7 +81,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { amount, description, metadata, email } = req.body;
+    const { amount, description, metadata, email, returnUrl } = req.body;
 
     if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
       return res.status(400).json({ success: false, error: 'Invalid amount' });
@@ -84,6 +101,11 @@ export default async function handler(req, res) {
       }
     }
 
+    const resolvedReturnUrl = normalizeReturnUrl(
+      returnUrl,
+      `${returnBaseUrl}/?paymentComplete=true#distribution`
+    );
+
     // Idempotence key to prevent duplicate payments
     const idempotenceKey = crypto.randomUUID();
 
@@ -94,7 +116,7 @@ export default async function handler(req, res) {
       },
       confirmation: {
         type: 'redirect',
-        return_url: `${returnBaseUrl}?paymentComplete=true#distribution`,
+        return_url: resolvedReturnUrl,
       },
       capture: true, // Auto-capture (one-stage payment)
       description: description || 'Оплата дистрибуции PFVMUSIC',
