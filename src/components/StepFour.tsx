@@ -718,8 +718,16 @@ export function StepFour({ data, onChange, preloadedPromoCodes, promoCodesReady,
                       </>
                     )}
                   </button>
+                  <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-left">
+                    <p className="text-sm font-semibold text-amber-900">
+                      Важно: после успешной оплаты обязательно нажмите в ЮKassa кнопку «Вернуться на сайт».
+                    </p>
+                    <p className="mt-1 text-xs text-amber-800">
+                      Без возврата на сайт оформление заявки не завершится автоматически, и мы не сможем продолжить обработку формы.
+                    </p>
+                  </div>
                   <p className="text-[11px] text-gray-400 text-center mt-2">
-                    Вы будете перенаправлены на страницу оплаты ЮKassa
+                    Вы будете перенаправлены на страницу оплаты ЮKassa. После оплаты вернитесь обратно на сайт, чтобы завершить отправку формы.
                   </p>
                 </>
               )}
