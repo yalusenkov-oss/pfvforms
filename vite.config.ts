@@ -5,6 +5,8 @@ import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv } from "vite";
 import { viteSingleFile } from "vite-plugin-singlefile";
 
+import { cloudflare } from "@cloudflare/vite-plugin";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -22,7 +24,7 @@ export default defineConfig(({ command, mode }) => {
     }, {} as Record<string, string>);
 
   return {
-    plugins: [react(), tailwindcss(), viteSingleFile()],
+    plugins: [react(), tailwindcss(), viteSingleFile(), cloudflare()],
     server: {
       proxy: {
         '/api': {
