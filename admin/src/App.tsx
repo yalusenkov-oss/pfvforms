@@ -154,7 +154,7 @@ export function App() {
   const loadRemote = useCallback(async () => {
     if (!authed) return;
     try {
-      const rows = await fetchSheetRows('distributions');
+      const rows = await fetchSheetRows('distributions', { limit: 300 });
       const distCount = Array.isArray(rows) ? rows.length : 0;
       const mapped = (Array.isArray(rows) ? rows : []).map((r: any, idx: number) => ({
         id: String(r.id || r.ID || r.contract_number || `remote-${idx}`),
@@ -209,7 +209,7 @@ export function App() {
       // Sync localStorage with fresh remote data so cache is always up-to-date
       try { localStorage.setItem('pfvmusic_distributions', JSON.stringify(finalMapped)); } catch {}
 
-      const promoRows = await fetchSheetRows('promos');
+      const promoRows = await fetchSheetRows('promos', { limit: 300 });
       const promoCount = Array.isArray(promoRows) ? promoRows.length : 0;
       const mappedPromos = (Array.isArray(promoRows) ? promoRows : []).map((p: any, idx: number) => ({
         id: p.id || p.ID || `remote-promo-${idx}`,

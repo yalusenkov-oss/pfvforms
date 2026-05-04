@@ -1489,6 +1489,12 @@ function sendPendingNotifications() {
 }
 
 function listSheetRows(sheetParam, limit) {
+  // Use a hard cap to avoid reading the entire sheet at once —
+  // getDataRange().getValues() on a large sheet throws
+  // "The document cannot be modified. Perhaps it has grown too large?"
+  const DEFAULT_MAX_ROWS = 500;
+  const effectiveLimit = (limit && limit > 0) ? Math.min(limit, DEFAULT_MAX_ROWS) : DEFAULT_MAX_ROWS;
+
   const normalized = String(sheetParam || '').toLowerCase().trim();
   let sheetName = sheetParam;
   let sheetType = 'unknown';
@@ -1505,39 +1511,42 @@ function listSheetRows(sheetParam, limit) {
   }
 
   const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(sheetName);
-  if (!sheet) throw new Error('Sheet "' + sheetName + '" not found');
+  // Return empty array if sheet doesn't exist yet instead of throwing
+  if (!sheet) return [];
 
-  const data = sheet.getDataRange().getValues();
-  if (!data || data.length < 2) return [];
+  const lastRow = sheet.getLastRow();
+  const lastCol = sheet.getLastColumn();
+  if (!lastRow || lastRow < 2 || !lastCol) return [];
 
-  const headers = data[0];
-  let rows = data.slice(1);
-  if (limit && limit > 0) rows = rows.slice(-limit);
-  const startRow = data.length - rows.length + 1;
+  // Read header row and only the last effectiveLimit data rows
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  const startDataRow = Math.max(2, lastRow - effectiveLimit + 1);
+  const readCount = lastRow - startDataRow + 1;
+  const rows = sheet.getRange(startDataRow, 1, readCount, lastCol).getValues();
 
   if (sheetType === 'distribution') {
     return rows.map((r, idx) => {
       const obj = mapDistributionRow(headers, r);
-      obj._row = startRow + idx;
+      obj._row = startDataRow + idx; // actual spreadsheet row number
       return obj;
     });
   }
   if (sheetType === 'promo') {
     return rows.map((r, idx) => {
       const obj = mapPromoRow(headers, r);
-      obj._row = startRow + idx;
+      obj._row = startDataRow + idx;
       return obj;
     });
   }
   if (sheetType === 'promocodes') {
     return rows.map((r, idx) => {
       const obj = mapPromoCodeRow(headers, r);
-      obj._row = startRow + idx;
+      obj._row = startDataRow + idx;
       return obj;
     });
   }
 
-  return rows.map((r, idx) => ({ index: startRow + idx, values: r }));
+  return rows.map((r, idx) => ({ index: startDataRow + idx, values: r }));
 }
 
 function mapDistributionRow(headers, row) {

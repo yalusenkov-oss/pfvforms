@@ -50,8 +50,7 @@ function initializeSheets() {
       'Цена караоке',         // AA
       'Итого'                 // AB
     ]]);
-    // Форматируем заголовки
-    distributionSheet.getRange(1, 1, 1, 28).setFontWeight('bold').setBackground('#f0f0f0');
+    try { distributionSheet.getRange(1, 1, 1, 28).setFontWeight('bold').setBackground('#f0f0f0'); } catch(fe) { Logger.log('Format warning: ' + fe); }
     Logger.log('Created sheet: ' + DISTRIBUTION_SHEET_NAME);
   }
   
@@ -77,8 +76,7 @@ function initializeSheets() {
       'Контакты',             // N
       'status'                // O
     ]]);
-    // Форматируем заголовки
-    promoSheet.getRange(1, 1, 1, 15).setFontWeight('bold').setBackground('#f0f0f0');
+    try { promoSheet.getRange(1, 1, 1, 15).setFontWeight('bold').setBackground('#f0f0f0'); } catch(fe) { Logger.log('Format warning: ' + fe); }
     Logger.log('Created sheet: ' + PROMO_SHEET_NAME);
   }
 
@@ -101,7 +99,7 @@ function initializeSheets() {
       'created_at',             // L
       'description'             // M
     ]]);
-    promoCodesSheet.getRange(1, 1, 1, 13).setFontWeight('bold').setBackground('#f0f0f0');
+    try { promoCodesSheet.getRange(1, 1, 1, 13).setFontWeight('bold').setBackground('#f0f0f0'); } catch(fe) { Logger.log('Format warning: ' + fe); }
     Logger.log('Created sheet: ' + PROMO_CODES_SHEET_NAME);
   }
 }
@@ -248,7 +246,11 @@ function doGet(e) {
 // Чтение строк для админ-панели
 // ═══════════════════════════════════════════════════════════════════════════
 function listSheetRows(sheetParam, limit) {
-  initializeSheets();
+  // Do NOT call initializeSheets() here — it performs write operations that
+  // fail with "document cannot be modified / too large" when reading.
+
+  const DEFAULT_MAX_ROWS = 500;
+  const effectiveLimit = (limit && limit > 0) ? Math.min(limit, DEFAULT_MAX_ROWS) : DEFAULT_MAX_ROWS;
 
   const normalized = String(sheetParam || '').toLowerCase().trim();
   let sheetName = sheetParam;
@@ -266,42 +268,45 @@ function listSheetRows(sheetParam, limit) {
 
   const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(sheetName);
   if (!sheet) {
-    throw new Error('Sheet "' + sheetName + '" not found');
+    // Sheet doesn't exist yet — return empty instead of throwing
+    return [];
   }
 
-  const data = sheet.getDataRange().getValues();
-  if (!data || data.length < 2) return [];
+  const lastRow = sheet.getLastRow();
+  const lastCol = sheet.getLastColumn();
+  if (!lastRow || lastRow < 2 || !lastCol) return [];
 
-  let rows = data.slice(1);
-  if (limit && limit > 0) {
-    rows = rows.slice(-limit);
-  }
+  // Read only the last effectiveLimit data rows to avoid loading huge datasets
+  const startDataRow = Math.max(2, lastRow - effectiveLimit + 1);
+  const readCount = lastRow - startDataRow + 1;
+
+  const rows = sheet.getRange(startDataRow, 1, readCount, lastCol).getValues();
 
   if (sheetType === 'distribution') {
     return rows.map(function(row, idx) {
       const obj = mapDistributionRow(row);
-      obj._row = idx + 2;
+      obj._row = startDataRow + idx; // actual spreadsheet row number
       return obj;
     });
   }
   if (sheetType === 'promo') {
     return rows.map(function(row, idx) {
       const obj = mapPromoRow(row);
-      obj._row = idx + 2;
+      obj._row = startDataRow + idx;
       return obj;
     });
   }
   if (sheetType === 'promocodes') {
     return rows.map(function(row, idx) {
       const obj = mapPromoCodeRow(row);
-      obj._row = idx + 2;
+      obj._row = startDataRow + idx;
       return obj;
     });
   }
 
   // Fallback: return objects with numeric keys
   return rows.map(function(row, idx) {
-    return { index: idx + 1, values: row };
+    return { index: startDataRow + idx, values: row };
   });
 }
 
