@@ -416,6 +416,19 @@ function logWebRequest(method, e) {
 // ═══════════════════════════════════════════════════════════════════════════
 // Сохранение данных
 // ═══════════════════════════════════════════════════════════════════════════
+
+// Lightweight sheet accessor — creates+sets up sheet only if missing,
+// avoids running the expensive migrateDistributionSheet() migration.
+function getOrCreateSheet(sheetName, setupFn) {
+  var spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = spreadsheet.getSheetByName(sheetName);
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet(sheetName);
+    if (setupFn) setupFn(sheet);
+  }
+  return sheet;
+}
+
 function saveDistribution(data) {
   try {
     initializeSheets();
@@ -685,9 +698,7 @@ function processDistributionBackground(data) {
 
 function savePromo(data) {
   try {
-    initializeSheets();
-    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(PROMO_SHEET_NAME);
-    if (!sheet) throw new Error('Sheet "' + PROMO_SHEET_NAME + '" not found');
+    const sheet = getOrCreateSheet(PROMO_SHEET_NAME, setupPromoSheet);
 
     const row = [
       new Date(data.timestamp || new Date()),
@@ -741,11 +752,11 @@ function savePromo(data) {
 
 function savePromoCode(data) {
   try {
-    initializeSheets();
-    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(PROMO_CODES_SHEET_NAME);
-    if (!sheet) throw new Error('Sheet "' + PROMO_CODES_SHEET_NAME + '" not found');
+    const sheet = getOrCreateSheet(PROMO_CODES_SHEET_NAME, setupPromoCodesSheet);
 
-    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const lastCol = sheet.getLastColumn();
+    if (!lastCol) throw new Error('Promo codes sheet has no columns — run setupPromoCodesSheet first');
+    const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
     const id = data.id || ('PC-' + Math.random().toString(36).substring(2, 8).toUpperCase());
     const existingRow = findRowById(sheet, headers, id);
 
@@ -793,9 +804,7 @@ function savePromoCode(data) {
 
 function deletePromoCode(data) {
   try {
-    initializeSheets();
-    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(PROMO_CODES_SHEET_NAME);
-    if (!sheet) throw new Error('Sheet "' + PROMO_CODES_SHEET_NAME + '" not found');
+    const sheet = getOrCreateSheet(PROMO_CODES_SHEET_NAME, setupPromoCodesSheet);
 
     const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
     const id = data.id || '';
@@ -820,9 +829,7 @@ function deletePromoCode(data) {
  */
 function incrementPromoCodeUsage(data) {
   try {
-    initializeSheets();
-    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(PROMO_CODES_SHEET_NAME);
-    if (!sheet) throw new Error('Sheet "' + PROMO_CODES_SHEET_NAME + '" not found');
+    const sheet = getOrCreateSheet(PROMO_CODES_SHEET_NAME, setupPromoCodesSheet);
 
     const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
     const codeCol = headers.indexOf('code');

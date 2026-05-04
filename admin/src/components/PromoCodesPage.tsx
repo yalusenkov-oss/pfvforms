@@ -243,6 +243,10 @@ export function PromoCodesPage() {
       return;
     }
 
+    setShowForm(false);
+    setEditingId(null);
+    setForm(emptyForm);
+
     if (editingId) {
       const payload = {
         id: editingId,
@@ -256,13 +260,18 @@ export function PromoCodesPage() {
         validUntil: form.validUntil,
         description: form.description.trim(),
       };
-      // Optimistic update for edit
+      const before = codes;
       const updated = codes.map(c => c.id === editingId ? { ...c, ...payload } : c);
       setCodes(updated);
       _codesCache = updated;
-      upsertPromoCode(payload)
-        .then(() => fetchRemote(true))
-        .catch(() => fetchRemote(true));
+      const ok = await upsertPromoCode(payload).catch(() => false);
+      if (!ok) {
+        alert('Ошибка сохранения промокода. Проверьте соединение и попробуйте снова.');
+        setCodes(before);
+        _codesCache = before;
+      } else {
+        fetchRemote(true);
+      }
     } else {
       const newCode: PromoCode = {
         id: generatePromoId(),
@@ -279,18 +288,19 @@ export function PromoCodesPage() {
         createdAt: new Date().toISOString(),
         description: form.description.trim(),
       };
-      // Optimistic add — show immediately at top
+      const before = codes;
       const updated = [newCode, ...codes];
       setCodes(updated);
       _codesCache = updated;
-      upsertPromoCode(newCode)
-        .then(() => fetchRemote(true))
-        .catch(() => fetchRemote(true));
+      const ok = await upsertPromoCode(newCode).catch(() => false);
+      if (!ok) {
+        alert('Ошибка сохранения промокода. Проверьте соединение и попробуйте снова.');
+        setCodes(before);
+        _codesCache = before;
+      } else {
+        fetchRemote(true);
+      }
     }
-
-    setShowForm(false);
-    setEditingId(null);
-    setForm(emptyForm);
   };
 
   const toggleTariff = (tariff: 'basic' | 'advanced' | 'premium' | 'platinum') => {

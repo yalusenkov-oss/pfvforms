@@ -24,11 +24,12 @@ export function PromoList({ promos, onView, onDelete, onStatusChange }: PromoLis
   const [statusDropdown, setStatusDropdown] = useState<string | null>(null);
 
   const filtered = promos.filter(p => {
-    const title = p.type === 'detailed' ? (p as DetailedPromoData).artistAndTitle || p.upc : p.upc;
-    const matchSearch =
-      title.toLowerCase().includes(search.toLowerCase()) ||
-      p.id.toLowerCase().includes(search.toLowerCase()) ||
-      p.genre.toLowerCase().includes(search.toLowerCase());
+    const title = (p.type === 'detailed' ? (p as DetailedPromoData).artistAndTitle || p.upc : p.upc) || '';
+    const q = search.toLowerCase();
+    const matchSearch = !search ||
+      title.toLowerCase().includes(q) ||
+      (p.id || '').toLowerCase().includes(q) ||
+      (p.genre || '').toLowerCase().includes(q);
     const matchStatus = filterStatus === 'all' || p.status === filterStatus;
     const matchType = filterType === 'all' || p.type === filterType;
     return matchSearch && matchStatus && matchType;
