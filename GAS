@@ -351,7 +351,6 @@ function doGet(e) {
 
   if (e.parameter.action === 'list') {
     try {
-      logWebRequest('GET', e);
       const sheetParam = e.parameter.sheet || '';
       const limit = e.parameter.limit ? parseInt(String(e.parameter.limit), 10) : null;
       const rows = listSheetRows(sheetParam, limit);
@@ -1490,8 +1489,6 @@ function sendPendingNotifications() {
 }
 
 function listSheetRows(sheetParam, limit) {
-  initializeSheets();
-
   const normalized = String(sheetParam || '').toLowerCase().trim();
   let sheetName = sheetParam;
   let sheetType = 'unknown';
@@ -1516,30 +1513,31 @@ function listSheetRows(sheetParam, limit) {
   const headers = data[0];
   let rows = data.slice(1);
   if (limit && limit > 0) rows = rows.slice(-limit);
+  const startRow = data.length - rows.length + 1;
 
   if (sheetType === 'distribution') {
     return rows.map((r, idx) => {
       const obj = mapDistributionRow(headers, r);
-      obj._row = idx + 2;
+      obj._row = startRow + idx;
       return obj;
     });
   }
   if (sheetType === 'promo') {
     return rows.map((r, idx) => {
       const obj = mapPromoRow(headers, r);
-      obj._row = idx + 2;
+      obj._row = startRow + idx;
       return obj;
     });
   }
   if (sheetType === 'promocodes') {
     return rows.map((r, idx) => {
       const obj = mapPromoCodeRow(headers, r);
-      obj._row = idx + 2;
+      obj._row = startRow + idx;
       return obj;
     });
   }
 
-  return rows.map((r, idx) => ({ index: idx + 1, values: r }));
+  return rows.map((r, idx) => ({ index: startRow + idx, values: r }));
 }
 
 function mapDistributionRow(headers, row) {

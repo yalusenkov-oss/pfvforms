@@ -22,6 +22,12 @@ function parseJsonSafe(text: string): any {
   return JSON.parse(text);
 }
 
+function throwScriptError(json: any): void {
+  if (json && json.success === false) {
+    throw new Error(json.error || json.message || 'Google Apps Script returned success=false');
+  }
+}
+
 export async function fetchSheetRows(sheetName: string, options: { limit?: number } = {}): Promise<SheetRow[] | null> {
   const params = new URLSearchParams();
   params.set('sheet', sheetName);
@@ -41,6 +47,8 @@ export async function fetchSheetRows(sheetName: string, options: { limit?: numbe
     } catch (e) {
       throw new Error(`Response was not valid JSON: ${text.slice(0, 300)}`);
     }
+
+    throwScriptError(json);
 
     // Accept either raw array or { rows: [...] } shape
     if (Array.isArray(json)) return json as SheetRow[];
@@ -147,6 +155,8 @@ export async function fetchPromoCodes(): Promise<any[] | null> {
     } catch {
       throw new Error(`Response was not valid JSON: ${text.slice(0, 300)}`);
     }
+
+    throwScriptError(json);
 
     if (Array.isArray(json)) return json;
     if (json && Array.isArray(json.rows)) return json.rows;
