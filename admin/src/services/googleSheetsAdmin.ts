@@ -166,20 +166,20 @@ export async function fetchPromoCodes(): Promise<any[] | null> {
   }
 }
 
-export async function upsertPromoCode(promoData: Record<string, any>): Promise<boolean> {
-  try {
-    const res = await fetchViaProxyPost('/api/submit', {
-      formType: 'promo_code',
-      ...promoData,
-    });
+export async function upsertPromoCode(promoData: Record<string, any>): Promise<true> {
+  const res = await fetchViaProxyPost('/api/submit', {
+    formType: 'promo_code',
+    ...promoData,
+  });
 
-    const text = await res.text();
-    const json = parseJsonSafe(text);
-    return json?.success || !!json?.status;
-  } catch (err) {
-    console.error('upsertPromoCode error:', err);
-    return false;
-  }
+  const text = await res.text();
+  let json: any = {};
+  try { json = text ? JSON.parse(text) : {}; } catch { /* non-JSON response */ }
+
+  if (json?.success || json?.status) return true;
+
+  const msg = json?.error || json?.message || (text ? text.slice(0, 200) : `HTTP ${res.status}`);
+  throw new Error(msg);
 }
 
 export async function deletePromoCodeRemote(id: string): Promise<boolean> {

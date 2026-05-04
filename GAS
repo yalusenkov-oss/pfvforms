@@ -425,6 +425,9 @@ function getOrCreateSheet(sheetName, setupFn) {
   if (!sheet) {
     sheet = spreadsheet.insertSheet(sheetName);
     if (setupFn) setupFn(sheet);
+  } else if (setupFn && sheet.getLastColumn() === 0) {
+    // Sheet exists but has no headers — set it up
+    setupFn(sheet);
   }
   return sheet;
 }
@@ -755,8 +758,7 @@ function savePromoCode(data) {
     const sheet = getOrCreateSheet(PROMO_CODES_SHEET_NAME, setupPromoCodesSheet);
 
     const lastCol = sheet.getLastColumn();
-    if (!lastCol) throw new Error('Promo codes sheet has no columns — run setupPromoCodesSheet first');
-    const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    const headers = lastCol > 0 ? sheet.getRange(1, 1, 1, lastCol).getValues()[0] : [];
     const id = data.id || ('PC-' + Math.random().toString(36).substring(2, 8).toUpperCase());
     const existingRow = findRowById(sheet, headers, id);
 

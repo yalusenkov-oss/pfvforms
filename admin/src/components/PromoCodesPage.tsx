@@ -264,13 +264,13 @@ export function PromoCodesPage() {
       const updated = codes.map(c => c.id === editingId ? { ...c, ...payload } : c);
       setCodes(updated);
       _codesCache = updated;
-      const ok = await upsertPromoCode(payload).catch(() => false);
-      if (!ok) {
-        alert('Ошибка сохранения промокода. Проверьте соединение и попробуйте снова.');
+      try {
+        await upsertPromoCode(payload);
+        fetchRemote(true);
+      } catch (err: any) {
+        alert('Ошибка сохранения промокода:\n' + (err?.message || String(err)));
         setCodes(before);
         _codesCache = before;
-      } else {
-        fetchRemote(true);
       }
     } else {
       const newCode: PromoCode = {
@@ -292,13 +292,13 @@ export function PromoCodesPage() {
       const updated = [newCode, ...codes];
       setCodes(updated);
       _codesCache = updated;
-      const ok = await upsertPromoCode(newCode).catch(() => false);
-      if (!ok) {
-        alert('Ошибка сохранения промокода. Проверьте соединение и попробуйте снова.');
+      try {
+        await upsertPromoCode(newCode);
+        fetchRemote(true);
+      } catch (err: any) {
+        alert('Ошибка сохранения промокода:\n' + (err?.message || String(err)));
         setCodes(before);
         _codesCache = before;
-      } else {
-        fetchRemote(true);
       }
     }
   };
