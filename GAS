@@ -119,45 +119,37 @@ function migrateDistributionSheet(sheet) {
     ? sheet.getRange(1, 1, 1, lastCol).getValues()[0]
     : [];
 
-  // Строим карту текущих заголовков → индекс (1-based)
-  var headerMap = {};
+  // Build set of existing header names
+  var existing = {};
   for (var i = 0; i < currentHeaders.length; i++) {
-    if (currentHeaders[i]) headerMap[String(currentHeaders[i]).trim()] = i + 1;
+    if (currentHeaders[i]) existing[String(currentHeaders[i]).trim()] = true;
   }
 
-  // Проходим по ожидаемым заголовкам и вставляем недостающие
+  // Append missing columns at the END — never insert in the middle.
+  // insertColumnBefore() shifts all cell data which fails on large sheets.
+  // rowToObject() reads by column name, so column order doesn't matter.
+  var missing = [];
   for (var ei = 0; ei < expectedHeaders.length; ei++) {
-    var expectedCol = ei + 1; // 1-based позиция в ожидаемой схеме
-    var colName = expectedHeaders[ei];
-
-    if (!headerMap[colName]) {
-      // Колонки нет — вставляем на нужную позицию
-      var insertAt = expectedCol;
-      if (insertAt > sheet.getLastColumn() + 1) {
-        insertAt = sheet.getLastColumn() + 1;
-      }
-      sheet.insertColumnBefore(insertAt);
-      sheet.getRange(1, insertAt).setValue(colName);
-      // Обновляем headerMap со сдвигом
-      var newHeaderMap = {};
-      for (var key in headerMap) {
-        newHeaderMap[key] = headerMap[key] >= insertAt ? headerMap[key] + 1 : headerMap[key];
-      }
-      newHeaderMap[colName] = insertAt;
-      headerMap = newHeaderMap;
-      Logger.log('migrateDistributionSheet: inserted column "' + colName + '" at position ' + insertAt);
-    }
+    if (!existing[expectedHeaders[ei]]) missing.push(expectedHeaders[ei]);
   }
 
-  // Применяем стили к строке заголовков
+  if (missing.length > 0) {
+    var nextCol = sheet.getLastColumn() + 1;
+    sheet.getRange(1, nextCol, 1, missing.length).setValues([missing]);
+    Logger.log('migrateDistributionSheet: appended columns: ' + missing.join(', '));
+  }
+
+  // Apply header row styling
   var totalCols = sheet.getLastColumn();
-  var headerRange = sheet.getRange(1, 1, 1, totalCols);
-  headerRange.setFontWeight('bold');
-  headerRange.setBackground('#4A90E2');
-  headerRange.setFontColor('#FFFFFF');
-  headerRange.setHorizontalAlignment('center');
-  headerRange.setVerticalAlignment('middle');
-  headerRange.setWrap(true);
+  if (totalCols > 0) {
+    var headerRange = sheet.getRange(1, 1, 1, totalCols);
+    headerRange.setFontWeight('bold');
+    headerRange.setBackground('#4A90E2');
+    headerRange.setFontColor('#FFFFFF');
+    headerRange.setHorizontalAlignment('center');
+    headerRange.setVerticalAlignment('middle');
+    headerRange.setWrap(true);
+  }
   sheet.setFrozenRows(1);
   Logger.log('migrateDistributionSheet: done. Total columns: ' + totalCols);
 }
