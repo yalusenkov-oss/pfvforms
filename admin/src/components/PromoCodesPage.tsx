@@ -260,7 +260,9 @@ export function PromoCodesPage() {
       const updated = codes.map(c => c.id === editingId ? { ...c, ...payload } : c);
       setCodes(updated);
       _codesCache = updated;
-      upsertPromoCode(payload).catch(() => fetchRemote(true));
+      upsertPromoCode(payload)
+        .then(() => fetchRemote(true))
+        .catch(() => fetchRemote(true));
     } else {
       const newCode: PromoCode = {
         id: generatePromoId(),
@@ -281,7 +283,9 @@ export function PromoCodesPage() {
       const updated = [newCode, ...codes];
       setCodes(updated);
       _codesCache = updated;
-      upsertPromoCode(newCode).catch(() => fetchRemote(true));
+      upsertPromoCode(newCode)
+        .then(() => fetchRemote(true))
+        .catch(() => fetchRemote(true));
     }
 
     setShowForm(false);

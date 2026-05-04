@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Filter, Disc3, Trash2, Eye, ChevronDown, FileText, Copy, Check } from 'lucide-react';
+import { Search, Filter, Disc3, Trash2, Eye, ChevronDown, FileText, Copy, Check, AlertCircle, Mic2 } from 'lucide-react';
 import { DistributionData, TARIFF_LABELS, RELEASE_TYPE_LABELS, STATUS_LABELS, STATUS_COLORS } from '../types';
 import { cn } from '../utils/cn';
 import { copyToClipboard } from '../utils/clipboard';
@@ -8,7 +8,7 @@ interface DistributionListProps {
   distributions: DistributionData[];
   onView: (id: string) => void;
   onDelete: (id: string) => void;
-  onStatusChange: (id: string, status: DistributionData['status']) => void;
+  onStatusChange: (id: string, status: DistributionData['status'], rejectionReason?: string) => void;
   onGenerateContract?: (id: string) => void;
   onCreateSignLink?: (id: string) => Promise<string | null>;
 }
@@ -21,7 +21,7 @@ function formatPrice(p: number) {
   return p.toLocaleString('ru-RU') + ' ₽';
 }
 
-const ALL_STATUSES: DistributionData['status'][] = ['new', 'in_progress', 'paid', 'signed', 'released', 'rejected'];
+const ALL_STATUSES: DistributionData['status'][] = ['new', 'in_progress', 'moderation', 'approved', 'signed', 'released', 'rejected'];
 
 export function DistributionList({ distributions, onView, onDelete, onStatusChange, onGenerateContract, onCreateSignLink }: DistributionListProps) {
   const [search, setSearch] = useState('');
@@ -213,22 +213,40 @@ export function DistributionList({ distributions, onView, onDelete, onStatusChan
                   </td>
                   <td className="px-4 py-3">
                     <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() => setStatusDropdown(statusDropdown === d.id ? null : d.id)}
-                        className={cn('text-xs px-2 py-0.5 rounded-full border flex items-center gap-1 cursor-pointer hover:opacity-80', STATUS_COLORS[d.status])}
-                      >
-                        {STATUS_LABELS[d.status]}
-                        <ChevronDown size={12} />
-                      </button>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <button
+                          type="button"
+                          onClick={() => setStatusDropdown(statusDropdown === d.id ? null : d.id)}
+                          className={cn('text-xs px-2 py-0.5 rounded-full border flex items-center gap-1 cursor-pointer hover:opacity-80', STATUS_COLORS[d.status] || 'bg-dark-700 text-dark-400 border-dark-600')}
+                        >
+                          {STATUS_LABELS[d.status] || d.status}
+                          <ChevronDown size={12} />
+                        </button>
+                        {d.karaokeNeeded && (
+                          <span title="Необходимо создать караоке" className="text-purple-400">
+                            <Mic2 size={13} />
+                          </span>
+                        )}
+                      </div>
+                      {d.status === 'rejected' && d.rejectionReason && (
+                        <p className="text-[10px] text-red-400/80 flex items-center gap-1 mt-0.5">
+                          <AlertCircle size={10} />
+                          {d.rejectionReason}
+                        </p>
+                      )}
                       {statusDropdown === d.id && (
-                        <div className="absolute z-20 top-full mt-1 left-0 bg-dark-800 border border-dark-600 rounded-lg shadow-xl py-1 min-w-[140px]">
+                        <div className="absolute z-20 top-full mt-1 left-0 bg-dark-800 border border-dark-600 rounded-lg shadow-xl py-1 min-w-[200px]">
                           {ALL_STATUSES.map(s => (
                             <button
                               type="button"
                               key={s}
                               onClick={() => {
-                                onStatusChange(d.id, s);
+                                if (s === 'rejected') {
+                                  const reason = prompt('Укажите причину отклонения:') || '';
+                                  onStatusChange(d.id, s, reason);
+                                } else {
+                                  onStatusChange(d.id, s);
+                                }
                                 setStatusDropdown(null);
                               }}
                               className={cn(

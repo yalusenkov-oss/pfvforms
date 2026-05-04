@@ -1,4 +1,4 @@
-import { ArrowLeft, Disc3, FileText, Music2, ExternalLink, ChevronDown, Copy, Check, Send, Download } from 'lucide-react';
+import { ArrowLeft, Disc3, FileText, Music2, ExternalLink, ChevronDown, Copy, Check, Send, Download, AlertCircle, Mic2 } from 'lucide-react';
 import { useState } from 'react';
 import { DistributionData, TARIFF_LABELS, RELEASE_TYPE_LABELS, STATUS_LABELS, STATUS_COLORS, PRICES, KARAOKE_PRICES, VIDEOSHOT_PRICE } from '../types';
 import { cn } from '../utils/cn';
@@ -8,12 +8,13 @@ import { copyToClipboard } from '../utils/clipboard';
 interface DistributionDetailProps {
   data: DistributionData;
   onBack: () => void;
-  onStatusChange: (id: string, status: DistributionData['status']) => void;
+  onStatusChange: (id: string, status: DistributionData['status'], rejectionReason?: string) => void;
+  onKaraokeToggle?: (id: string, karaokeNeeded: boolean) => void;
   onGenerateContract?: (id: string) => void;
   onCreateSignLink?: (id: string) => void;
 }
 
-const ALL_STATUSES: DistributionData['status'][] = ['new', 'in_progress', 'paid', 'signed', 'released', 'rejected'];
+const ALL_STATUSES: DistributionData['status'][] = ['new', 'in_progress', 'moderation', 'approved', 'signed', 'released', 'rejected'];
 
 function InfoRow({ label, value, mono, link }: { label: string; value: string; mono?: boolean; link?: boolean }) {
   const [copied, setCopied] = useState(false);
@@ -71,7 +72,7 @@ function formatPrice(p: number) {
   return p.toLocaleString('ru-RU') + ' ₽';
 }
 
-export function DistributionDetail({ data, onBack, onStatusChange, onGenerateContract, onCreateSignLink }: DistributionDetailProps) {
+export function DistributionDetail({ data, onBack, onStatusChange, onKaraokeToggle, onGenerateContract, onCreateSignLink }: DistributionDetailProps) {
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const tracks = Array.isArray(data.tracks) ? data.tracks : [];
   const trackCount = tracks.length || 1;
@@ -90,7 +91,7 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
     setEmailSuccess('');
     setEmailError('');
     try {
-      const res = await createSignLink(data.contractNumber, data.rowIndex, {
+      const res = await createSignLink(data.contractNumber ?? '', data.rowIndex, {
         forceRegenerate: false,
       });
       if (!res?.success) throw new Error('Не удалось отправить письмо');
@@ -224,13 +225,18 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
             <ChevronDown size={14} />
           </button>
           {showStatusMenu && (
-            <div className="absolute z-50 top-full mt-2 left-0 w-full min-w-[180px] bg-dark-800 border border-dark-600 rounded-lg shadow-2xl py-1 ring-1 ring-black/30">
+            <div className="absolute z-50 top-full mt-2 left-0 w-full min-w-[220px] bg-dark-800 border border-dark-600 rounded-lg shadow-2xl py-1 ring-1 ring-black/30">
               {ALL_STATUSES.map(s => (
                 <button
                   type="button"
                   key={s}
                   onClick={() => {
-                    onStatusChange(data.id, s);
+                    if (s === 'rejected') {
+                      const reason = prompt('Укажите причину отклонения:') || '';
+                      onStatusChange(data.id, s, reason);
+                    } else {
+                      onStatusChange(data.id, s);
+                    }
                     setShowStatusMenu(false);
                   }}
                   className={cn(
@@ -245,6 +251,40 @@ export function DistributionDetail({ data, onBack, onStatusChange, onGenerateCon
           )}
         </div>
         </div>
+      </div>
+
+      {/* Rejection reason banner */}
+      {data.status === 'rejected' && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-start gap-3">
+          <AlertCircle size={18} className="text-red-400 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-red-400">Релиз не прошёл модерацию</p>
+            {data.rejectionReason && (
+              <p className="text-sm text-red-300/80 mt-1">{data.rejectionReason}</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Karaoke needed toggle */}
+      <div className="flex items-center justify-between bg-dark-800/50 border border-dark-700 rounded-xl px-5 py-3">
+        <div className="flex items-center gap-2">
+          <Mic2 size={16} className={data.karaokeNeeded ? 'text-purple-400' : 'text-dark-500'} />
+          <span className="text-sm font-medium text-white">Необходимо создать караоке</span>
+        </div>
+        <button
+          type="button"
+          onClick={() => onKaraokeToggle?.(data.id, !data.karaokeNeeded)}
+          className={cn(
+            'relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none',
+            data.karaokeNeeded ? 'bg-purple-600' : 'bg-dark-600'
+          )}
+        >
+          <span className={cn(
+            'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
+            data.karaokeNeeded ? 'translate-x-6' : 'translate-x-1'
+          )} />
+        </button>
       </div>
 
       {/* Price summary */}

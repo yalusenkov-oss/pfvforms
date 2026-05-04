@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Megaphone, ChevronDown, Copy, Check, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Megaphone, ChevronDown, Copy, Check, ExternalLink, AlertCircle } from 'lucide-react';
 import { PromoData, DetailedPromoData, WeeklyPromoData, STATUS_LABELS, STATUS_COLORS } from '../types';
 import { cn } from '../utils/cn';
 import { copyToClipboard } from '../utils/clipboard';
@@ -7,10 +7,10 @@ import { copyToClipboard } from '../utils/clipboard';
 interface PromoDetailProps {
   data: PromoData;
   onBack: () => void;
-  onStatusChange: (id: string, status: PromoData['status']) => void;
+  onStatusChange: (id: string, status: PromoData['status'], rejectionReason?: string) => void;
 }
 
-const ALL_STATUSES: PromoData['status'][] = ['new', 'in_progress', 'done', 'rejected'];
+const ALL_STATUSES: PromoData['status'][] = ['new', 'in_progress', 'moderation', 'approved', 'done', 'rejected'];
 
 function InfoRow({ label, value, link }: { label: string; value: string; link?: boolean }) {
   const [copied, setCopied] = useState(false);
@@ -88,12 +88,17 @@ export function PromoDetail({ data, onBack, onStatusChange }: PromoDetailProps) 
             <ChevronDown size={14} />
           </button>
           {showStatusMenu && (
-            <div className="absolute z-50 top-full mt-2 left-0 w-full min-w-[180px] bg-dark-800 border border-dark-600 rounded-lg shadow-2xl py-1 ring-1 ring-black/30">
+            <div className="absolute z-50 top-full mt-2 left-0 w-full min-w-[220px] bg-dark-800 border border-dark-600 rounded-lg shadow-2xl py-1 ring-1 ring-black/30">
               {ALL_STATUSES.map(s => (
                 <button
                   key={s}
                   onClick={() => {
-                    onStatusChange(data.id, s);
+                    if (s === 'rejected') {
+                      const reason = prompt('Укажите причину отклонения:') || '';
+                      onStatusChange(data.id, s, reason);
+                    } else {
+                      onStatusChange(data.id, s);
+                    }
                     setShowStatusMenu(false);
                   }}
                   className={cn(
@@ -108,6 +113,19 @@ export function PromoDetail({ data, onBack, onStatusChange }: PromoDetailProps) 
           )}
         </div>
       </div>
+
+      {/* Rejection reason banner */}
+      {data.status === 'rejected' && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-start gap-3">
+          <AlertCircle size={18} className="text-red-400 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-red-400">Релиз не прошёл модерацию</p>
+            {data.rejectionReason && (
+              <p className="text-sm text-red-300/80 mt-1">{data.rejectionReason}</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Info Block */}
       <div className={cn(

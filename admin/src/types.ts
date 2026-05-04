@@ -51,7 +51,9 @@ export interface DistributionData {
   artistProfileLinks: string;
   // Meta
   submittedAt: string;
-  status: 'new' | 'in_progress' | 'paid' | 'signed' | 'released' | 'rejected';
+  status: 'new' | 'in_progress' | 'moderation' | 'approved' | 'paid' | 'signed' | 'released' | 'rejected';
+  rejectionReason?: string;
+  karaokeNeeded?: boolean;
   id: string;
   totalPrice: number;
   contractNumber?: string;
@@ -81,7 +83,8 @@ export interface DetailedPromoData {
   contacts: string;
   submittedAt: string;
   id: string;
-  status: 'new' | 'in_progress' | 'done' | 'rejected';
+  status: 'new' | 'in_progress' | 'moderation' | 'approved' | 'done' | 'rejected';
+  rejectionReason?: string;
   rowIndex?: number;
 }
 
@@ -96,7 +99,8 @@ export interface WeeklyPromoData {
   contacts: string;
   submittedAt: string;
   id: string;
-  status: 'new' | 'in_progress' | 'done' | 'rejected';
+  status: 'new' | 'in_progress' | 'moderation' | 'approved' | 'done' | 'rejected';
+  rejectionReason?: string;
   rowIndex?: number;
 }
 
@@ -147,19 +151,23 @@ export const RELEASE_TYPE_LABELS: Record<string, string> = {
 
 export const STATUS_LABELS: Record<string, string> = {
   new: 'Новый',
-  in_progress: 'В работе',
+  in_progress: 'Обрабатывается',
+  moderation: 'На модерации',
+  approved: 'Модерация пройдена',
   paid: 'Оплачен',
   signed: 'Подписан',
   released: 'Выпущен',
-  rejected: 'Отклонён',
-  done: 'Готово',
+  rejected: 'Релиз не прошёл модерацию',
+  done: 'Выполнено',
 };
 
 export const STATUS_COLORS: Record<string, string> = {
   new: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
   in_progress: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+  moderation: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+  approved: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
   paid: 'bg-green-500/20 text-green-400 border-green-500/30',
-  signed: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+  signed: 'bg-green-500/20 text-green-400 border-green-500/30',
   released: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
   rejected: 'bg-red-500/20 text-red-400 border-red-500/30',
   done: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',

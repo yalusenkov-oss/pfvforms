@@ -83,14 +83,14 @@ function initializeSheets() {
   let promoSheet = spreadsheet.getSheetByName(PROMO_SHEET_NAME);
   if (!promoSheet) {
     promoSheet = spreadsheet.insertSheet(PROMO_SHEET_NAME);
+    setupPromoSheet(promoSheet);
   }
-  setupPromoSheet(promoSheet);
 
   let promoCodesSheet = spreadsheet.getSheetByName(PROMO_CODES_SHEET_NAME);
   if (!promoCodesSheet) {
     promoCodesSheet = spreadsheet.insertSheet(PROMO_CODES_SHEET_NAME);
+    setupPromoCodesSheet(promoCodesSheet);
   }
-  setupPromoCodesSheet(promoCodesSheet);
 }
 
 /**
@@ -107,8 +107,8 @@ function migrateDistributionSheet(sheet) {
     'bank_details', 'email', 'contact', 'artist_profile_links',
     'base_price', 'karaoke_price', 'videoshot_price', 'total_price',
     'payment_proof_url', 'contract_number', 'percentage',
-    'contract_status', 'music_author', 'lyrics_author', 'lyrics_texts',
-    'document_status', 'telegram_status',
+    'contract_status', 'rejection_reason', 'music_author', 'lyrics_author', 'lyrics_texts',
+    'karaoke_needed', 'document_status', 'telegram_status',
     'sign_status', 'sign_token', 'sign_expires_at', 'sign_link',
     'sign_doc_id', 'signed_url', 'signed_at',
     'contract_html', 'sign_source', 'signed_pdf_id', 'platforms', 'tg_contract_msg_id'
@@ -170,7 +170,8 @@ function setupDistributionSheet(sheet) {
     'karaoke', 'videoshot', 'videoshot_link', 'tracks_json', 'licensor_name', 'passport_series_number', 'passport_issued_by',
     'passport_issue_date', 'bank_details', 'email', 'contact', 'artist_profile_links',
     'base_price', 'karaoke_price', 'videoshot_price', 'total_price', 'payment_proof_url', 'contract_number', 'percentage',
-    'contract_status', 'music_author', 'lyrics_author', 'lyrics_texts', 'document_status', 'telegram_status',
+    'contract_status', 'rejection_reason', 'music_author', 'lyrics_author', 'lyrics_texts',
+    'karaoke_needed', 'document_status', 'telegram_status',
     'sign_status', 'sign_token', 'sign_expires_at', 'sign_link', 'sign_doc_id', 'signed_url', 'signed_at',
     'contract_html', 'sign_source', 'signed_pdf_id', 'platforms', 'tg_contract_msg_id'
   ];
@@ -201,7 +202,7 @@ function setupPromoSheet(sheet) {
   const headers = [
     'timestamp', 'Type', 'release_link', 'upc_or_name', 'release_date',
     'genre', 'focus_track', 'additional_info', 'artist_and_title', 'release_description',
-    'artist_info', 'artist_photos', 'social_links', 'contact_info', 'status', 'telegram_status'
+    'artist_info', 'artist_photos', 'social_links', 'contact_info', 'status', 'rejection_reason', 'telegram_status'
   ];
 
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
@@ -505,9 +506,11 @@ function saveDistribution(data) {
       contract_number:         contractNumber,
       percentage:              percentage + '%',
       contract_status:         '',
+      rejection_reason:        '',
       music_author:            musicAuthorValue || '',
       lyrics_author:           lyricsAuthorValue || '',
       lyrics_texts:            collectLyricsFromTracks(tracksArray) || '',
+      karaoke_needed:          false,
       document_status:         '',
       telegram_status:         '',
       sign_status:             'pending',
@@ -701,7 +704,8 @@ function savePromo(data) {
       data.artistPhotos || '',
       data.socialLinks || '',
       data.contactInfo || '',
-      data.status || ''
+      data.status || '',
+      data.rejectionReason || ''
     ];
 
     sheet.appendRow(row);
@@ -1587,8 +1591,10 @@ function mapDistributionRow(headers, row) {
     contractNumber: raw.contract_number || '',
     percentage: raw.percentage || '',
     contractStatus: raw.contract_status || '',
+    rejectionReason: raw.rejection_reason || '',
     musicAuthor: raw.music_author || '',
     lyricsAuthor: raw.lyrics_author || '',
+    karaokeNeeded: normalizeBool(raw.karaoke_needed),
     documentStatus: raw.document_status || '',
     signStatus: raw.sign_status || '',
     signLink: raw.sign_link || '',
@@ -1617,8 +1623,25 @@ function mapPromoRow(headers, row) {
     artistPhotos: raw.artist_photos || '',
     socialLinks: raw.social_links || '',
     contactInfo: raw.contact_info || '',
-    status: raw.status || ''
+    status: normalizePromoStatus(raw.status || ''),
+    rejectionReason: raw.rejection_reason || ''
   };
+}
+
+function normalizePromoStatus(value) {
+  const map = {
+    'Новый': 'new',
+    'Обрабатывается': 'in_progress',
+    'В работе': 'in_progress',
+    'На модерации': 'moderation',
+    'Модерация пройдена': 'approved',
+    'Выполнено': 'done',
+    'Готово': 'done',
+    'Релиз не прошёл модерацию': 'rejected',
+    'Отклонён': 'rejected',
+    'Отклонен': 'rejected'
+  };
+  return map[value] || value || 'new';
 }
 
 function mapPromoCodeRow(headers, row) {

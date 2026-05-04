@@ -11,8 +11,6 @@ import { LoginPage } from './components/LoginPage';
 import { PromoCodesPage } from './components/PromoCodesPage';
 import { AdminTab, DistributionData, PromoData } from './types';
 import {
-  getDistributions,
-  getPromos,
   updateDistributionStatus,
   updateDistributionContractNumber,
   updatePromoStatus,
@@ -102,11 +100,13 @@ export function App() {
   const normalizeStatus = (v: any): DistributionData['status'] => {
     const raw = String(v || '').trim().toLowerCase();
     if (raw === 'new' || raw === 'новый') return 'new';
-    if (raw === 'in_progress' || raw === 'в работе') return 'in_progress';
+    if (raw === 'in_progress' || raw === 'в работе' || raw === 'обрабатывается') return 'in_progress';
+    if (raw === 'moderation' || raw === 'на модерации') return 'moderation';
+    if (raw === 'approved' || raw === 'модерация пройдена') return 'approved';
     if (raw === 'paid' || raw === 'оплачен') return 'paid';
     if (raw === 'signed' || raw === 'подписан') return 'signed';
     if (raw === 'released' || raw === 'выпущен') return 'released';
-    if (raw === 'rejected' || raw === 'отклонён' || raw === 'отклонен') return 'rejected';
+    if (raw === 'rejected' || raw === 'отклонён' || raw === 'отклонен' || raw === 'релиз не прошёл модерацию') return 'rejected';
     return 'new';
   };
 
@@ -188,6 +188,8 @@ export function App() {
         artistProfileLinks: r.artistProfileLinks || r.artist_profile_links || '',
         submittedAt: r.timestamp || r.submittedAt || new Date().toISOString(),
         status: normalizeStatus((r.status as any) || r.contract_status),
+        rejectionReason: r.rejectionReason || r.rejection_reason || '',
+        karaokeNeeded: normalizeBool(r.karaokeNeeded ?? r.karaoke_needed),
         totalPrice: normalizeNumber(r.totalPrice ?? r.total ?? r.total_price),
         contractNumber: r.contractNumber || r.contract_number || '',
         rowIndex: Number(r._row || r.row || 0) || undefined,
@@ -228,6 +230,8 @@ export function App() {
         contacts: p.contactInfo || p.contacts || p.contact_info || '',
         submittedAt: p.timestamp || p.submittedAt || new Date().toISOString(),
         status: p.status || 'new',
+        rejectionReason: p.rejectionReason || p.rejection_reason || '',
+        rowIndex: Number(p._row || p.row || 0) || undefined,
       }));
       // Apply local status overrides on top of remote promo data (same as distributions)
       const promoOverrides = getStatusOverrides();
@@ -282,32 +286,35 @@ export function App() {
     }
   };
 
-  const handleDistStatusChange = (id: string, status: DistributionData['status']) => {
-    // Update local state immediately
-    setDistributions(prev => prev.map(d => d.id === id ? { ...d, status } : d));
+  const handleDistStatusChange = (id: string, status: DistributionData['status'], rejectionReason?: string) => {
+    const reason = status === 'rejected'
+      ? (rejectionReason ?? (prompt('Укажите причину отклонения:') || ''))
+      : '';
+    setDistributions(prev => prev.map(d => d.id === id ? { ...d, status, rejectionReason: reason } : d));
     updateDistributionStatus(id, status);
     saveStatusOverride(id, status);
 
-    // Try to update remote in background (fire-and-forget)
     const current = distributions.find(d => d.id === id);
     if (current?.rowIndex) {
-      updateSheetRow('distributions', current.rowIndex, {
-        contract_status: status,
-        status,
-      }).catch(() => { /* ignore remote errors */ });
+      const updates: Record<string, any> = { contract_status: status, status };
+      if (status === 'rejected') updates.rejection_reason = reason;
+      updateSheetRow('distributions', current.rowIndex, updates).catch(() => {});
     }
   };
 
-  const handlePromoStatusChange = (id: string, status: PromoData['status']) => {
+  const handlePromoStatusChange = (id: string, status: PromoData['status'], rejectionReason?: string) => {
+    const reason = status === 'rejected'
+      ? (rejectionReason ?? (prompt('Укажите причину отклонения:') || ''))
+      : '';
     updatePromoStatus(id, status);
-    setPromos(prev => prev.map(p => p.id === id ? { ...p, status } : p));
-    // Persist override in localStorage so it survives page reload
+    setPromos(prev => prev.map(p => p.id === id ? { ...p, status, rejectionReason: reason } : p));
     saveStatusOverride(id, status);
 
-    // Try to update remote in background (fire-and-forget)
     const current = promos.find(p => p.id === id);
     if (current?.rowIndex) {
-      updateSheetRow('promos', current.rowIndex, { status }).catch(() => { /* ignore */ });
+      const updates: Record<string, any> = { status };
+      if (status === 'rejected') updates.rejection_reason = reason;
+      updateSheetRow('promos', current.rowIndex, updates).catch(() => {});
     }
   };
 
@@ -326,6 +333,14 @@ export function App() {
   const handleContractNumberUpdate = (id: string, contractNumber: string) => {
     updateDistributionContractNumber(id, contractNumber);
     setDistributions(prev => prev.map(d => d.id === id ? { ...d, contractNumber } : d));
+  };
+
+  const handleKaraokeToggle = (id: string, karaokeNeeded: boolean) => {
+    setDistributions(prev => prev.map(d => d.id === id ? { ...d, karaokeNeeded } : d));
+    const current = distributions.find(d => d.id === id);
+    if (current?.rowIndex) {
+      updateSheetRow('distributions', current.rowIndex, { karaoke_needed: karaokeNeeded }).catch(() => {});
+    }
   };
 
   const handlePromoDelete = (id: string) => {
@@ -438,6 +453,7 @@ export function App() {
             data={data}
             onBack={() => setView({ type: 'distributions' })}
             onStatusChange={handleDistStatusChange}
+            onKaraokeToggle={handleKaraokeToggle}
             onGenerateContract={(id) => setView({ type: 'distribution-contract', id })}
           />
         );

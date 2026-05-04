@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Filter, Megaphone, Trash2, Eye, ChevronDown } from 'lucide-react';
+import { Search, Filter, Megaphone, Trash2, Eye, ChevronDown, AlertCircle } from 'lucide-react';
 import { PromoData, DetailedPromoData, STATUS_LABELS, STATUS_COLORS } from '../types';
 import { cn } from '../utils/cn';
 
@@ -7,14 +7,14 @@ interface PromoListProps {
   promos: PromoData[];
   onView: (id: string) => void;
   onDelete: (id: string) => void;
-  onStatusChange: (id: string, status: PromoData['status']) => void;
+  onStatusChange: (id: string, status: PromoData['status'], rejectionReason?: string) => void;
 }
 
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-const ALL_STATUSES: PromoData['status'][] = ['new', 'in_progress', 'done', 'rejected'];
+const ALL_STATUSES: PromoData['status'][] = ['new', 'in_progress', 'moderation', 'approved', 'done', 'rejected'];
 
 export function PromoList({ promos, onView, onDelete, onStatusChange }: PromoListProps) {
   const [search, setSearch] = useState('');
@@ -140,18 +140,29 @@ export function PromoList({ promos, onView, onDelete, onStatusChange }: PromoLis
                       <div className="relative">
                         <button
                           onClick={() => setStatusDropdown(statusDropdown === p.id ? null : p.id)}
-                          className={cn('text-xs px-2 py-0.5 rounded-full border flex items-center gap-1 cursor-pointer hover:opacity-80', STATUS_COLORS[p.status])}
+                          className={cn('text-xs px-2 py-0.5 rounded-full border flex items-center gap-1 cursor-pointer hover:opacity-80', STATUS_COLORS[p.status] || 'bg-dark-700 text-dark-400 border-dark-600')}
                         >
-                          {STATUS_LABELS[p.status]}
+                          {STATUS_LABELS[p.status] || p.status}
                           <ChevronDown size={12} />
                         </button>
+                        {p.status === 'rejected' && p.rejectionReason && (
+                          <p className="text-[10px] text-red-400/80 flex items-center gap-1 mt-0.5">
+                            <AlertCircle size={10} />
+                            {p.rejectionReason}
+                          </p>
+                        )}
                         {statusDropdown === p.id && (
-                          <div className="absolute z-20 top-full mt-1 left-0 bg-dark-800 border border-dark-600 rounded-lg shadow-xl py-1 min-w-[140px]">
+                          <div className="absolute z-20 top-full mt-1 left-0 bg-dark-800 border border-dark-600 rounded-lg shadow-xl py-1 min-w-[200px]">
                             {ALL_STATUSES.map(s => (
                               <button
                                 key={s}
                                 onClick={() => {
-                                  onStatusChange(p.id, s);
+                                  if (s === 'rejected') {
+                                    const reason = prompt('Укажите причину отклонения:') || '';
+                                    onStatusChange(p.id, s, reason);
+                                  } else {
+                                    onStatusChange(p.id, s);
+                                  }
                                   setStatusDropdown(null);
                                 }}
                                 className={cn(
